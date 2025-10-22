@@ -140,3 +140,145 @@ Identify and evaluate potential sources of bias that could distort findings.
    - **Recall bias:** Are retrospective reports systematically inaccurate?
    - **Social desirability:** Are responses biased toward acceptability?
    - **Instrument bias:** Do measurement tools systematically err?
+   - Evaluate blinding, validation, and measurement objectivity
+
+4. **Analysis Biases**
+   - **P-hacking:** Were multiple analyses conducted until significance emerged?
+   - **Outcome switching:** Were non-significant outcomes replaced with significant ones?
+   - **Selective reporting:** Are all planned analyses reported?
+   - **Subgroup fishing:** Were subgroup analyses conducted without correction?
+   - Check for study registration and compare to published outcomes
+
+5. **Confounding**
+   - What variables could affect both exposure and outcome?
+   - Were confounders measured and controlled (statistically or by design)?
+   - Could unmeasured confounding explain findings?
+   - Are there plausible alternative explanations?
+
+**Reference:** See `references/common_biases.md` for comprehensive bias taxonomy with detection and mitigation strategies.
+
+### 3. Statistical Analysis Evaluation
+
+Critically assess statistical methods, interpretation, and reporting.
+
+**Apply when:**
+- Reviewing quantitative research
+- Evaluating data-driven claims
+- Assessing clinical trial results
+- Reviewing meta-analyses
+
+**Statistical review checklist:**
+
+1. **Sample Size and Power**
+   - Was a priori power analysis conducted?
+   - Is sample adequate for detecting meaningful effects?
+   - Is the study underpowered (common problem)?
+   - Do significant results from small samples raise flags for inflated effect sizes?
+
+2. **Statistical Tests**
+   - Are tests appropriate for data type and distribution?
+   - Were test assumptions checked and met?
+   - Are parametric tests justified, or should non-parametric alternatives be used?
+   - Is the analysis matched to study design (e.g., paired vs. independent)?
+
+3. **Multiple Comparisons**
+   - Were multiple hypotheses tested?
+   - Was correction applied (Bonferroni, FDR, other)?
+   - Are primary outcomes distinguished from secondary/exploratory?
+   - Could findings be false positives from multiple testing?
+
+4. **P-Value Interpretation**
+   - Are p-values interpreted correctly (probability of data if null is true)?
+   - Is non-significance incorrectly interpreted as "no effect"?
+   - Is statistical significance conflated with practical importance?
+   - Are exact p-values reported, or only "p < .05"?
+   - Is there suspicious clustering just below .05?
+
+5. **Effect Sizes and Confidence Intervals**
+   - Are effect sizes reported alongside significance?
+   - Are confidence intervals provided to show precision?
+   - Is the effect size meaningful in practical terms?
+   - Are standardized effect sizes interpreted with field-specific context?
+
+6. **Missing Data**
+   - How much data is missing?
+   - Is missing data mechanism considered (MCAR, MAR, MNAR)?
+   - How is missing data handled (deletion, imputation, maximum likelihood)?
+   - Could missing data bias results?
+
+7. **Regression and Modeling**
+   - Is the model overfitted (too many predictors, no cross-validation)?
+   - Are predictions made outside the data range (extrapolation)?
+   - Are multicollinearity issues addressed?
+   - Are model assumptions checked?
+
+8. **Common Pitfalls**
+   - Correlation treated as causation
+   - Ignoring regression to the mean
+   - Base rate neglect
+   - Texas sharpshooter fallacy (pattern finding in noise)
+   - Simpson's paradox (confounding by subgroups)
+
+**Reference:** See `references/statistical_pitfalls.md` for detailed pitfalls and correct practices.
+
+### 4. Evidence Quality Assessment
+
+Evaluate the strength and quality of evidence systematically.
+
+**Apply when:**
+- Weighing evidence for decisions
+- Conducting literature reviews
+- Comparing conflicting findings
+- Determining confidence in conclusions
+
+**Evidence evaluation framework:**
+
+1. **Study Design Hierarchy**
+   - Systematic reviews/meta-analyses (highest for intervention effects)
+   - Randomized controlled trials
+   - Cohort studies
+   - Case-control studies
+   - Cross-sectional studies
+   - Case series/reports
+   - Expert opinion (lowest)
+
+   **Important:** Higher-level designs aren't always better quality. A well-designed observational study can be stronger than a poorly-conducted RCT.
+
+2. **Quality Within Design Type**
+   - Risk of bias assessment (use appropriate tool: Cochrane ROB, Newcastle-Ottawa, etc.)
+   - Methodological rigor
+   - Transparency and reporting completeness
+   - Conflicts of interest
+
+3. **GRADE Considerations (if applicable)**
+   - Start with design type (RCT = high, observational = low)
+   - **Downgrade for:**
+     - Risk of bias
+     - Inconsistency across studies
+     - Indirectness (wrong population/intervention/outcome)
+     - Imprecision (wide confidence intervals, small samples)
+     - Publication bias
+   - **Upgrade for:**
+     - Large effect sizes
+     - Dose-response relationships
+     - Confounders would reduce (not increase) effect
+
+4. **Convergence of Evidence**
+   - **Stronger when:**
+     - Multiple independent replications
+     - Different research groups and settings
+     - Different methodologies converge on same conclusion
+     - Mechanistic and empirical evidence align
+   - **Weaker when:**
+     - Single study or research group
+     - Contradictory findings in literature
+     - Publication bias evident
+     - No replication attempts
+
+5. **Contextual Factors**
+   - Biological/theoretical plausibility
+   - Consistency with established knowledge
+   - Temporality (cause precedes effect)
+   - Specificity of relationship
+   - Strength of association
+
