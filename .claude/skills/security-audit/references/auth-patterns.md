@@ -143,3 +143,148 @@ async function refreshTokens(refreshToken: string): Promise<TokenPair> {
   const storedToken = await RefreshToken.findOne({ tokenHash });
   
   if (!storedToken || storedToken.expiresAt < new Date()) {
+    throw new Error('Invalid refresh token');
+  }
+  
+  // Detect token reuse (potential theft)
+  const familyTokens = await RefreshToken.find({ familyId: storedToken.familyId });
+  if (familyTokens.some(t => t.id !== storedToken.id && t.createdAt > storedToken.createdAt)) {
+    // Token reuse detected - invalidate entire family
+    await RefreshToken.deleteMany({ familyId: storedToken.familyId });
+    throw new Error('Token reuse detected');
+  }
+  
+  // Rotate: invalidate old, create new
+  await RefreshToken.delete({ id: storedToken.id });
+  
+  const newRefreshToken = await createRefreshToken(storedToken.userId, storedToken.familyId);
+  const newAccessToken = generateAccessToken(await User.findById(storedToken.userId));
+  
+  return { accessToken: newAccessToken, refreshToken: newRefreshToken };
+}
+```
+
+---
+
+### Session-Based Authentication
+
+#### Secure Session Configuration
+
+```typescript
+import session from 'express-session';
+import RedisStore from 'connect-redis';
+import { createClient } from 'redis';
+
+const redisClient = createClient({ url: process.env.REDIS_URL });
+
+app.use(session({
+  store: new RedisStore({ client: redisClient }),
+  secret: process.env.SESSION_SECRET!,
+  name: '__Host-session',  // Cookie prefix for additional security
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: true,          // HTTPS only
+    httpOnly: true,        // No JS access
+    sameSite: 'strict',    // CSRF protection
+    maxAge: 24 * 60 * 60 * 1000,  // 24 hours
+    domain: undefined,     // Current domain only
+    path: '/'
+  }
+}));
+```
+
+#### Session Regeneration
+
+```typescript
+// Always regenerate session on login
+app.post('/login', async (req, res) => {
+  const user = await authenticateUser(req.body);
+  
+  req.session.regenerate((err) => {
+    if (err) return res.status(500).json({ error: 'Session error' });
+    
+    req.session.userId = user.id;
+    req.session.loginTime = Date.now();
+    req.session.ip = req.ip;
+    
+    res.json({ success: true });
+  });
+});
+
+// Validate session consistency
+function validateSession(req: Request, res: Response, next: NextFunction) {
+  if (req.session.ip && req.session.ip !== req.ip) {
+    // IP changed - potential session hijacking
+    req.session.destroy(() => {});
+    return res.status(401).json({ error: 'Session invalid' });
+  }
+  next();
+}
+```
+
+---
+
+## Authorization Patterns
+
+### Role-Based Access Control (RBAC)
+
+```typescript
+enum Role {
+  USER = 'user',
+  ADMIN = 'admin',
+  SUPER_ADMIN = 'super_admin'
+}
+
+interface User {
+  id: string;
+  roles: Role[];
+}
+
+function requireRole(...roles: Role[]) {
+  return (req: Request, res: Response, next: NextFunction) => {
+    const user = req.user as User;
+    
+    if (!user) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+    
+    const hasRole = roles.some(role => user.roles.includes(role));
+    
+    if (!hasRole) {
+      return res.status(403).json({ error: 'Insufficient permissions' });
+    }
+    
+    next();
+  };
+}
+
+// Usage
+app.delete('/api/users/:id', authenticate, requireRole(Role.ADMIN), deleteUser);
+```
+
+### Permission-Based Access Control
+
+```typescript
+enum Permission {
+  READ_USERS = 'users:read',
+  WRITE_USERS = 'users:write',
+  DELETE_USERS = 'users:delete',
+  READ_ORDERS = 'orders:read',
+  WRITE_ORDERS = 'orders:write'
+}
+
+const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
+  [Role.USER]: [Permission.READ_USERS, Permission.READ_ORDERS],
+  [Role.ADMIN]: [Permission.READ_USERS, Permission.WRITE_USERS, Permission.READ_ORDERS, Permission.WRITE_ORDERS],
+  [Role.SUPER_ADMIN]: Object.values(Permission)
+};
+
+function requirePermission(...permissions: Permission[]) {
+  return (req: Request, res: Response, next: NextFunction) => {
+    const user = req.user as User;
+    const userPermissions = user.roles.flatMap(role => ROLE_PERMISSIONS[role]);
+    
+    const hasPermissions = permissions.every(p => userPermissions.includes(p));
+    
+    if (!hasPermissions) {
