@@ -131,3 +131,135 @@ Top contributors stop contributing
   | Effort Level | Recognition |
   |--------------|-------------|
   | Light (2-4 hrs/mo) | Swag, early access |
+  | Medium (8-12 hrs/mo) | Above + stipend, events |
+  | Heavy (20+ hrs/mo) | Above + compensation, advisory role |
+  
+  ### Burnout Recovery
+  
+  1. Acknowledge and thank
+  2. Offer break without judgment
+  3. Reduce scope when they return
+  4. Add capacity to team
+  
+  ### Healthy Program Metrics
+  
+  | Metric | Target |
+  |--------|--------|
+  | Ambassador tenure | >12 months avg |
+  | Churn rate | <25% annually |
+  | NPS of ambassadors | >50 |
+  | Workload spread | No one >25% of output |
+  
+### **Symptoms**
+  - Top contributors going quiet
+  - Declining commitment fulfillment
+  - Complaints in feedback sessions
+### **Detection Pattern**
+ambassador|champion|contributor
+
+## Community Attribution Gaps
+
+### **Id**
+community-attribution-gaps
+### **Summary**
+Can't prove community's business value
+### **Severity**
+medium
+### **Situation**
+Leadership questions community investment
+### **Why**
+  No attribution system in place.
+  Qualitative value not quantified.
+  ROI calculation missing.
+  
+### **Solution**
+  ## Building Community Attribution
+  
+  ### Quick-Win Attribution
+  
+  **1. Survey Attribution**
+  ```
+  Signup survey:
+  "How did you hear about us?"
+  - Community/forum
+  - Community event
+  - Friend/colleague (community member)
+  - User content (tutorial, review)
+  ```
+  
+  **2. Referral Tracking**
+  ```
+  Ambassador referral links:
+  product.com/signup?ref=ambassador-name
+  
+  Track: Signups, conversions, LTV
+  ```
+  
+  **3. Event Attribution**
+  ```
+  Event → Registration → Signup within 30 days
+  
+  Track: Event-attributed conversions
+  ```
+  
+  ### Advanced Attribution
+  
+  **Cohort Analysis**
+  ```
+  Compare users who:
+  A) Joined community before purchase
+  B) Never joined community
+  
+  Measure:
+  - Conversion rate
+  - LTV
+  - Retention
+  - NPS
+  ```
+  
+  **Influence Tracking**
+  ```
+  Tag users who touch community:
+  - Viewed community content
+  - Asked/answered question
+  - Attended event
+  - Connected with ambassador
+  
+  Attribute % of conversion to community
+  ```
+  
+  ### ROI Framework
+  
+  ```
+  Quarterly Community ROI
+  
+  Value Created:
+  - Attributed signups × Avg CAC saved: $X
+  - Support deflection × Ticket cost: $X
+  - Retention lift × LTV impact: $X
+  - Content value × Production cost: $X
+  Total Value: $X
+  
+  Cost:
+  - Team: $X
+  - Platform: $X
+  - Programs: $X
+  - Events: $X
+  Total Cost: $X
+  
+  ROI: (Value - Cost) / Cost = X%
+  ```
+  
+### **Symptoms**
+  - What's the ROI of community?
+  - Budget pressure on community team
+  - Can't justify headcount
+### **Detection Pattern**
+community ROI|attribution|value
+
+## Platform Mismatch
+
+### **Id**
+platform-mismatch
+### **Summary**
+Wrong community platform for audience
