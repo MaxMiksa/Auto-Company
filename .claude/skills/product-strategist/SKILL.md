@@ -125,3 +125,129 @@ COMPETITIVE RIVALRY: [Low/Med/High]
 ### Competitive Positioning Map
 
 ```
+                    High Price
+                        │
+    Premium         ────┼────    Luxury
+    (High value)        │        (Status)
+                        │
+    Low Feature ────────┼──────── High Feature
+                        │
+    Budget          ────┼────    Value
+    (Cost focus)        │        (Best deal)
+                        │
+                    Low Price
+```
+
+## Positioning Strategy
+
+### Positioning Statement
+
+```
+FOR [target customer]
+WHO [statement of need/opportunity]
+[Product name] IS A [product category]
+THAT [key benefit/differentiator]
+UNLIKE [competitive alternative]
+OUR PRODUCT [primary differentiation]
+```
+
+### Value Proposition Canvas
+
+```
+CUSTOMER PROFILE                 VALUE MAP
+┌─────────────────────┐         ┌─────────────────────┐
+│     Customer        │         │    Value            │
+│       Jobs          │ ←─────→ │   Proposition       │
+│  ┌─────────────┐   │         │  ┌─────────────┐   │
+│  │ Pains      │   │         │  │Pain Relievers│   │
+│  └─────────────┘   │         │  └─────────────┘   │
+│  ┌─────────────┐   │         │  ┌─────────────┐   │
+│  │ Gains      │   │         │  │Gain Creators│   │
+│  └─────────────┘   │         │  └─────────────┘   │
+└─────────────────────┘         └─────────────────────┘
+```
+
+### Messaging Framework
+
+| Audience | Pain Point | Our Solution | Proof Point |
+|----------|------------|--------------|-------------|
+| [Buyer] | [Pain] | [Solution] | [Evidence] |
+| [User] | [Pain] | [Solution] | [Evidence] |
+| [Influencer] | [Pain] | [Solution] | [Evidence] |
+
+## Go-to-Market Strategy
+
+### GTM Plan Template
+
+```markdown
+# Go-to-Market Plan: [Product/Feature]
+
+## Overview
+- Launch date: [Date]
+- Target segment: [Segment]
+- Revenue target: $[X] by [Date]
+
+## Target Customer
+- Ideal Customer Profile (ICP)
+- Buyer personas
+- Decision-making process
+
+## Positioning
+- Positioning statement
+- Key messages (3)
+- Competitive differentiators
+
+## Pricing Strategy
+- Pricing model: [Model]
+- Price points: [Tiers]
+- Packaging: [Bundles]
+
+## Channel Strategy
+| Channel | Role | Investment | Target |
+|---------|------|------------|--------|
+| Direct Sales | [Role] | [%] | [Goal] |
+| Self-serve | [Role] | [%] | [Goal] |
+| Partners | [Role] | [%] | [Goal] |
+
+## Marketing Plan
+- Pre-launch: [Activities]
+- Launch: [Activities]
+- Post-launch: [Activities]
+
+## Sales Enablement
+- Training program
+- Sales collateral
+- Demo environments
+
+## Success Metrics
+- [Metric 1]: [Target]
+- [Metric 2]: [Target]
+- [Metric 3]: [Target]
+
+## Timeline
+| Phase | Activities | Dates |
+|-------|-----------|-------|
+| Pre-launch | [List] | [Dates] |
+| Launch | [List] | [Dates] |
+| Post-launch | [List] | [Dates] |
+```
+
+### Launch Checklist
+
+```
+PRE-LAUNCH (T-30 days)
+□ Product ready for launch
+□ Pricing finalized
+□ Sales training complete
+□ Marketing materials ready
+□ Support documentation done
+□ Beta feedback incorporated
+
+LAUNCH WEEK
+□ Press release distributed
+□ Blog post published
+□ Email campaign sent
+□ Social media announced
+□ Sales team notified
+□ Support team briefed
+
