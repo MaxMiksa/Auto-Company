@@ -139,3 +139,144 @@ loop until extraction is thorough (typically 2-4 passes):
   - Forms and inputs
   - Repeated patterns (list items, cards, etc.)
   - Site-specific structures (tweets, posts, stories)
+
+- **Pass 4+**: Refinement
+  - Clean up extracted text
+  - Add context and relationships
+  - Note anything unusual or interesting
+
+## Output Format
+
+Write to {output_path} in this format:
+
+```markdown
+# {url}
+
+Fetched: {timestamp}
+Passes: {n}
+Status: {extracting|complete}
+
+## Summary
+
+{2-3 sentence summary of what this page is}
+
+## Links
+
+| # | Text | Href | Notes |
+|---|------|------|-------|
+| 0 | ... | ... | ... |
+| 1 | ... | ... | ... |
+...
+
+## Content
+
+### Main Content
+
+{extracted article text, cleaned and readable}
+
+### Comments/Discussion
+
+{if applicable}
+
+### Sidebar/Navigation
+
+{notable navigation or related links}
+
+## Structure
+
+Page type: {article, list, profile, search results, etc.}
+
+Key patterns:
+- {selector} → {what it contains}
+- ...
+
+## Forms
+
+### {form name/action}
+- {field name} ({type})
+- ...
+
+## Media
+
+- {images, videos, embeds}
+
+## Metadata
+
+- title: ...
+- description: ...
+- og:image: ...
+- ...
+
+## Extraction Notes
+
+Pass 1: {what was extracted}
+Pass 2: {what was added}
+...
+```
+
+## Guidelines
+
+1. **Be thorough but efficient** — Extract everything useful, skip boilerplate
+2. **Preserve structure** — Keep hierarchy from the page
+3. **Clean text** — Remove HTML artifacts, extra whitespace
+4. **Index links** — Number them for easy `follow N` navigation
+5. **Note patterns** — Identify site-specific structures
+6. **Stay readable** — Output should be useful to both humans and grep
+
+## Completion
+
+After each pass, assess:
+- Have I captured the main content?
+- Are links properly indexed?
+- Is there significant content I haven't extracted?
+- Would another pass add meaningful value?
+
+When extraction is thorough, update Status to `complete` and finish.
+
+Write your final confirmation:
+```
+Extraction complete: {output_path}
+Passes: {n}
+Links: {count}
+Content: {brief description}
+```
+````
+
+---
+
+## Graceful Degradation
+
+Commands work even if extraction is incomplete:
+
+| Command | If extracted | If only HTML |
+|---------|--------------|--------------|
+| `ls` | Rich links from markdown | Basic `<a>` tag parsing |
+| `cat .selector` | From extracted content | Direct HTML parsing |
+| `grep "pattern"` | Search extracted text | Search raw text |
+| `stat` | Full metadata | Basic info |
+
+### Checking extraction status
+
+Before executing a command, check:
+
+1. Does `{slug}.parsed.md` exist?
+2. Does it contain `Status: complete`?
+
+If complete, use the rich extracted content. Otherwise, fall back to HTML parsing or show what's available.
+
+---
+
+## Cache Files
+
+### {slug}.html
+
+Raw HTML exactly as fetched. Kept for:
+- Fallback when extraction incomplete
+- CSS selector queries that need full DOM
+- Re-extraction if needed
+
+### {slug}.parsed.md
+
+The rich extracted content. Example:
+
+```markdown
