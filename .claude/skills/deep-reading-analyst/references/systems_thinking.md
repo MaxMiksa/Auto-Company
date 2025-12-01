@@ -105,3 +105,110 @@ Places to intervene (Donella Meadows' hierarchy, strongest to weakest):
 
 **Network Effects:**
 - Technology: Social media platforms
+- Economics: Currency adoption
+- Language: English as lingua franca
+- Standards: USB-C adoption
+
+**Limits to Growth:**
+- Biology: Population dynamics
+- Business: Market saturation
+- Personal: Skill plateaus
+- Resources: Oil production peak
+
+## Analysis Questions
+
+### Structure
+- What are the key components?
+- What connects them?
+- Where are the feedback loops?
+
+### Behavior
+- What patterns emerge over time?
+- What's amplifying? (Reinforcing loops)
+- What's stabilizing? (Balancing loops)
+
+### Dynamics
+- What happens if X increases 10x?
+- Where are delays causing problems?
+- What's the bottleneck?
+
+### Boundaries
+- What's outside this system but affects it?
+- Where do we draw the line?
+- What external factors matter?
+
+## Systems Archetypes
+
+### 1. Shifting the Burden
+Short-term fix → Undermines long-term solution
+**Example:** Taking painkillers (symptom) vs. fixing posture (cause)
+
+### 2. Escalation
+Both sides respond to each other, spiraling up
+**Example:** Arms race, price wars, social media arguments
+
+### 3. Success to the Successful
+Winner gets advantages that compound
+**Example:** Rich get richer, bestseller lists, platform dominance
+
+### 4. Fixes That Fail
+Solution works initially but creates worse problem
+**Example:** Antibiotic resistance, traffic lanes inducing demand
+
+### 5. Growth and Underinvestment
+Growth stalls because capacity wasn't built
+**Example:** Startup success → Can't scale → Service degrades
+
+## Application to Content Analysis
+
+When reading about any topic:
+
+1. **Map the system**
+   - List key elements mentioned
+   - Draw connections between them
+
+2. **Identify loops**
+   - What reinforces growth/decline?
+   - What creates balance/limits?
+
+3. **Predict dynamics**
+   - If X changes, what cascades follow?
+   - Where will this lead in 1 year? 5 years?
+
+4. **Find leverage**
+   - Where is the author intervening?
+   - Are there better leverage points?
+
+5. **Connect to other domains**
+   - What similar patterns exist elsewhere?
+   - Can solutions from other fields apply?
+
+## Cross-Reference to Other Fields
+
+```markdown
+## Concept in Article
+[Core idea from content]
+
+## Similar Patterns In:
+
+**Economics:** [How this shows up]
+**Biology:** [How this shows up]  
+**Psychology:** [How this shows up]
+**Technology:** [How this shows up]
+**History:** [How this shows up]
+
+## Transferable Insights
+If this pattern exists across domains, then:
+- [Universal principle 1]
+- [Universal principle 2]
+```
+
+## Warning: Systems Thinking Pitfalls
+
+- **Over-complicating:** Not everything needs a full system map
+- **Analysis paralysis:** Perfect map vs. good enough understanding
+- **Ignoring human agency:** People can change system rules
+- **Determinism:** Systems have probability, not certainty
+- **Closed thinking:** Real systems have open boundaries
+
+**Balance:** Use systems thinking to understand dynamics, not to predict perfectly.
