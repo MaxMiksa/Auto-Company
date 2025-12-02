@@ -144,3 +144,149 @@ class SourceEvaluator:
             # Recency scoring
             if age < timedelta(days=90):  # < 3 months
                 return 100.0
+            elif age < timedelta(days=365):  # < 1 year
+                return 85.0
+            elif age < timedelta(days=730):  # < 2 years
+                return 70.0
+            elif age < timedelta(days=1825):  # < 5 years
+                return 50.0
+            else:
+                return 30.0
+
+        except Exception:
+            return 50.0
+
+    def _evaluate_expertise(
+        self,
+        domain: str,
+        title: str,
+        author: Optional[str]
+    ) -> float:
+        """Evaluate source expertise (0-100)"""
+        score = 50.0
+
+        # Academic/research domains get high expertise
+        if any(d in domain for d in ['arxiv', 'nature', 'science', 'ieee', 'acm']):
+            score += 30
+
+        # Government/official sources
+        if '.gov' in domain or 'who.int' in domain:
+            score += 25
+
+        # Technical documentation
+        if 'docs.' in domain or 'documentation' in title.lower():
+            score += 20
+
+        # Author credentials (if available)
+        if author:
+            if any(title in author.lower() for title in ['dr.', 'phd', 'professor']):
+                score += 15
+
+        return min(score, 100.0)
+
+    def _evaluate_bias(
+        self,
+        domain: str,
+        title: str,
+        content: Optional[str]
+    ) -> float:
+        """Evaluate potential bias (0-100, higher = more neutral)"""
+        score = 70.0  # Start neutral
+
+        # Check for sensationalism in title
+        sensational_indicators = [
+            '!', 'shocking', 'unbelievable', 'you won\'t believe',
+            'secret', 'they don\'t want you to know'
+        ]
+        title_lower = title.lower()
+        if any(indicator in title_lower for indicator in sensational_indicators):
+            score -= 20
+
+        # Academic sources are typically less biased
+        if any(d in domain for d in ['arxiv', 'nature', 'science', 'ieee']):
+            score += 20
+
+        # Check for balance in content (if available)
+        if content:
+            # Look for balanced language
+            balanced_indicators = ['however', 'although', 'on the other hand', 'critics argue']
+            if any(indicator in content.lower() for indicator in balanced_indicators):
+                score += 10
+
+        return min(max(score, 0), 100.0)
+
+    def _identify_factors(
+        self,
+        domain: str,
+        domain_score: float,
+        recency_score: float,
+        expertise_score: float,
+        bias_score: float
+    ) -> Dict[str, str]:
+        """Identify key credibility factors"""
+        factors = {}
+
+        if domain_score >= 85:
+            factors['domain'] = "High authority domain"
+        elif domain_score <= 45:
+            factors['domain'] = "Low authority domain - verify claims"
+
+        if recency_score >= 85:
+            factors['recency'] = "Recent information"
+        elif recency_score <= 40:
+            factors['recency'] = "Outdated information - verify currency"
+
+        if expertise_score >= 80:
+            factors['expertise'] = "Expert source"
+        elif expertise_score <= 45:
+            factors['expertise'] = "Limited expertise indicators"
+
+        if bias_score >= 80:
+            factors['bias'] = "Balanced perspective"
+        elif bias_score <= 50:
+            factors['bias'] = "Potential bias detected"
+
+        return factors
+
+    def _generate_recommendation(self, overall_score: float) -> str:
+        """Generate trust recommendation"""
+        if overall_score >= 80:
+            return "high_trust"
+        elif overall_score >= 60:
+            return "moderate_trust"
+        elif overall_score >= 40:
+            return "low_trust"
+        else:
+            return "verify"
+
+
+# Example usage
+if __name__ == '__main__':
+    evaluator = SourceEvaluator()
+
+    # Test sources
+    test_sources = [
+        {
+            'url': 'https://www.nature.com/articles/s41586-2025-12345',
+            'title': 'Breakthrough in Quantum Computing',
+            'publication_date': '2025-10-15'
+        },
+        {
+            'url': 'https://someblog.wordpress.com/shocking-discovery',
+            'title': 'SHOCKING! You Won\'t Believe This Discovery!',
+            'publication_date': '2020-01-01'
+        },
+        {
+            'url': 'https://docs.python.org/3/library/asyncio.html',
+            'title': 'asyncio — Asynchronous I/O',
+            'publication_date': '2025-11-01'
+        }
+    ]
+
+    for source in test_sources:
+        score = evaluator.evaluate_source(**source)
+        print(f"\nSource: {source['title']}")
+        print(f"URL: {source['url']}")
+        print(f"Overall Score: {score.overall_score}/100")
+        print(f"Recommendation: {score.recommendation}")
+        print(f"Factors: {score.factors}")
