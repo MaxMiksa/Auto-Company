@@ -103,3 +103,107 @@ Technical reference guide in `references/qa_best_practices.md`:
 - Security considerations
 - Scalability guidelines
 
+## Tech Stack
+
+**Languages:** TypeScript, JavaScript, Python, Go, Swift, Kotlin
+**Frontend:** React, Next.js, React Native, Flutter
+**Backend:** Node.js, Express, GraphQL, REST APIs
+**Database:** PostgreSQL, Prisma, NeonDB, Supabase
+**DevOps:** Docker, Kubernetes, Terraform, GitHub Actions, CircleCI
+**Cloud:** AWS, GCP, Azure
+
+## Development Workflow
+
+### 1. Setup and Configuration
+
+```bash
+# Install dependencies
+npm install
+# or
+pip install -r requirements.txt
+
+# Configure environment
+cp .env.example .env
+```
+
+### 2. Run Quality Checks
+
+```bash
+# Use the analyzer script
+python scripts/coverage_analyzer.py .
+
+# Review recommendations
+# Apply fixes
+```
+
+### 3. Implement Best Practices
+
+Follow the patterns and practices documented in:
+- `references/testing_strategies.md`
+- `references/test_automation_patterns.md`
+- `references/qa_best_practices.md`
+
+## Best Practices Summary
+
+### Code Quality
+- Follow established patterns
+- Write comprehensive tests
+- Document decisions
+- Review regularly
+
+### Performance
+- Measure before optimizing
+- Use appropriate caching
+- Optimize critical paths
+- Monitor in production
+
+### Security
+- Validate all inputs
+- Use parameterized queries
+- Implement proper authentication
+- Keep dependencies updated
+
+### Maintainability
+- Write clear code
+- Use consistent naming
+- Add helpful comments
+- Keep it simple
+
+## Common Commands
+
+```bash
+# Development
+npm run dev
+npm run build
+npm run test
+npm run lint
+
+# Analysis
+python scripts/coverage_analyzer.py .
+python scripts/e2e_test_scaffolder.py --analyze
+
+# Deployment
+docker build -t app:latest .
+docker-compose up -d
+kubectl apply -f k8s/
+```
+
+## Troubleshooting
+
+### Common Issues
+
+Check the comprehensive troubleshooting section in `references/qa_best_practices.md`.
+
+### Getting Help
+
+- Review reference documentation
+- Check script output messages
+- Consult tech stack documentation
+- Review error logs
+
+## Resources
+
+- Pattern Reference: `references/testing_strategies.md`
+- Workflow Guide: `references/test_automation_patterns.md`
+- Technical Guide: `references/qa_best_practices.md`
+- Tool Scripts: `scripts/` directory
