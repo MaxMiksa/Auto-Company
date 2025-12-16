@@ -130,3 +130,135 @@ Page shows:
 |---------|------------------|----------------|
 | **Title** | Must be unique | Dynamic variables |
 | **H1** | Must be unique | Dynamic variables |
+| **Meta description** | Should be unique | Template with variables |
+| **Body intro** | Somewhat unique | Conditional text blocks |
+| **Core data** | Must be unique | Database-driven |
+| **Analysis** | Should be unique | Conditional logic |
+| **FAQs** | Can be templated | Customize 2-3 per page |
+
+### Programmatic Implementation
+
+```
+Technical stack options:
+
+1. Static Site Generation (Recommended for <10k pages)
+   ├── Next.js getStaticPaths
+   ├── Astro content collections
+   └── Hugo data templates
+
+2. Server-Side Rendering (For dynamic data)
+   ├── Next.js getServerSideProps
+   └── Nuxt server middleware
+
+3. Database + CDN (For large scale)
+   ├── Supabase/Postgres + Vercel Edge
+   └── Pre-render popular pages, SSR rest
+
+Key requirements:
+- Fast page load (<1s)
+- Proper canonical tags
+- XML sitemap generation
+- Robots.txt for crawl control
+```
+
+### Data Quality Checklist
+
+Before building programmatic pages:
+
+- [ ] Data is accurate and verified
+- [ ] Data is regularly updated (automated if possible)
+- [ ] Each record is meaningfully different
+- [ ] Missing data is handled gracefully
+- [ ] Data covers user needs (not just keywords)
+- [ ] Source data is reliable/authoritative
+- [ ] Legal right to use the data
+
+### Internal Linking for Programmatic
+
+```
+Category hub pages:
+├── /tools/secrets-management (hub)
+│   ├── Links to: /tools/vault
+│   ├── Links to: /tools/aws-secrets-manager
+│   └── Links to: /compare/vault-vs-aws-secrets-manager
+
+Comparison pages:
+├── /compare/vault-vs-aws-secrets-manager
+│   ├── Links to: /tools/vault
+│   ├── Links to: /tools/aws-secrets-manager
+│   ├── Links to: /compare/vault-vs-azure-key-vault (related)
+│   └── Links to: /guides/secrets-management (pillar)
+
+Tool pages:
+├── /tools/vault
+│   ├── Links to: All comparisons involving Vault
+│   ├── Links to: /tools/secrets-management (category)
+│   └── Links to: Related tools (alternatives)
+```
+
+### Avoiding Thin Content Penalties
+
+| Risk Factor | Mitigation |
+|-------------|------------|
+| **Duplicate content** | Unique data per page, not just variable swapping |
+| **Low word count** | Minimum 500 words unique content |
+| **No user value** | Solve real problems, not just rank |
+| **Poor indexing ratio** | Noindex low-value variations |
+| **Keyword stuffing** | Natural language, readable content |
+| **No internal links** | Hub and spoke architecture |
+| **Orphan pages** | Every page linked from somewhere |
+
+### Quality Tiers for Programmatic
+
+```
+Tier 1 (Full index, full optimization):
+├── High search volume variations
+├── Rich unique content
+├── Manual quality checks
+└── Canonical, indexable
+
+Tier 2 (Index, lighter optimization):
+├── Medium search volume
+├── Templated but unique
+├── Automated QA
+└── Canonical, indexable
+
+Tier 3 (Noindex or don't create):
+├── Very low/no search volume
+├── Minimal unique content
+├── Either noindex or don't build
+└── Don't waste crawl budget
+```
+
+### Programmatic SEO Metrics
+
+| Metric | What to Track | Target |
+|--------|---------------|--------|
+| **Indexed pages** | % of pages in Google index | >90% of Tier 1/2 |
+| **Traffic per page** | Avg sessions per programmatic page | Varies by vertical |
+| **Crawl frequency** | How often Google recrawls | Increasing |
+| **CTR** | Click-through rate | >2% average |
+| **Bounce rate** | Users leaving immediately | <70% |
+| **Cannibalization** | Pages competing for same query | Minimal |
+
+### Scaling Considerations
+
+| Page Count | Considerations |
+|------------|----------------|
+| **100-500** | Manual review possible, high quality |
+| **500-5,000** | Automated QA needed, tier pages |
+| **5,000-50,000** | Careful crawl budget, hub pages critical |
+| **50,000+** | Crawl budget management, dynamic rendering |
+
+### Anti-Patterns
+
+- **Thin content at scale** — 100-word template pages tank domain
+- **Keyword stuffing** — [Location] + [keyword] everywhere
+- **No real search demand** — Building pages nobody searches for
+- **Duplicate content** — Same content with different URLs
+- **Over-indexing** — Indexing every variation wastes crawl budget
+- **Stale data** — Programmatic pages with outdated information
+- **No user value** — Pages exist only to rank, not to help
+- **Ignoring quality tiers** — Treating all variations equally
+- **Poor internal linking** — Orphan pages don't get crawled/ranked
+- **No measurement** — Flying blind on what's working
