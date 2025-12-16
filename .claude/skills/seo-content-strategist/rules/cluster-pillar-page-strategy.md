@@ -116,3 +116,120 @@ encryption, authentication, authorization, networking...]
 (Too broad, unfocused, impossible to maintain)
 ```
 
+### Cluster Content Guidelines
+
+| Level | Word Count | Depth | Link Strategy |
+|-------|------------|-------|---------------|
+| **Pillar** | 3,000-5,000 | Comprehensive overview | Links to all clusters |
+| **Cluster Hub** | 1,500-2,500 | Subtopic deep-dive | Links to pillar + related posts |
+| **Supporting Posts** | 800-1,500 | Specific questions | Links to cluster hub + pillar |
+
+### Internal Linking Rules
+
+| From | To | Anchor Text |
+|------|----|-------------|
+| **Pillar** | All cluster articles | Descriptive, keyword-rich |
+| **Cluster** | Pillar (always) | Primary keyword |
+| **Cluster** | Related clusters | Natural, contextual |
+| **Supporting** | Parent cluster | Keyword variation |
+| **Supporting** | Pillar | Primary keyword |
+
+### Good Internal Linking
+
+```markdown
+In a cluster article about Kubernetes secrets:
+
+"While Kubernetes provides native secrets, they're base64
+encoded—not encrypted. For comprehensive protection, you need
+a dedicated [secrets management solution](/guides/secrets-management)
+that handles encryption, rotation, and access control."
+
+✓ Link to pillar with primary keyword anchor
+✓ Natural placement in context
+✓ Adds value for the reader
+```
+
+### Bad Internal Linking
+
+```markdown
+✗ For more information, click here.
+  (No keyword anchor, "click here" is meaningless)
+
+✗ We have many articles about secrets management, secrets,
+   secret rotation, secrets in kubernetes, docker secrets,
+   and more secrets topics.
+  (Keyword stuffing, unnatural, spammy)
+
+✗ Check out our other posts:
+  - [Post 1](/post-1)
+  - [Post 2](/post-2)
+  (No context, no anchor text value)
+```
+
+### Cluster Planning Template
+
+| Element | Details |
+|---------|---------|
+| **Topic Cluster** | [Core topic] |
+| **Pillar Page** | [URL, primary keyword] |
+| **Target Audience** | [Who this serves] |
+| **Business Goal** | [Awareness, leads, product adoption] |
+
+**Cluster Articles:**
+
+| Article | Primary Keyword | Intent | Status |
+|---------|-----------------|--------|--------|
+| [Title 1] | [keyword] | [intent] | [draft/published] |
+| [Title 2] | [keyword] | [intent] | [draft/published] |
+| [Title 3] | [keyword] | [intent] | [draft/published] |
+
+### Cluster Expansion Strategy
+
+```
+Phase 1: Foundation
+├── Pillar page (comprehensive guide)
+├── 3-5 high-priority cluster articles
+└── Internal linking complete
+
+Phase 2: Depth
+├── Add comparison articles
+├── Add use-case specific content
+├── Add FAQ/question articles
+└── Update pillar with new links
+
+Phase 3: Breadth
+├── Related sub-clusters
+├── Integration-specific content
+├── Industry-specific angles
+└── Programmatic variations
+```
+
+### Measuring Cluster Success
+
+| Metric | What to Track | Target |
+|--------|---------------|--------|
+| **Pillar Rankings** | Position for head term | Top 10 → Top 3 |
+| **Cluster Rankings** | % of cluster articles ranking | >60% in top 20 |
+| **Internal CTR** | Clicks between cluster pages | Increasing |
+| **Topic Traffic** | Total organic to cluster | +50% in 6 months |
+| **Topical Authority** | Rankings for related terms | Expanding |
+
+### Cluster Maintenance
+
+| Cadence | Action |
+|---------|--------|
+| **Monthly** | Check pillar rankings, fix broken internal links |
+| **Quarterly** | Update pillar with new information, add new cluster articles |
+| **Bi-annually** | Major pillar refresh, consolidate underperforming articles |
+| **Annually** | Full cluster audit, restructure if needed |
+
+### Anti-Patterns
+
+- **Orphan articles** — Content not linked to any cluster
+- **Flat architecture** — All articles at same level, no hierarchy
+- **Pillar neglect** — Building clusters without maintaining pillar
+- **Over-optimization** — Every link uses exact-match anchor text
+- **Cluster sprawl** — Too many articles diluting topic focus
+- **One-way linking** — Cluster articles don't link back to pillar
+- **Duplicate intent** — Multiple articles targeting same keyword
+- **Ignoring cannibalization** — Multiple pages competing for same query
