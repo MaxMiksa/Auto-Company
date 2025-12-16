@@ -122,3 +122,127 @@ Awareness → Consideration → Decision
 ### Content Type by Intent
 
 | Intent | Primary Content Types | CTA Approach |
+|--------|----------------------|--------------|
+| **Informational** | Blog posts, guides, tutorials, glossary | Soft (newsletter, related content) |
+| **Navigational** | Homepage, product pages, docs | Direct (login, get started) |
+| **Commercial** | Comparisons, reviews, best-of lists | Medium (try free, see demo) |
+| **Transactional** | Pricing, signup, checkout | Strong (buy now, start trial) |
+
+### Mixed Intent Keywords
+
+Some keywords have multiple valid intents:
+
+```
+Query: "secrets management"
+
+SERP shows:
+├── 60% Educational guides (informational)
+├── 30% Tool pages (commercial)
+└── 10% Product pages (transactional)
+
+Strategy:
+1. Primary: Create comprehensive guide (matches majority)
+2. Secondary: Include tools section with comparisons
+3. Support: Link to product page for interested readers
+
+Don't create product page for this query — it matches
+minority of intent, won't rank well
+```
+
+### Intent Validation Checklist
+
+Before creating content:
+
+- [ ] Searched the exact keyword
+- [ ] Noted what type of content ranks (blog, product, tool)
+- [ ] Identified dominant content format (guide, list, comparison)
+- [ ] Checked SERP features (PAA indicates informational)
+- [ ] Analyzed word count of top results
+- [ ] Verified content type matches user expectations
+- [ ] Planned appropriate CTA for the intent
+
+### SERP Intent Indicators
+
+| SERP Element | Indicates |
+|--------------|-----------|
+| **PAA boxes** | Informational (people want to learn) |
+| **Shopping results** | Transactional (ready to buy) |
+| **Local pack** | Local intent (looking for nearby) |
+| **Knowledge panel** | Navigational/Informational |
+| **Image pack** | Visual search (how things look) |
+| **Video results** | Tutorial/how-to intent |
+| **News carousel** | Current events, timely info |
+| **No SERP features** | Ambiguous or niche intent |
+
+### Intent Mapping for Content Planning
+
+| Keyword | Volume | Current Rank | SERP Intent | Our Content | Match? |
+|---------|--------|--------------|-------------|-------------|--------|
+| "secrets management" | 5,400 | 12 | Informational | Guide | Yes |
+| "vault vs aws secrets" | 880 | - | Commercial | None | Need to create |
+| "infisical pricing" | 320 | 1 | Transactional | Pricing page | Yes |
+| "best secrets tools" | 720 | 45 | Commercial | Product page | No (mismatch!) |
+
+### Fixing Intent Mismatches
+
+```
+Problem: Ranking poorly for "best secrets management tools"
+Current page: Product page (transactional)
+SERP intent: Commercial (comparison/review content)
+
+Fix options:
+
+1. Create new comparison page
+   └── /blog/best-secrets-management-tools
+   └── Compare 10 tools including yours
+   └── Objective analysis, not just pitch
+
+2. Repurpose existing page
+   └── Transform product page → comparison hub
+   └── Add competitor analysis
+   └── Position as buyer's guide
+
+3. Accept mismatch
+   └── If intent truly doesn't fit your business
+   └── Focus on keywords where you can match
+```
+
+### Intent-Based Internal Linking
+
+```
+Link from informational → commercial:
+"For a detailed comparison of the top tools mentioned in this
+guide, see our [secrets management tools comparison](/compare/
+secrets-management-tools)."
+
+Link from commercial → transactional:
+"Ready to try the top-rated solution? [Start your free trial
+of Infisical](/signup) with no credit card required."
+
+Link from transactional → informational:
+"New to secrets management? [Read our complete guide](/guides/
+secrets-management) to understand the basics first."
+```
+
+### Measuring Intent Alignment
+
+| Metric | Good Alignment | Bad Alignment |
+|--------|----------------|---------------|
+| **Bounce rate** | <50% | >70% |
+| **Time on page** | >2 minutes (informational) | <30 seconds |
+| **Pages per session** | >1.5 | 1.0 |
+| **Scroll depth** | >60% | <20% |
+| **Conversions** | Meeting intent-appropriate goals | Zero/minimal |
+
+### Anti-Patterns
+
+- **Forcing product pages** — Trying to rank product page for informational queries
+- **Ignoring SERP** — Not checking what actually ranks before writing
+- **Same content everywhere** — Same page targeting multiple intents
+- **Hard sell on informational** — Aggressive CTAs on educational content
+- **No CTAs on commercial** — Missing conversion opportunity
+- **Keyword-only focus** — Targeting keyword without understanding intent
+- **Static intent mapping** — Intent can shift; check SERPs regularly
+- **Assuming intent** — "I think users want..." vs checking actual SERP
+- **Ignoring mixed intent** — Not addressing multiple needs in content
+- **Wrong metrics** — Measuring bounces on transactional like informational
