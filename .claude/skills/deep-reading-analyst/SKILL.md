@@ -249,3 +249,128 @@ Use web_search to find 2-3 related sources, then:
 - Compare SCQA across sources
 - Identify consensus vs. divergence
 - Synthesize integrated perspective
+
+```markdown
+## Multi-Source Analysis
+
+### Source 1: [This article]
+S-C-Q-A: [Summary]
+Key claim: [...]
+
+### Source 2: [Found article]
+S-C-Q-A: [Summary]
+Key claim: [...]
+
+### Source 3: [Found article]
+S-C-Q-A: [Summary]
+Key claim: [...]
+
+## Synthesis
+
+**Consensus**: [What all agree on]
+**Divergence**: [Where they differ]
+**Unique value**: [What each contributes]
+**Integrated view**: [Your synthesis]
+```
+
+## Step 4: Synthesis & Output
+
+**Generate based on user goal:**
+
+### For Problem-Solving:
+
+```markdown
+## Applicable Solutions
+[Extract 2-3 methods from content]
+
+## Application Plan
+Problem: [User's specific issue]
+Relevant insights: [From analysis]
+
+Action steps:
+1. [Concrete action with timeline]
+2. [Concrete action with timeline]
+3. [Concrete action with timeline]
+
+Success metrics: [How to measure]
+
+## Risk Mitigation (from Inversion)
+Potential failure points:
+- [Point 1] → Prevent by: [...]
+- [Point 2] → Prevent by: [...]
+```
+
+### For Learning:
+
+```markdown
+## Learning Notes
+
+Core concepts (explained simply):
+1. **[Concept 1]**: [Definition + Example]
+2. **[Concept 2]**: [Definition + Example]
+
+Mental models gained:
+- [Model 1]: [How it works]
+
+Connections to prior knowledge:
+- [Link to something user already knows]
+
+## Deeper Understanding (First Principles)
+Fundamental question: [...]
+Core principle: [...]
+
+## Verification Questions
+1. [Question to test understanding]
+2. [Question to test application]
+3. [Question to test evaluation]
+```
+
+### For Writing Reference:
+
+```markdown
+## Key Arguments & Evidence
+[Structured extraction with page/paragraph numbers]
+
+## Quotable Insights
+"[Quote 1]" — Context: [...]
+"[Quote 2]" — Context: [...]
+
+## Critical Analysis Notes
+Strengths: [For citing]
+Limitations: [For balanced discussion]
+
+## Alternative Perspectives (from Mental Models)
+[What other disciplines would say about this]
+
+## Gaps & Counterfactuals
+What the article doesn't address:
+- [Gap 1]
+- [Gap 2]
+```
+
+### For Decision-Making:
+
+```markdown
+## Decision Framework
+
+Options presented: [A / B / C]
+
+Multi-model evaluation:
+- Economic lens: [...]
+- Risk lens (Inversion): [...]
+- Systems lens: [...]
+
+## Six Hats Decision Analysis
+🤍 Facts: [Objective comparison]
+🖤 Risks: [What could go wrong]
+💛 Benefits: [Upside potential]
+💚 Alternatives: [Other options not considered]
+💙 Recommendation: [Synthesized advice]
+
+## Scenario Analysis (from Inversion)
+Best case: [...]
+Worst case: [...]
+Most likely: [...]
+```
+
+## Step 5: Knowledge Activation
