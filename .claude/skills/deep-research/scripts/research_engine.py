@@ -288,3 +288,147 @@ Your task: Connect insights and generate novel understanding
 6. Develop evidence hierarchies
 
 ## Use Extended Reasoning:
+- Explore non-obvious connections
+- Consider second-order implications
+- Think about what sources might be missing
+- Generate novel hypotheses
+
+## Output Format:
+```json
+{
+  "patterns": ["pattern1", "pattern2", ...],
+  "concept_relationships": {"concept1": ["related_to1", "related_to2"], ...},
+  "novel_insights": ["insight1", "insight2", ...],
+  "frameworks": ["framework_description1", ...],
+  "key_arguments": [
+    {
+      "argument": "main claim",
+      "supporting_evidence": ["evidence1", "evidence2"],
+      "strength": "strong|moderate|weak"
+    }
+  ]
+}
+```
+""",
+            ResearchPhase.CRITIQUE: """
+# Phase 6: CRITIQUE
+
+Your task: Rigorously evaluate research quality
+
+## Execute Red Team Analysis:
+1. Check logical consistency
+2. Verify citation completeness
+3. Identify gaps or weaknesses
+4. Assess balance and objectivity
+5. Test alternative interpretations
+6. Challenge assumptions
+
+## Red Team Questions:
+- What's missing from this research?
+- What could be wrong?
+- What alternative explanations exist?
+- What biases might be present?
+- What counterfactuals should be considered?
+- What would a skeptic say?
+
+## Output Format:
+```json
+{
+  "strengths": ["strength1", "strength2", ...],
+  "weaknesses": ["weakness1", "weakness2", ...],
+  "gaps": ["gap1", "gap2", ...],
+  "biases": ["bias1", "bias2", ...],
+  "improvements_needed": [
+    {
+      "issue": "description",
+      "recommendation": "how to fix",
+      "priority": "high|medium|low"
+    }
+  ]
+}
+```
+""",
+            ResearchPhase.REFINE: """
+# Phase 7: REFINE
+
+Your task: Address gaps and strengthen weak areas
+
+## Execute:
+1. Conduct additional research for identified gaps
+2. Strengthen weak arguments with more evidence
+3. Add missing perspectives
+4. Resolve contradictions where possible
+5. Enhance clarity and structure
+6. Verify all revised content
+
+## Focus On:
+- High priority improvements from critique
+- Missing stakeholder perspectives
+- Weak evidence chains
+- Unclear explanations
+
+## Output:
+Updated findings, sources, and synthesis with improvements documented.
+""",
+            ResearchPhase.PACKAGE: """
+# Phase 8: PACKAGE
+
+Your task: Deliver professional, actionable research report
+
+## Generate Complete Report:
+
+```markdown
+# Research Report: [Topic]
+
+## Executive Summary
+[3-5 key findings bullets]
+[Primary recommendation]
+[Confidence level: High/Medium/Low]
+
+## Introduction
+### Research Question
+[Original question]
+
+### Scope & Methodology
+[What was investigated and how]
+
+### Key Assumptions
+[Important assumptions made]
+
+## Main Analysis
+
+### Finding 1: [Title]
+[Detailed explanation with evidence]
+[Citations: [1], [2], [3]]
+
+### Finding 2: [Title]
+[Detailed explanation with evidence]
+[Citations: [4], [5], [6]]
+
+[Continue for all findings...]
+
+## Synthesis & Insights
+[Patterns and connections]
+[Novel insights]
+[Implications]
+
+## Limitations & Caveats
+[Known gaps]
+[Assumptions]
+[Areas of uncertainty]
+
+## Recommendations
+[Action items]
+[Next steps]
+[Further research needs]
+
+## Bibliography
+[1] Source 1 full citation
+[2] Source 2 full citation
+...
+
+## Appendix: Methodology
+[Research process]
+[Sources consulted]
+[Verification approach]
+```
