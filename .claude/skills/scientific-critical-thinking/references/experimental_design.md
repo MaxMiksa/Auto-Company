@@ -246,3 +246,127 @@
 - [ ] Blinding of providers
 - [ ] Monitor protocol adherence
 - [ ] Document deviations
+
+### Detection Bias
+- [ ] Blinding of outcome assessors
+- [ ] Objective measures when possible
+- [ ] Standardized assessment procedures
+- [ ] Multiple raters with reliability checks
+
+### Attrition Bias
+- [ ] Strategies to minimize dropout
+- [ ] Track reasons for dropout
+- [ ] Compare dropouts to completers
+- [ ] Intention-to-treat analysis planned
+
+### Reporting Bias
+- [ ] Preregister study and analysis plan
+- [ ] Designate primary vs. secondary outcomes
+- [ ] Commit to reporting all outcomes
+- [ ] Distinguish planned from exploratory analyses
+
+## Data Management
+
+### Data Collection
+- [ ] Data collection forms designed and tested
+- [ ] REDCap, Qualtrics, or similar platforms
+- [ ] Range checks and validation rules
+- [ ] Regular backups
+- [ ] Secure storage (HIPAA/GDPR compliant if needed)
+
+### Data Quality
+- [ ] Real-time data validation
+- [ ] Regular quality checks
+- [ ] Missing data patterns monitored
+- [ ] Outliers identified and investigated
+- [ ] Protocol deviations documented
+
+### Data Security
+- [ ] De-identification procedures
+- [ ] Access controls
+- [ ] Audit trails
+- [ ] Compliance with regulations (IRB, HIPAA, GDPR)
+
+## Statistical Analysis Planning
+
+### Analysis Plan (Prespecify Before Data Collection)
+- [ ] **Primary analysis:**
+  - Statistical test(s) specified
+  - Hypothesis clearly stated
+  - Significance level set (usually α = .05)
+  - One-tailed or two-tailed
+- [ ] **Secondary analyses:**
+  - Clearly designated as secondary
+  - Exploratory analyses labeled as such
+- [ ] **Multiple comparisons:**
+  - Adjustment method specified (if needed)
+  - Primary outcome protects from inflation
+
+### Assumptions
+- [ ] Assumptions of statistical tests identified
+- [ ] Plan to check assumptions
+- [ ] Backup non-parametric alternatives
+- [ ] Transformation options considered
+
+### Missing Data
+- [ ] Anticipated amount of missingness
+- [ ] Missing data mechanism (MCAR, MAR, MNAR)
+- [ ] Handling strategy:
+  - Complete case analysis
+  - Multiple imputation
+  - Maximum likelihood
+- [ ] Sensitivity analyses planned
+
+### Effect Sizes
+- [ ] Appropriate effect size measures identified
+- [ ] Will be reported alongside p-values
+- [ ] Confidence intervals planned
+
+### Statistical Software
+- [ ] Software selected (R, SPSS, Stata, Python, etc.)
+- [ ] Version documented
+- [ ] Analysis scripts prepared in advance
+- [ ] Will be made available (Open Science)
+
+## Ethical Considerations
+
+### Ethical Approval
+- [ ] IRB/Ethics committee approval obtained
+- [ ] Study registered (ClinicalTrials.gov, etc.) if applicable
+- [ ] Protocol follows Declaration of Helsinki or equivalent
+
+### Informed Consent
+- [ ] Voluntary participation
+- [ ] Comprehensible explanation
+- [ ] Risks and benefits disclosed
+- [ ] Right to withdraw without penalty
+- [ ] Privacy protections explained
+- [ ] Compensation disclosed
+
+### Risk-Benefit Analysis
+- [ ] Potential benefits outweigh risks
+- [ ] Risks minimized
+- [ ] Vulnerable populations protected
+- [ ] Data safety monitoring (if high risk)
+
+### Confidentiality
+- [ ] Data de-identified
+- [ ] Secure storage
+- [ ] Limited access
+- [ ] Reporting doesn't allow re-identification
+
+## Validity Threats
+
+### Internal Validity (Causation)
+- [ ] **History:** External events between measurements
+- [ ] **Maturation:** Changes in participants over time
+- [ ] **Testing:** Effects of repeated measurement
+- [ ] **Instrumentation:** Changes in measurement over time
+- [ ] **Regression to mean:** Extreme scores becoming less extreme
+- [ ] **Selection:** Groups differ at baseline
+- [ ] **Attrition:** Differential dropout
+- [ ] **Diffusion:** Control group receives treatment elements
+
+### External Validity (Generalizability)
+- [ ] Sample representative of population
+- [ ] Setting realistic/natural
