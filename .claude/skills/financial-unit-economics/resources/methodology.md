@@ -248,3 +248,128 @@ Contribution Margin % = (Revenue - Variable Costs) ÷ Revenue
 ## 4. Cohort Analysis
 
 ### Why Cohort Analysis Matters
+
+**Problem with averages**: Blending all customers hides important trends. Early customers may have different behavior than recent customers.
+
+**Cohort analysis**: Track customers grouped by acquisition period (month, quarter) to see how metrics evolve.
+
+**Benefits**:
+- Detect improving/worsening trends
+- Compare channels/segments
+- Forecast future LTV based on observed behavior
+
+### Building a Retention Cohort Table
+
+**Structure**: Rows = cohorts (acquisition month), Columns = months since acquisition.
+
+**Example**:
+
+| Cohort | M0 | M1 | M2 | M3 | M6 | M12 |
+|--------|----|----|----|----|----|----|
+| Jan 2024 | 100% | 92% | 84% | 78% | 62% | 42% |
+| Feb 2024 | 100% | 90% | 81% | 75% | 60% | - |
+| Mar 2024 | 100% | 93% | 86% | 80% | 65% | - |
+| Apr 2024 | 100% | 91% | 83% | 77% | - | - |
+
+**Insights**:
+- **Improving retention**: Mar cohort (93% M1 retention) > Jan cohort (92%). Product improvements working.
+- **Stable long-term retention**: ~60% at M6 across cohorts. Predictable LTV.
+
+### Calculating LTV from Cohorts
+
+**Method**: Sum revenue at each time period, weighted by retention.
+
+**Example** (Jan 2024 cohort, ARPU $50, Margin 80%):
+
+LTV = $50 × 80% × (1.0 + 0.92 + 0.84 + 0.78 + ... + 0.42 at M12)
+
+Approximate sum of retention % = ~9.5 months equivalent
+
+LTV = $50 × 80% × 9.5 = **$380**
+
+**More accurate**: Sum all observed months, extrapolate tail based on churn rate stabilization.
+
+### Cohort Analysis by Channel
+
+Compare retention and LTV across acquisition channels.
+
+**Example**:
+
+| Channel | M0 | M1 | M3 | M6 | M12 | LTV |
+|---------|----|----|----|----|-----|-----|
+| Organic | 100% | 95% | 85% | 70% | 55% | $450 |
+| Paid Search | 100% | 88% | 75% | 55% | 35% | $300 |
+| Referral | 100% | 97% | 90% | 75% | 60% | $500 |
+
+**Insight**: Referral has best retention and LTV. Paid Search has worst retention (high early churn). Focus on referral growth.
+
+### Trends to Monitor
+
+1. **Retention curve shape**: Does churn stabilize (flatten) after a few months, or continue accelerating?
+2. **Cohort improvement**: Are newer cohorts retaining better than older cohorts? (Product improvements working)
+3. **Channel differences**: Which channels yield stickiest customers?
+4. **Time to payback**: How long until cumulative revenue (× margin) > CAC?
+
+---
+
+## 5. Interpreting Unit Economics
+
+### LTV/CAC Ratio Benchmarks
+
+| Ratio | Assessment | Recommendation |
+|-------|------------|----------------|
+| <1:1 | **Unsustainable** | Losing money on every customer. Fix or pivot. |
+| 1-2:1 | **Marginal** | Barely profitable. Don't scale yet. |
+| 2-3:1 | **Acceptable** | Unit economics work. Optimize before scaling. |
+| 3-5:1 | **Good** | Can profitably grow. Scale marketing spend. |
+| >5:1 | **Excellent** | Strong economics. Aggressive growth, raise capital. |
+
+**Why 3:1 is the target**:
+- 1× covers CAC
+- 1× covers operating expenses (R&D, G&A, customer success)
+- 1× profit
+
+**Context matters**:
+- **Payback period**: 10:1 LTV/CAC with 24-month payback is worse than 4:1 with 6-month payback (cash strain).
+- **Market size**: Low LTV/CAC acceptable if huge market (can still build large business).
+- **Stage**: Early-stage startups may accept 2-3:1 while finding product-market fit. Growth-stage should target >3:1.
+
+### Payback Period Benchmarks
+
+| Payback | Assessment | Cash Impact |
+|---------|------------|-------------|
+| <6 months | **Excellent** | Can reinvest quickly, fuel rapid growth. |
+| 6-12 months | **Good** | Manageable, standard for SaaS. |
+| 12-18 months | **Acceptable** | Need patient capital, slower growth. |
+| >18 months | **Challenging** | High cash burn, risky. Hard to scale. |
+
+**Why payback matters**: Short payback = fast capital recovery = can reinvest in growth without needing external funding.
+
+**Example**:
+- Company A: LTV/CAC 8:1, Payback 18 months → High cash burn, slow reinvestment despite good ratio.
+- Company B: LTV/CAC 4:1, Payback 6 months → Faster reinvestment, can scale more aggressively.
+
+### Cash Efficiency Metrics
+
+**CAC Payback (SaaS-specific)**:
+
+```
+CAC Payback (months) = S&M Spend ÷ (New ARR × Gross Margin %)
+```
+
+**Example**:
+- Q1 S&M spend: $100k
+- New ARR added: $120k
+- Gross Margin: 80%
+- CAC Payback = $100k ÷ ($120k × 80%) = 1.04 quarters = ~3.1 months
+
+**Sales Efficiency (Magic Number)**:
+
+```
+Sales Efficiency = (New ARR in Quarter) ÷ (S&M Spend in Prior Quarter)
+```
+
+**Benchmarks**:
+- <0.75: Inefficient, unprofitable growth
+- 0.75-1.0: Acceptable
+- >1.0: Efficient, profitable growth
