@@ -246,3 +246,126 @@ Else:
 ### Step 6: Calculate Key Metrics
 
 Track metrics that matter for stage.
+
+**Revenue Metrics:**
+
+- MRR / ARR
+- Growth rate (MoM, YoY)
+- Revenue by segment or cohort
+
+**Unit Economics:**
+
+- CAC (Customer Acquisition Cost)
+- LTV (Lifetime Value)
+- CAC Payback Period
+- LTV / CAC Ratio
+
+**Efficiency Metrics:**
+
+- Burn multiple (Net Burn / Net New ARR)
+- Magic number (Net New ARR / S&M Spend)
+- Rule of 40 (Growth % + Profit Margin %)
+
+**Cash Metrics:**
+
+- Monthly burn rate
+- Runway (months)
+- Cash efficiency
+
+### Step 7: Scenario Analysis
+
+Create three scenarios with different assumptions.
+
+**Variable Assumptions:**
+
+- Customer acquisition rate (±30%)
+- Churn rate (±20%)
+- Average contract value (±15%)
+- CAC (±25%)
+
+**Fixed Assumptions:**
+
+- Pricing structure
+- Core operating expenses
+- Hiring plan (adjust timing, not roles)
+
+## Business Model Templates
+
+### SaaS Financial Model
+
+**Revenue Drivers:**
+
+- New MRR (customers × ARPU)
+- Expansion MRR (upsells)
+- Contraction MRR (downgrades)
+- Churned MRR (lost customers)
+
+**Key Ratios:**
+
+- Gross margin: 75-85%
+- S&M as % revenue: 40-60% (early stage)
+- CAC payback: < 12 months
+- Net retention: 100-120%
+
+**Example Projection:**
+
+```
+Year 1: $500K ARR, 50 customers, $100K MRR by Dec
+Year 2: $2.5M ARR, 200 customers, $208K MRR by Dec
+Year 3: $8M ARR, 600 customers, $667K MRR by Dec
+```
+
+### Marketplace Financial Model
+
+**Revenue Drivers:**
+
+- GMV (Gross Merchandise Value)
+- Take rate (% of GMV)
+- Net revenue = GMV × Take rate
+
+**Key Ratios:**
+
+- Take rate: 10-30% depending on category
+- CAC for buyers vs. sellers
+- Contribution margin: 60-70%
+
+**Example Projection:**
+
+```
+Year 1: $5M GMV, 15% take rate = $750K revenue
+Year 2: $20M GMV, 15% take rate = $3M revenue
+Year 3: $60M GMV, 15% take rate = $9M revenue
+```
+
+### E-Commerce Financial Model
+
+**Revenue Drivers:**
+
+- Traffic (visitors)
+- Conversion rate
+- Average order value (AOV)
+- Purchase frequency
+
+**Key Ratios:**
+
+- Gross margin: 40-60%
+- Contribution margin: 20-35%
+- CAC payback: 3-6 months
+
+### Services / Agency Financial Model
+
+**Revenue Drivers:**
+
+- Billable hours or projects
+- Hourly rate or project fee
+- Utilization rate
+- Team capacity
+
+**Key Ratios:**
+
+- Gross margin: 50-70%
+- Utilization: 70-85%
+- Revenue per employee
+
+## Fundraising Integration
+
