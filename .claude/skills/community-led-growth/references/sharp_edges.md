@@ -263,3 +263,135 @@ community ROI|attribution|value
 platform-mismatch
 ### **Summary**
 Wrong community platform for audience
+### **Severity**
+medium
+### **Situation**
+Engagement low despite good content
+### **Why**
+  Platform doesn't match user behavior.
+  Friction too high.
+  Features don't support use case.
+  
+### **Solution**
+  ## Platform-Audience Fit
+  
+  ### Audience Analysis
+  
+  **Developer/Technical Audience**
+  - Prefer: Discord, GitHub Discussions, Discourse
+  - Avoid: Facebook, LinkedIn groups
+  - Why: Technical features, code formatting, integrations
+  
+  **Business/Marketing Audience**
+  - Prefer: Slack, Circle, LinkedIn
+  - Avoid: Discord, IRC
+  - Why: Professional feel, familiar interface
+  
+  **Consumer/General Audience**
+  - Prefer: Facebook, Discord, Reddit
+  - Avoid: Enterprise platforms
+  - Why: Where they already are
+  
+  ### Platform Selection Matrix
+  
+  | Need | Forum (Discourse) | Chat (Discord) | Social (Circle) |
+  |------|-------------------|----------------|-----------------|
+  | Long-form discussion | ✓✓✓ | ✗ | ✓ |
+  | Real-time chat | ✗ | ✓✓✓ | ✓ |
+  | SEO value | ✓✓✓ | ✗ | ✓ |
+  | Events/courses | ✓ | ✓ | ✓✓✓ |
+  | Knowledge base | ✓✓✓ | ✗ | ✓ |
+  
+  ### Migration Decision
+  
+  Migrate when:
+  - Engagement consistently <20% of expected
+  - User feedback strongly negative
+  - Business needs changed
+  - Current platform limiting growth
+  
+  Don't migrate when:
+  - Just "grass is greener"
+  - No clear user demand
+  - Migration cost > benefit
+  
+### **Symptoms**
+  - Users complain about platform
+  - Low signup-to-active ratio
+  - Alternative communities forming elsewhere
+### **Detection Pattern**
+platform|Discord|Slack|forum
+
+## Scaling Too Fast
+
+### **Id**
+scaling-too-fast
+### **Summary**
+Growing community beyond management capacity
+### **Severity**
+medium
+### **Situation**
+Quality drops as community grows
+### **Why**
+  Moderation can't keep up.
+  Culture diluted.
+  Signal-to-noise ratio drops.
+  
+### **Solution**
+  ## Controlled Community Scaling
+  
+  ### Scaling Thresholds
+  
+  | Members | Team Needed | Focus |
+  |---------|-------------|-------|
+  | 0-500 | 0.5 FTE | Culture, founding members |
+  | 500-2000 | 1 FTE | Structure, programs |
+  | 2000-10000 | 2-3 FTE | Moderation, automation |
+  | 10000+ | 3-5+ FTE | Sub-communities, delegation |
+  
+  ### Quality Control at Scale
+  
+  **1. Moderation Scaling**
+  ```
+  Early: Founder/team moderates
+  Growth: Add volunteer moderators
+  Scale: Moderation tools + volunteers + staff
+  ```
+  
+  **2. Culture Documentation**
+  ```
+  Create and enforce:
+  - Community guidelines
+  - Quality standards
+  - Escalation paths
+  - Recognition of good behavior
+  ```
+  
+  **3. Sub-Community Structure**
+  ```
+  Main community
+  ├── Beginner zone
+  ├── Advanced users
+  ├── Regional groups
+  └── Topic-specific
+  ```
+  
+  ### Growth Gates
+  
+  **Consider gating when:**
+  - Moderation backlog growing
+  - Quality complaints increasing
+  - Core members disengaging
+  
+  **Gating options:**
+  - Application process
+  - Invite-only periods
+  - Qualification requirements
+  - Waitlist
+  
+### **Symptoms**
+  - Quality complaints from long-time members
+  - Moderation team overwhelmed
+  - Core contributors leaving
+### **Detection Pattern**
+scaling|growth|moderation
