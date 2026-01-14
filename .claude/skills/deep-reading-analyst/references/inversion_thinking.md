@@ -240,3 +240,123 @@ First Principles: Strip to essentials
 Inversion: Test fragility of essential assumptions
 ```
 
+### + Systems Thinking
+```markdown
+Systems Thinking: See reinforcing loops
+Inversion: Identify negative loops and collapse points
+```
+
+### + Mental Models
+```markdown
+Mental Models: Multi-angle analysis
+Inversion: Consider the opposite for each angle
+```
+
+## Inversion Toolbox
+
+### Tool 1: Pre-Mortem
+
+```markdown
+## Pre-Mortem Analysis
+
+Imagine it's 1 year later, the plan completely failed.
+
+Failure causes:
+1. [Most likely failure reason 1]
+2. [Most likely failure reason 2]
+3. [Most likely failure reason 3]
+
+Based on this, current actions should be:
+- [Prevention measure 1]
+- [Prevention measure 2]
+```
+
+### Tool 2: Reverse Engineering
+
+```markdown
+## Working Backwards from Results
+
+Ideal outcome: [Describe]
+
+Reverse steps:
+← Step N: [Final step]
+← Step N-1: [Previous step]
+← ...
+← Step 1: [First step]
+
+Article's missing steps: [Identify]
+```
+
+### Tool 3: Not-To-Do List
+
+```markdown
+## Not-To-Do List (More Important Than To-Do)
+
+Based on inversion, explicitly avoid:
+1. ❌ [Failure-causing behavior 1]
+2. ❌ [Failure-causing behavior 2]
+3. ❌ [Failure-causing behavior 3]
+
+Stop signals:
+When [X signal] appears, immediately stop
+```
+
+### Tool 4: Devil's Advocate
+
+```markdown
+## Playing Devil's Advocate
+
+Defending the opposite view:
+- Claim: [Contrary position]
+- Evidence: [Supporting counter-evidence]
+- Context: [When opposite is better]
+
+Balanced conclusion:
+Not A or B, but [middle path]
+```
+
+## Common Pitfalls
+
+### ❌ Excessive Negativity
+- Wrong: Use inversion to reject everything
+- Right: Use inversion to optimize plans, not abandon them
+
+### ❌ Analysis Paralysis
+- Wrong: See too many risks, can't act
+- Right: Identify risks → Design mitigations → Act
+
+### ❌ Ignoring Probability
+- Wrong: Treat low-probability risks same as high-probability
+- Right: Risk assessment = Probability × Impact
+
+## Practice Exercises
+
+### Exercise 1: Daily Decisions
+For any daily decision, ask:
+- "How to ensure this decision is wrong?"
+- What blind spots did I discover?
+
+### Exercise 2: Inverted Reading
+For any advice article, automatically ask:
+- "When would this advice be harmful?"
+- "What prerequisites are missing?"
+
+### Exercise 3: Pre-Mortem Planning
+Before any plan, do 15-minute pre-mortem:
+- Assume failure, list causes
+- Modify plan to avoid these causes
+
+## Key Quotes
+
+> "It is remarkable how much long-term advantage people like us have gotten by trying to be consistently not stupid, instead of trying to be very intelligent."
+> — Charlie Munger
+
+> "Tell me where I'm going to die, so I'll never go there."
+> — Carl Jacobi
+
+> "If you want to improve, be content to be thought foolish and stupid."
+> — Epictetus (On how inversion may contradict conventional wisdom)
+
+---
+
+**Remember**: Inversion's goal isn't pessimism, but robustness. By seeing failure paths, we design better success paths.
