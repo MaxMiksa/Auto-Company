@@ -280,3 +280,144 @@ Raw HTML exactly as fetched. Kept for:
 The rich extracted content. Example:
 
 ```markdown
+# https://news.ycombinator.com
+
+Fetched: 2026-01-24T10:30:00Z
+Passes: 3
+Status: complete
+
+## Summary
+
+Hacker News front page. A tech-focused link aggregator showing 30 user-submitted
+stories ranked by points. Mix of Show HN projects, technical articles, and
+industry news.
+
+## Links
+
+| # | Text | Href | Notes |
+|---|------|------|-------|
+| 0 | Show HN: I built a tool for... | /item?id=41234567 | 142 pts, 87 comments |
+| 1 | The State of AI in 2026 | /item?id=41234568 | 891 pts, 432 comments |
+| 2 | Why Rust is eating the world | /item?id=41234569 | 234 pts, 156 comments |
+| 3 | A deep dive into WebAssembly | /item?id=41234570 | 167 pts, 89 comments |
+...
+
+## Content
+
+### Main Content
+
+This is a link aggregator. Stories are displayed in a ranked list with:
+- Title linking to external article or internal discussion
+- Point count showing community votes
+- Comment count linking to discussion
+
+### Navigation
+
+- [new](/newest) - Newest submissions
+- [past](/front) - Previous front pages
+- [comments](/newcomments) - Recent comments
+- [ask](/ask) - Ask HN questions
+- [show](/show) - Show HN projects
+- [jobs](/jobs) - Job postings
+
+## Structure
+
+Page type: Link aggregator / News feed
+
+Key patterns:
+- .titleline → Story titles
+- .score → Point counts
+- .hnuser → Usernames
+- .age → Submission time
+- .subtext → Metadata row (points, user, time, comments)
+
+## Forms
+
+### Search (external)
+- q (text) → Algolia HN search
+
+### Login (/login)
+- acct (text)
+- pw (password)
+
+## Media
+
+None (text-only design)
+
+## Metadata
+
+- title: Hacker News
+- (no meta description)
+- (no og tags)
+
+## Extraction Notes
+
+Pass 1: Found 30 story links, basic structure
+Pass 2: Extracted navigation, identified patterns
+Pass 3: Added metadata, cleaned up content descriptions
+```
+
+---
+
+## Session State
+
+### session.md
+
+```markdown
+# websh session
+
+started: 2026-01-24T10:30:00Z
+pwd: https://news.ycombinator.com
+pwd_slug: news-ycombinator-com
+
+## Navigation Stack
+
+- https://news.ycombinator.com
+
+## Recent Commands
+
+1. cd https://news.ycombinator.com
+2. ls | head 5
+3. grep "AI"
+```
+
+Updated after each command.
+
+---
+
+## Cache Expiration
+
+Currently, cache does not auto-expire. Use `refresh` to re-fetch.
+
+Future consideration: TTL-based expiration, staleness warnings.
+
+---
+
+## Initialization
+
+On first websh command, if `.websh/` doesn't exist:
+
+```bash
+mkdir -p .websh/cache
+touch .websh/session.md
+touch .websh/history.md
+touch .websh/bookmarks.md
+echo "# websh cache index\n\n## Entries\n\n| Slug | URL | Fetched | Status |\n|------|-----|---------|--------|" > .websh/cache/index.md
+```
+
+Write initial session state:
+
+```markdown
+# websh session
+
+started: {now}
+pwd: (none)
+
+## Navigation Stack
+
+(empty)
+
+## Recent Commands
+
+(none)
+```
