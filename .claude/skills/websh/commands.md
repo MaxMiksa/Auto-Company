@@ -472,3 +472,161 @@ Show the crawl queue.
 ```
 queue                        # show queue status
 queue -l                     # long format with all URLs
+queue --clear                # clear pending queue
+```
+
+**Output:**
+```
+In progress: 3
+  [→] https://hn.com/item?id=123 (extracting)
+  [→] https://hn.com/item?id=124 (fetching)
+  [→] https://hn.com/item?id=125 (fetching)
+
+Queued: 17
+  [0] https://hn.com/item?id=126 (depth 1)
+  [1] https://hn.com/item?id=127 (depth 1)
+  ...
+
+Completed: 12
+Skipped: 5 (external/cached)
+```
+
+---
+
+## Search & Discovery
+
+### `find <pattern>`
+
+Recursively search/crawl from current page.
+
+**Syntax:**
+```
+find <text-pattern>              # search page content
+find -name "<pattern>"           # search link text
+find -href "<pattern>"           # search URLs
+find -selector "<css>"           # find elements
+find -depth <n>                  # crawl n levels deep
+find -maxpages <n>               # limit pages to crawl
+find -type <t>                   # filter: link, image, form, heading
+find -follow                     # actually fetch found pages
+```
+
+**Examples:**
+```
+find "API documentation"                    # find text across linked pages
+find -name "*.pdf" -depth 2                # find PDF links, 2 levels deep
+find -selector "form" -depth 1             # find all forms on this + linked pages
+find -href "/api/" -follow                 # crawl all /api/ pages
+```
+
+**Output:** List of matches with source page
+
+---
+
+### `locate <term>`
+
+Instant search across ALL cached pages.
+
+**Syntax:**
+```
+locate <pattern>
+locate -i <pattern>  # case-insensitive
+locate -r <regex>    # regex mode
+locate --urls        # search URLs only
+locate --titles      # search titles only
+```
+
+**Example:**
+```
+locate "authentication"    # find in all cached content
+locate -i "OAuth"          # case-insensitive
+```
+
+**Output:**
+```
+news-ycombinator-com: [3 matches]
+  - "OAuth authentication flow..."
+  - "...using authentication tokens..."
+techcrunch-com-article: [1 match]
+  - "...new authentication method..."
+```
+
+---
+
+### `tree`
+
+Show site structure.
+
+**Syntax:**
+```
+tree                 # from current page
+tree -d <n>          # depth limit
+tree -L <n>          # same as -d
+tree --sitemap       # use sitemap.xml if available
+tree --infer         # infer from links
+tree -P <pattern>    # only matching paths
+```
+
+**Output:**
+```
+https://example.com/
+├── /about
+├── /products
+│   ├── /products/widget
+│   └── /products/gadget
+├── /blog
+│   ├── /blog/post-1
+│   └── /blog/post-2
+└── /contact
+```
+
+---
+
+### `which <link>`
+
+Resolve where a link actually goes (follow redirects).
+
+**Syntax:**
+```
+which <url>
+which <index>        # from ls output
+which -a             # show all redirects in chain
+```
+
+**Output:**
+```
+https://bit.ly/xyz → https://example.com/actual-page
+```
+
+With `-a`:
+```
+https://bit.ly/xyz
+  → https://example.com/redirect
+  → https://example.com/actual-page (200 OK)
+```
+
+---
+
+## Comparison & Diff
+
+### `diff`
+
+Compare pages or versions.
+
+**Syntax:**
+```
+diff <url1> <url2>           # compare two URLs
+diff <url>                   # compare current vs URL
+diff -c                      # context format
+diff -u                      # unified format
+diff --side-by-side          # side by side
+diff --links                 # compare only links
+diff --text                  # compare only text content
+```
+
+**Time-based:**
+```
+diff -t <duration>           # compare to cached version from <duration> ago
+diff --wayback <date>        # compare to Wayback Machine snapshot
+```
+
