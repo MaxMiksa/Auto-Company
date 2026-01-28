@@ -427,3 +427,146 @@ The FILE grows to 15,000 words, but no single tool call exceeds limits
    - Verification: Check citations_used list - if list contains [1] through [73], generate all 73 entries
    - NO ranges ([1-50]), NO placeholders ("Additional citations"), NO truncation
    - Tool: Edit (append to file)
+   - Progress: "Generated Bibliography ✓ (N citations)"
+
+8. **Methodology Appendix**
+   - Generate: Research process, verification approach (appropriate depth)
+   - Tool: Edit (append to file)
+   - Progress: "Generated Methodology ✓"
+
+**Phase 8.3: Auto-Continuation Decision Point**
+
+After generating sections, check word count:
+
+**If total output ≤18,000 words:** Complete normally
+- Generate Bibliography (all citations)
+- Generate Methodology
+- Verify complete report
+- Save copy to ~/.claude/research_output/
+- Done! ✓
+
+**If total output will exceed 18,000 words:** Auto-Continuation Protocol
+
+**Step 1: Save Continuation State**
+Create file: `~/.claude/research_output/continuation_state_[report_id].json`
+
+```json
+{
+  "version": "2.1.1",
+  "report_id": "[unique_id]",
+  "file_path": "[absolute_path_to_report.md]",
+  "mode": "[quick|standard|deep|ultradeep]",
+
+  "progress": {
+    "sections_completed": [list of section IDs done],
+    "total_planned_sections": [total count],
+    "word_count_so_far": [current word count],
+    "continuation_count": [which continuation this is, starts at 1]
+  },
+
+  "citations": {
+    "used": [1, 2, 3, ..., N],
+    "next_number": [N+1],
+    "bibliography_entries": [
+      "[1] Full citation entry",
+      "[2] Full citation entry",
+      ...
+    ]
+  },
+
+  "research_context": {
+    "research_question": "[original question]",
+    "key_themes": ["theme1", "theme2", "theme3"],
+    "main_findings_summary": [
+      "Finding 1: [100-word summary]",
+      "Finding 2: [100-word summary]",
+      ...
+    ],
+    "narrative_arc": "[Current position in story: beginning/middle/conclusion]"
+  },
+
+  "quality_metrics": {
+    "avg_words_per_finding": [calculated average],
+    "citation_density": [citations per 1000 words],
+    "prose_vs_bullets_ratio": [e.g., "85% prose"],
+    "writing_style": "technical-precise-data-driven"
+  },
+
+  "next_sections": [
+    {"id": N, "type": "finding", "title": "Finding X", "target_words": 1500},
+    {"id": N+1, "type": "synthesis", "title": "Synthesis", "target_words": 1000},
+    ...
+  ]
+}
+```
+
+**Step 2: Spawn Continuation Agent**
+
+Use Task tool with general-purpose agent:
+
+```
+Task(
+  subagent_type="general-purpose",
+  description="Continue deep-research report generation",
+  prompt="""
+CONTINUATION TASK: You are continuing an existing deep-research report.
+
+CRITICAL INSTRUCTIONS:
+1. Read continuation state file: ~/.claude/research_output/continuation_state_[report_id].json
+2. Read existing report to understand context: [file_path from state]
+3. Read LAST 3 completed sections to understand flow and style
+4. Load research context: themes, narrative arc, writing style from state
+5. Continue citation numbering from state.citations.next_number
+6. Maintain quality metrics from state (avg words, citation density, prose ratio)
+
+CONTEXT PRESERVATION:
+- Research question: [from state]
+- Key themes established: [from state]
+- Findings so far: [summaries from state]
+- Narrative position: [from state]
+- Writing style: [from state]
+
+YOUR TASK:
+Generate next batch of sections (stay under 18,000 words):
+[List next_sections from state]
+
+Use Write/Edit tools to append to existing file: [file_path]
+
+QUALITY GATES (verify before each section):
+- Words per section: Within ±20% of [avg_words_per_finding]
+- Citation density: Match [citation_density] ±0.5 per 1K words
+- Prose ratio: Maintain ≥80% prose (not bullets)
+- Theme alignment: Section ties to key_themes
+- Style consistency: Match [writing_style]
+
+After generating sections:
+- If more sections remain: Update state, spawn next continuation agent
+- If final sections: Generate complete bibliography, verify report, cleanup state file
+
+HANDOFF PROTOCOL (if spawning next agent):
+1. Update continuation_state.json with new progress
+2. Add new citations to state
+3. Add summaries of new findings to state
+4. Update quality metrics
+5. Spawn next agent with same instructions
+"""
+)
+```
+
+**Step 3: Report Continuation Status**
+Tell user:
+```
+📊 Report Generation: Part 1 Complete (N sections, X words)
+🔄 Auto-continuing via spawned agent...
+   Next batch: [section list]
+   Progress: [X%] complete
+```
+
+**Phase 8.4: Continuation Agent Quality Protocol**
+
+When continuation agent starts:
+
+**Context Loading (CRITICAL):**
+1. Read continuation_state.json → Load ALL context
+2. Read existing report file → Review last 3 sections
+3. Extract patterns:
