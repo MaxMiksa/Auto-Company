@@ -380,3 +380,130 @@ grep -rn "JSON\.parse\|unserialize\|pickle\.load" --include="*.ts" --include="*.
 
 ```html
 <!-- No subresource integrity -->
+<script src="https://cdn.example.com/lib.js"></script>
+```
+
+### Fixed Code
+
+```html
+<!-- With SRI -->
+<script src="https://cdn.example.com/lib.js" 
+        integrity="sha384-abc123..." 
+        crossorigin="anonymous"></script>
+```
+
+---
+
+## A09:2021 – Logging Failures
+
+### Description
+Insufficient logging, detection, monitoring, and active response.
+
+### Detection
+
+```bash
+# Missing security logging
+grep -rn "login\|logout\|password" --include="*.ts" | grep -v "log\|audit"
+
+# Sensitive data in logs
+grep -rn "console\.log.*password\|token\|secret" --include="*.ts"
+```
+
+### Requirements
+
+```typescript
+// Security events to log
+const securityEvents = [
+  'login_success',
+  'login_failure',
+  'logout',
+  'password_change',
+  'mfa_enabled',
+  'mfa_disabled',
+  'permission_change',
+  'data_export',
+  'admin_action'
+];
+
+// Audit log entry
+interface AuditLog {
+  timestamp: Date;
+  event: string;
+  userId: string;
+  ip: string;
+  userAgent: string;
+  details: Record<string, unknown>;
+  success: boolean;
+}
+```
+
+---
+
+## A10:2021 – SSRF
+
+### Description
+Server-Side Request Forgery occurs when fetching a remote resource without validating user-supplied URL.
+
+### Detection Patterns
+
+```bash
+# URL from user input
+grep -rn "fetch\|axios\|request\|http\.get" --include="*.ts" | \
+  grep "req\.\(body\|query\|params\)"
+
+# DNS rebinding potential
+grep -rn "url\s*=.*req\." --include="*.ts"
+```
+
+### Vulnerable Code
+
+```typescript
+// SSRF vulnerability
+app.get('/fetch', async (req, res) => {
+  const response = await fetch(req.query.url); // ❌
+  res.json(await response.json());
+});
+```
+
+### Fixed Code
+
+```typescript
+import { URL } from 'url';
+
+const ALLOWED_HOSTS = ['api.example.com', 'cdn.example.com'];
+
+app.get('/fetch', async (req, res) => {
+  const url = new URL(req.query.url);
+  
+  // Validate host
+  if (!ALLOWED_HOSTS.includes(url.hostname)) {
+    return res.status(400).json({ error: 'Host not allowed' });
+  }
+  
+  // Block internal IPs
+  const ip = await dns.resolve(url.hostname);
+  if (isPrivateIP(ip)) {
+    return res.status(400).json({ error: 'Internal hosts not allowed' });
+  }
+  
+  const response = await fetch(url.toString());
+  res.json(await response.json());
+});
+```
+
+---
+
+## Quick Reference Table
+
+| ID | Name | Key Mitigation |
+|----|------|----------------|
+| A01 | Broken Access Control | Authorization checks on every endpoint |
+| A02 | Cryptographic Failures | Strong algorithms, no hardcoded secrets |
+| A03 | Injection | Parameterized queries, input validation |
+| A04 | Insecure Design | Threat modeling, rate limiting |
+| A05 | Security Misconfiguration | Security headers, minimal error info |
+| A06 | Vulnerable Components | Regular dependency updates |
+| A07 | Auth Failures | Strong auth, session management |
+| A08 | Integrity Failures | SRI, signed updates |
+| A09 | Logging Failures | Audit logs, monitoring |
+| A10 | SSRF | URL validation, allowlists |
