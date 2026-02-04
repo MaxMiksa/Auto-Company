@@ -369,3 +369,126 @@ Year 3: $60M GMV, 15% take rate = $9M revenue
 
 ## Fundraising Integration
 
+### Funding Scenario Modeling
+
+**Pre-Money Valuation:**
+Based on metrics and comparables.
+
+**Dilution:**
+
+```
+Post-Money = Pre-Money + Investment
+Dilution % = Investment / Post-Money
+```
+
+**Use of Funds:**
+Allocate funding to extend runway and achieve milestones.
+
+**Example:**
+
+```
+Raise: $5M at $20M pre-money
+Post-Money: $25M
+Dilution: 20%
+
+Use of Funds:
+- Product Development: $2M (40%)
+- Sales & Marketing: $2M (40%)
+- G&A and Operations: $0.5M (10%)
+- Working Capital: $0.5M (10%)
+```
+
+### Milestone-Based Planning
+
+**Identify Key Milestones:**
+
+- Product launch
+- First $1M ARR
+- Break-even on CAC
+- Series A fundraise
+
+**Funding Amount:**
+Ensure runway to achieve next milestone + 6 months buffer.
+
+## Common Pitfalls
+
+**Pitfall 1: Overly Optimistic Revenue**
+
+- New startups rarely hit aggressive projections
+- Use conservative customer acquisition assumptions
+- Model realistic churn rates
+
+**Pitfall 2: Underestimating Costs**
+
+- Add 20% buffer to expense estimates
+- Include fully-loaded compensation
+- Account for software and tools
+
+**Pitfall 3: Ignoring Cash Flow Timing**
+
+- Revenue ≠ cash (payment terms)
+- Expenses paid before revenue collected
+- Model cash conversion carefully
+
+**Pitfall 4: Static Headcount**
+
+- Hiring takes time (3-6 months to fill roles)
+- Ramp time for productivity (3-6 months)
+- Account for attrition (10-15% annually)
+
+**Pitfall 5: Not Scenario Planning**
+
+- Single scenario is never accurate
+- Always model conservative case
+- Plan for what you'll do if base case fails
+
+## Model Validation
+
+**Sanity Checks:**
+
+- [ ] Revenue growth rate is achievable (3x in Year 2, 2x in Year 3)
+- [ ] Unit economics are realistic (LTV/CAC > 3, payback < 18 months)
+- [ ] Burn multiple is reasonable (< 2.0 in Year 2-3)
+- [ ] Headcount scales with revenue (revenue per employee growing)
+- [ ] Gross margin is appropriate for business model
+- [ ] S&M spending aligns with CAC and growth targets
+
+**Benchmark Against Peers:**
+Compare key metrics to similar companies at similar stage.
+
+**Investor Feedback:**
+Share model with advisors or investors for feedback on assumptions.
+
+## Additional Resources
+
+### Reference Files
+
+For detailed model structures and advanced techniques:
+
+- **`references/model-templates.md`** - Complete financial model templates by business model
+- **`references/unit-economics.md`** - Deep dive on CAC, LTV, payback, and efficiency metrics
+- **`references/fundraising-scenarios.md`** - Modeling funding rounds and dilution
+
+### Example Files
+
+Working financial models with formulas:
+
+- **`examples/saas-financial-model.md`** - Complete 3-year SaaS model with cohort analysis
+- **`examples/marketplace-model.md`** - Marketplace GMV and take rate projections
+- **`examples/scenario-analysis.md`** - Three-scenario framework with sensitivities
+
+## Quick Start
+
+To create a startup financial model:
+
+1. **Define business model** - Revenue drivers and pricing
+2. **Project revenue** - Cohort-based with retention
+3. **Model costs** - COGS, S&M, R&D, G&A by month
+4. **Plan headcount** - Hiring by role and department
+5. **Calculate cash flow** - Revenue - expenses = burn/runway
+6. **Compute metrics** - CAC, LTV, burn multiple, runway
+7. **Create scenarios** - Conservative, base, optimistic
+8. **Validate assumptions** - Sanity check and benchmark
+9. **Integrate fundraising** - Model funding rounds and milestones
+
+For complete templates and formulas, reference the `references/` and `examples/` files.
