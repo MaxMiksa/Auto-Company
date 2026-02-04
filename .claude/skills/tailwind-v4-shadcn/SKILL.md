@@ -416,3 +416,142 @@ Usage: `<div className="bg-brand">Branded</div>`
 For detailed patterns and component composition examples, load `references/advanced-usage.md`.
 
 ---
+
+## Dependencies
+
+### ✅ Install These
+
+```json
+{
+  "dependencies": {
+    "tailwindcss": "^4.1.17",
+    "@tailwindcss/vite": "^4.1.17",
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^3.3.1",
+    "@radix-ui/react-*": "latest",
+    "lucide-react": "^0.554.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "@vitejs/plugin-react": "^5.1.1",
+    "vite": "^7.2.4",
+    "typescript": "~5.9.3"
+  }
+}
+```
+
+### ❌ NEVER Install These (Deprecated in v4)
+
+```bash
+# These packages will cause build errors:
+bun add tailwindcss-animate  # ❌ Deprecated
+# or: npm install tailwindcss-animate  # ❌ Deprecated
+
+bun add tw-animate-css      # ❌ Doesn't exist
+```
+
+**If you see import errors for these packages**, remove them and use native CSS animations or `@tailwindcss/motion` instead.
+
+---
+
+## Tailwind v4 Plugins
+
+Tailwind v4 supports official plugins using the `@plugin` directive in CSS.
+
+**Quick Example:**
+```css
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+@plugin "@tailwindcss/forms";
+```
+
+**Common Error:**
+❌ WRONG: `@import "@tailwindcss/typography"` (doesn't work)
+✅ CORRECT: `@plugin "@tailwindcss/typography"` (use @plugin directive)
+
+**Built-in Features:** Container queries are now core (no `@tailwindcss/container-queries` plugin needed).
+
+Load `references/plugins-reference.md` for complete documentation including Typography plugin (prose classes), Forms plugin, installation steps, and common plugin errors.
+
+---
+
+## Reference Documentation
+
+For deeper understanding, see:
+
+- **common-gotchas.md** - All the ways it can break (and fixes)
+- **dark-mode.md** - Complete dark mode implementation
+- **migration-guide.md** - Migrating hardcoded colors to CSS variables
+- **plugins-reference.md** - Official Tailwind v4 plugins (Typography, Forms)
+- **advanced-usage.md** - Custom colors and advanced patterns
+
+---
+
+## When to Load References
+
+Load reference files based on user's specific needs:
+
+### Load `references/common-gotchas.md` when:
+- User reports "colors not working" or "bg-primary doesn't exist"
+- Dark mode not switching properly
+- Build fails with Tailwind errors
+- User encounters any CSS/configuration issue
+- Debugging theme problems
+
+### Load `references/dark-mode.md` when:
+- User asks to implement dark mode
+- Theme switching not working
+- Need ThemeProvider component code
+- Questions about system theme detection
+
+### Load `references/migration-guide.md` when:
+- Migrating from Tailwind v3 to v4
+- User has hardcoded colors to migrate
+- Questions about v3 → v4 changes
+- Need migration checklist
+
+### Load `references/plugins-reference.md` when:
+- User needs Typography plugin (prose class)
+- User needs Forms plugin
+- Questions about @plugin directive
+- Plugin installation errors
+
+### Load `references/advanced-usage.md` when:
+- User asks about custom colors beyond defaults
+- Need advanced component patterns
+- Questions about component best practices
+- Component composition questions
+
+---
+
+## Official Documentation
+
+- **shadcn/ui Vite Setup**: https://ui.shadcn.com/docs/installation/vite
+- **shadcn/ui Tailwind v4 Guide**: https://ui.shadcn.com/docs/tailwind-v4
+- **shadcn/ui Dark Mode (Vite)**: https://ui.shadcn.com/docs/dark-mode/vite
+- **Tailwind v4 Docs**: https://tailwindcss.com/docs
+- **shadcn/ui Theming**: https://ui.shadcn.com/docs/theming
+
+---
+
+## Production Example
+
+This skill is based on the WordPress Auditor project:
+- **Live**: https://wordpress-auditor.webfonts.workers.dev
+- **Stack**: Vite + React 19 + Tailwind v4 + shadcn/ui + Cloudflare Workers
+- **Dark Mode**: Full system/light/dark support
+- **Version**: Tailwind v4.1.17 + shadcn/ui latest (Nov 2025)
+
+All patterns in this skill have been validated in production.
+
+---
+
+**Questions? Issues?**
+
+1. Check `reference/common-gotchas.md` first
+2. Verify all steps in the 4-step architecture
+3. Ensure `components.json` has `"config": ""`
+4. Delete `tailwind.config.ts` if it exists
+5. Check official docs: https://ui.shadcn.com/docs/tailwind-v4
