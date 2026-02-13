@@ -2,7 +2,7 @@
 # ============================================================
 # Auto Company — 24/7 Autonomous Loop
 # ============================================================
-# Keeps Codex CLI running continuously to drive the AI team.
+# Keeps selected CLI engine (Claude/Codex) running continuously.
 # Uses fresh sessions with consensus.md as the relay baton.
 #
 # Usage:
