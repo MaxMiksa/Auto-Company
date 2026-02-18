@@ -434,11 +434,116 @@ run_codex_cycle() {
     rm -f "$timeout_flag"
 }
 
+run_claude_cycle() {
+    local prompt="$1"
+    local output_file timeout_flag
+
+    output_file=$(mktemp)
+    timeout_flag=$(mktemp)
+
+    set +e
+    (
+        cd "$PROJECT_DIR" || exit 1
+        local claude_cmd=("$RESOLVED_ENGINE_BIN" "-p" "$prompt" "--output-format" "json")
+        if [ -n "$MODEL" ]; then
+            claude_cmd+=("--model" "$MODEL")
+        fi
+        if [ -n "$CLAUDE_PERMISSION_MODE" ]; then
+            claude_cmd+=("--permission-mode" "$CLAUDE_PERMISSION_MODE")
+        fi
+        "${claude_cmd[@]}"
+    ) > "$output_file" 2>&1 &
+    local claude_pid=$!
+
+    (
+        sleep "$CYCLE_TIMEOUT_SECONDS"
+        if kill -0 "$claude_pid" 2>/dev/null; then
+            echo "1" > "$timeout_flag"
+            kill -TERM "$claude_pid" 2>/dev/null || true
+            sleep 5
+            kill -KILL "$claude_pid" 2>/dev/null || true
+        fi
+    ) &
+    local watchdog_pid=$!
+
+    wait "$claude_pid"
+    EXIT_CODE=$?
+
+    kill "$watchdog_pid" 2>/dev/null || true
+    wait "$watchdog_pid" 2>/dev/null || true
+    set -e
+
+    OUTPUT=$(cat "$output_file")
+    RESULT_MESSAGE="$OUTPUT"
+    rm -f "$output_file"
+
+    if [ -s "$timeout_flag" ]; then
+        CYCLE_TIMED_OUT=1
+        EXIT_CODE=124
+    else
+        CYCLE_TIMED_OUT=0
+    fi
+    rm -f "$timeout_flag"
+}
+
+run_engine_cycle() {
+    local prompt="$1"
+    case "$ENGINE" in
+        claude)
+            run_claude_cycle "$prompt"
+            ;;
+        codex)
+            run_codex_cycle "$prompt"
+            ;;
+        *)
+            echo "Error: Unsupported ENGINE '$ENGINE'" >&2
+            return 1
+            ;;
+    esac
+}
+
 extract_cycle_metadata() {
     RESULT_TEXT=""
     CYCLE_COST="N/A"
     CYCLE_SUBTYPE="unknown"
-    CYCLE_TYPE="codex_exec"
+    CYCLE_TYPE="${ENGINE}_exec"
+
+    if [ "$ENGINE" = "claude" ]; then
+        if command -v jq >/dev/null 2>&1; then
+            RESULT_TEXT=$(echo "$RESULT_MESSAGE" | jq -r '.result // .message // .output_text // empty' 2>/dev/null | head -c 2000 || true)
+            if [ -z "$RESULT_TEXT" ]; then
+                RESULT_TEXT=$(echo "$RESULT_MESSAGE" | jq -r '.. | .text? // empty' 2>/dev/null | head -c 2000 || true)
+            fi
+
+            parsed_cost=$(echo "$RESULT_MESSAGE" | jq -r '.total_cost_usd // .cost_usd // empty' 2>/dev/null || true)
+            if [ -n "$parsed_cost" ]; then
+                CYCLE_COST="$parsed_cost"
+            fi
+
+            parsed_subtype=$(echo "$RESULT_MESSAGE" | jq -r '.subtype // empty' 2>/dev/null || true)
+            if [ -n "$parsed_subtype" ]; then
+                CYCLE_SUBTYPE="$parsed_subtype"
+            fi
+
+            parsed_type=$(echo "$RESULT_MESSAGE" | jq -r '.type // empty' 2>/dev/null || true)
+            if [ -n "$parsed_type" ]; then
+                CYCLE_TYPE="$parsed_type"
+            fi
+        fi
+
+        if [ -z "$RESULT_TEXT" ]; then
+            RESULT_TEXT=$(echo "$OUTPUT" | head -c 2000 || true)
+        fi
+
+        if [ "$CYCLE_SUBTYPE" = "unknown" ]; then
+            if [ "$EXIT_CODE" -eq 0 ]; then
+                CYCLE_SUBTYPE="success"
+            else
+                CYCLE_SUBTYPE="error"
+            fi
+        fi
+        return
+    fi
 
     RESULT_TEXT=$(echo "$RESULT_MESSAGE" | head -c 2000 || true)
     if [ -z "$RESULT_TEXT" ]; then
