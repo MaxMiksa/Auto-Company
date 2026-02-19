@@ -18,6 +18,18 @@ LABEL="com.autocompany.loop"
 PLIST_PATH="$HOME/Library/LaunchAgents/${LABEL}.plist"
 PAUSE_FLAG="${PROJECT_DIR}/.auto-loop-paused"
 OS_NAME="$(uname -s)"
+ENGINE="${ENGINE:-claude}"
+ENGINE="$(echo "$ENGINE" | tr '[:upper:]' '[:lower:]')"
+MODEL="${MODEL:-}"
+CLAUDE_BIN="${CLAUDE_BIN:-}"
+CLAUDE_PERMISSION_MODE="${CLAUDE_PERMISSION_MODE:-bypassPermissions}"
+CODEX_BIN="${CODEX_BIN:-}"
+CODEX_SANDBOX_MODE="${CODEX_SANDBOX_MODE:-danger-full-access}"
+
+if [ "$ENGINE" != "claude" ] && [ "$ENGINE" != "codex" ]; then
+    echo "Error: ENGINE must be 'claude' or 'codex' (received: '$ENGINE')."
+    exit 1
+fi
 
 if [ "$OS_NAME" != "Darwin" ]; then
     echo "install-daemon.sh supports macOS launchd only."
