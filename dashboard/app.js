@@ -140,7 +140,7 @@ function renderMarkdown(md) {
 function classForState(kind, state) {
   if (kind === "daemon") {
     if (state === "active") return "good";
-    if (state === "inactive" || state === "not_installed") return "warn";
+    if (state === "inactive" || state === "not_installed" || state === "not_supported") return "warn";
     return "bad";
   }
   if (kind === "loop") {
@@ -150,12 +150,12 @@ function classForState(kind, state) {
   }
   if (kind === "guardian") {
     if (state === "running") return "good";
-    if (state === "stopped") return "warn";
+    if (state === "stopped" || state === "not_supported") return "warn";
     return "bad";
   }
   if (kind === "autostart") {
     if (state === "configured") return "good";
-    if (state === "not_configured") return "warn";
+    if (state === "not_configured" || state === "not_supported") return "warn";
     return "bad";
   }
   return "warn";
@@ -228,7 +228,7 @@ async function fetchStatus() {
   els.logText.textContent = (data.logTail || parsed.recentLog || "(no logs yet)").trim();
   els.rawText.textContent = data.raw || "";
 
-  const healthy = data.ok && loop.state === "running" && daemon.state === "active";
+  const healthy = data.ok && loop.state === "running";
   els.pulseText.textContent = healthy ? "Live Link: STABLE" : "Live Link: ATTENTION";
   els.pulseDot.style.background = healthy ? "var(--good)" : "var(--warn)";
 
