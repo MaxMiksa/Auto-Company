@@ -26,6 +26,7 @@ STOP_SCRIPT = REPO_ROOT / "scripts" / "core" / "stop-loop.sh"
 LOG_FILE = REPO_ROOT / "logs" / "auto-loop.log"
 STATE_FILE = REPO_ROOT / ".auto-loop-state"
 CONSENSUS_FILE = REPO_ROOT / "memories" / "consensus.md"
+PID_FILE = REPO_ROOT / ".auto-loop.pid"
 
 
 def run_shell(script_path: Path, args: list[str] | None = None, timeout: int = 90) -> dict[str, Any]:
@@ -86,6 +87,23 @@ def read_tail(path: Path, lines: int = 120) -> str:
     return "\n".join(rows[-lines:])
 
 
+def detect_caffeinate_guard(loop_pid: int | None) -> tuple[str, int | None, str]:
+    if loop_pid is None:
+        return ("stopped", None, "Sleep guard: loop pid unknown")
+
+    # Try to detect a caffeinate process tied to this loop pid.
+    cmd = ["pgrep", "-f", f"caffeinate.*-w {loop_pid}"]
+    try:
+        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=3)
+        pids = [x.strip() for x in (proc.stdout or "").splitlines() if x.strip().isdigit()]
+        if pids:
+            return ("running", int(pids[0]), f"caffeinate -w {loop_pid}")
+    except Exception:
+        pass
+
+    return ("stopped", None, "Sleep guard: not active (use make start-awake)")
+
+
 def parse_status_output(raw: str) -> dict[str, Any]:
     section_re = re.compile(r"^=== (.+) ===$")
     sections: dict[str, list[str]] = {}
@@ -102,8 +120,9 @@ def parse_status_output(raw: str) -> dict[str, Any]:
             sections[current].append(line)
 
     parsed: dict[str, Any] = {
-        "guardian": {"state": "not_supported", "pid": None, "raw": "Awake guardian: N/A on macOS"},
-        "autostart": {"state": "not_supported", "raw": "Autostart: N/A on macOS"},
+        "platform": "macos",
+        "guardian": {"state": "unknown", "pid": None, "raw": "Sleep guard: unknown"},
+        "autostart": {"state": "unknown", "raw": "Autostart: launchd"},
         "daemon": {
             "state": "unknown",
             "activeState": "unknown",
@@ -146,9 +165,13 @@ def parse_status_output(raw: str) -> dict[str, Any]:
             if "LOADED" in upper or "ACTIVE" in upper:
                 parsed["daemon"]["state"] = "active"
                 parsed["daemon"]["activeState"] = "loaded"
+                parsed["autostart"]["state"] = "configured"
+                parsed["autostart"]["raw"] = "Autostart: launchd agent loaded"
             elif "PAUSED" in upper or "NOT LOADED" in upper:
                 parsed["daemon"]["state"] = "inactive"
                 parsed["daemon"]["activeState"] = "inactive"
+                parsed["autostart"]["state"] = "not_configured"
+                parsed["autostart"]["raw"] = "Autostart: launchd agent not loaded"
         elif row.startswith("ENGINE="):
             parsed["loop"]["engine"] = row.split("=", 1)[1].strip()
         elif row.startswith("MODEL="):
@@ -159,6 +182,13 @@ def parse_status_output(raw: str) -> dict[str, Any]:
             parsed["loop"]["errorCount"] = row.split("=", 1)[1].strip()
         elif row.startswith("LOOP_COUNT="):
             parsed["loop"]["loopCount"] = row.split("=", 1)[1].strip()
+
+    guard_state, guard_pid, guard_raw = detect_caffeinate_guard(parsed["loop"].get("pid"))
+    parsed["guardian"] = {"state": guard_state, "pid": guard_pid, "raw": guard_raw}
+
+    if parsed["autostart"]["state"] == "unknown":
+        parsed["autostart"]["state"] = "not_configured"
+        parsed["autostart"]["raw"] = "Autostart: launchd status unknown"
 
     consensus_rows = sections.get("Latest Consensus", [])
     parsed["consensusPreview"] = "\n".join(consensus_rows).strip()
