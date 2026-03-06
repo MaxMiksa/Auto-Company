@@ -46,6 +46,11 @@ cycles: ## Show cycle history summary
 monitor: ## Tail live logs (Ctrl+C to exit)
 	./scripts/core/monitor.sh
 
+# === Dashboard ===
+
+dashboard: ## Start local dashboard server (macOS + Linux)
+	python3 dashboard/server.py
+
 # === Daemon (macOS launchd / Linux systemd --user) ===
 
 install: ## Install daemon (macOS launchd or Linux/WSL systemd --user)

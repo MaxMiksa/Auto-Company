@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-"""Local dashboard server for Auto Company (Windows + WSL runtime)."""
+"""Local dashboard server for Auto Company (macOS + Windows + WSL runtime)."""
 
 from __future__ import annotations
 
 import argparse
 import json
 import os
+import platform
 import re
 import subprocess
 import time
@@ -20,9 +21,23 @@ from urllib.parse import parse_qs, urlparse
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DASHBOARD_DIR = Path(__file__).resolve().parent
 
-STATUS_SCRIPT = REPO_ROOT / "scripts" / "windows" / "status-win.ps1"
-START_SCRIPT = REPO_ROOT / "scripts" / "windows" / "start-win.ps1"
-STOP_SCRIPT = REPO_ROOT / "scripts" / "windows" / "stop-win.ps1"
+# Detect platform
+IS_WINDOWS = platform.system() == "Windows"
+IS_MACOS = platform.system() == "Darwin"
+
+if IS_WINDOWS:
+    STATUS_SCRIPT = REPO_ROOT / "scripts" / "windows" / "status-win.ps1"
+    START_SCRIPT = REPO_ROOT / "scripts" / "windows" / "start-win.ps1"
+    STOP_SCRIPT = REPO_ROOT / "scripts" / "windows" / "stop-win.ps1"
+elif IS_MACOS:
+    STATUS_SCRIPT = REPO_ROOT / "scripts" / "macos" / "status-mac.sh"
+    START_SCRIPT = REPO_ROOT / "scripts" / "core" / "auto-loop.sh"
+    STOP_SCRIPT = REPO_ROOT / "scripts" / "core" / "stop-loop.sh"
+else:
+    # WSL/Linux fallback
+    STATUS_SCRIPT = REPO_ROOT / "scripts" / "core" / "monitor.sh"
+    START_SCRIPT = REPO_ROOT / "scripts" / "core" / "auto-loop.sh"
+    STOP_SCRIPT = REPO_ROOT / "scripts" / "core" / "stop-loop.sh"
 
 LOG_FILE = REPO_ROOT / "logs" / "auto-loop.log"
 STATE_FILE = REPO_ROOT / ".auto-loop-state"
@@ -76,6 +91,46 @@ def run_powershell_script(script_path: Path, args: list[str] | None = None, time
         "elapsedMs": elapsed_ms,
         "output": combined,
     }
+
+
+def run_shell_script(script_path: Path, args: list[str] | None = None, timeout: int = 90) -> dict[str, Any]:
+    """Run a shell script (macOS/Linux)."""
+    cmd = [str(script_path)]
+    if args:
+        cmd.extend(args)
+
+    start = time.time()
+    proc = subprocess.run(
+        cmd,
+        cwd=str(REPO_ROOT),
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        timeout=timeout,
+    )
+    elapsed_ms = int((time.time() - start) * 1000)
+
+    output = (proc.stdout or "").strip()
+    error = (proc.stderr or "").strip()
+    combined = output
+    if error:
+        combined = f"{output}\n{error}".strip()
+
+    return {
+        "ok": proc.returncode == 0,
+        "exitCode": proc.returncode,
+        "elapsedMs": elapsed_ms,
+        "output": combined,
+    }
+
+
+def run_status_script(timeout: int = 90) -> dict[str, Any]:
+    """Run the appropriate status script for the current platform."""
+    if IS_WINDOWS:
+        return run_powershell_script(STATUS_SCRIPT, timeout=timeout)
+    else:
+        return run_shell_script(STATUS_SCRIPT, timeout=timeout)
 
 
 def read_text_file(path: Path, fallback: str = "") -> str:
@@ -145,6 +200,7 @@ def parse_status_output(raw: str) -> dict[str, Any]:
         "recentLog": "",
     }
 
+    # === Windows Guardian ===
     guardian_rows = sections.get("Windows Guardian", [])
     guardian_line = next((x.strip() for x in guardian_rows if x.strip().startswith("Awake guardian:")), "")
     parsed["guardian"]["raw"] = "\n".join(guardian_rows).strip()
@@ -157,6 +213,21 @@ def parse_status_output(raw: str) -> dict[str, Any]:
         elif "STOPPED" in guardian_line:
             parsed["guardian"]["state"] = "stopped"
 
+    # === macOS Guardian ===
+    macos_guardian_rows = sections.get("macOS Guardian", [])
+    if macos_guardian_rows:
+        guardian_line = next((x.strip() for x in macos_guardian_rows if x.strip().startswith("Guardian:")), "")
+        parsed["guardian"]["raw"] = "\n".join(macos_guardian_rows).strip()
+        if guardian_line:
+            parsed["guardian"]["raw"] = guardian_line
+            if "RUNNING" in guardian_line:
+                parsed["guardian"]["state"] = "running"
+                pid_m = re.search(r"PID (\d+)", guardian_line)
+                parsed["guardian"]["pid"] = int(pid_m.group(1)) if pid_m else None
+            elif "STOPPED" in guardian_line:
+                parsed["guardian"]["state"] = "stopped"
+
+    # === Windows Autostart ===
     autostart_rows = sections.get("Windows Autostart Task", [])
     autostart_line = next((x.strip() for x in autostart_rows if x.strip().startswith("Autostart:")), "")
     parsed["autostart"]["raw"] = "\n".join(autostart_rows).strip()
@@ -169,25 +240,50 @@ def parse_status_output(raw: str) -> dict[str, Any]:
         else:
             parsed["autostart"]["state"] = "unknown"
 
-    daemon_rows = sections.get("WSL Daemon (systemd --user)", [])
-    parsed["daemon"]["raw"] = "\n".join(daemon_rows).strip()
-    daemon_compact = [x.strip() for x in daemon_rows if x.strip()]
-    if daemon_compact:
-        first = daemon_compact[0]
-        if "not installed" in first.lower():
-            parsed["daemon"]["state"] = "not_installed"
-        elif first in {"active", "inactive", "activating", "failed"}:
-            parsed["daemon"]["state"] = first
-        for row in daemon_compact:
-            if row.startswith("MainPID="):
-                val = row.split("=", 1)[1].strip()
-                parsed["daemon"]["mainPid"] = int(val) if val.isdigit() else None
-            elif row.startswith("ActiveState="):
-                parsed["daemon"]["activeState"] = row.split("=", 1)[1].strip()
-            elif row.startswith("SubState="):
-                parsed["daemon"]["subState"] = row.split("=", 1)[1].strip()
+    # === macOS Daemon (launchd) ===
+    macos_daemon_rows = sections.get("macOS Daemon (launchd)", [])
+    if macos_daemon_rows:
+        parsed["daemon"]["raw"] = "\n".join(macos_daemon_rows).strip()
+        daemon_compact = [x.strip() for x in macos_daemon_rows if x.strip()]
+        if daemon_compact:
+            first = daemon_compact[0]
+            if "NOT LOADED" in first:
+                parsed["daemon"]["state"] = "not_loaded"
+            elif "PAUSED" in first:
+                parsed["daemon"]["state"] = "paused"
+            elif "ACTIVE" in first:
+                parsed["daemon"]["state"] = "active"
+                # Try to extract PID from launchctl output
+                for row in daemon_compact:
+                    if "PID" in row:
+                        pid_m = re.search(r"(\d+)", row)
+                        if pid_m:
+                            parsed["daemon"]["mainPid"] = int(pid_m.group(1))
+            else:
+                parsed["daemon"]["state"] = first.lower()
 
-    loop_rows = sections.get("Loop Status (scripts/core/monitor.sh)") or sections.get("Loop Status (monitor.sh)", [])
+    # === WSL Daemon (systemd --user) ===
+    daemon_rows = sections.get("WSL Daemon (systemd --user)", [])
+    if daemon_rows and not parsed["daemon"]["raw"]:
+        parsed["daemon"]["raw"] = "\n".join(daemon_rows).strip()
+        daemon_compact = [x.strip() for x in daemon_rows if x.strip()]
+        if daemon_compact:
+            first = daemon_compact[0]
+            if "not installed" in first.lower():
+                parsed["daemon"]["state"] = "not_installed"
+            elif first in {"active", "inactive", "activating", "failed"}:
+                parsed["daemon"]["state"] = first
+            for row in daemon_compact:
+                if row.startswith("MainPID="):
+                    val = row.split("=", 1)[1].strip()
+                    parsed["daemon"]["mainPid"] = int(val) if val.isdigit() else None
+                elif row.startswith("ActiveState="):
+                    parsed["daemon"]["activeState"] = row.split("=", 1)[1].strip()
+                elif row.startswith("SubState="):
+                    parsed["daemon"]["subState"] = row.split("=", 1)[1].strip()
+
+    # === Loop Status ===
+    loop_rows = sections.get("Loop Status (scripts/core/monitor.sh)") or sections.get("Loop Status (monitor.sh)", []) or sections.get("Loop Status", [])
     loop_status_rows = sections.get("Auto Company Status", [])
     merged_loop_rows = list(loop_rows) + list(loop_status_rows)
     parsed["loop"]["raw"] = "\n".join(merged_loop_rows).strip()
@@ -213,6 +309,25 @@ def parse_status_output(raw: str) -> dict[str, Any]:
         elif row.startswith("LOOP_COUNT="):
             parsed["loop"]["loopCount"] = row.split("=", 1)[1].strip()
 
+    # === State File (cross-platform) ===
+    state_file_rows = sections.get("State File", [])
+    if state_file_rows:
+        for row in state_file_rows:
+            if "=" in row:
+                k, v = row.split("=", 1)
+                k = k.strip()
+                v = v.strip()
+                if k == "LOOP_COUNT":
+                    parsed["loop"]["loopCount"] = v
+                elif k == "ERROR_COUNT":
+                    parsed["loop"]["errorCount"] = v
+                elif k == "LAST_RUN":
+                    parsed["loop"]["lastRun"] = v
+                elif k == "ENGINE":
+                    parsed["loop"]["engine"] = v
+                elif k == "MODEL":
+                    parsed["loop"]["model"] = v
+
     consensus_rows = sections.get("Latest Consensus", [])
     parsed["consensusPreview"] = "\n".join(consensus_rows).strip()
     recent_rows = sections.get("Recent Log", [])
@@ -222,7 +337,7 @@ def parse_status_output(raw: str) -> dict[str, Any]:
 
 
 def gather_status_payload() -> dict[str, Any]:
-    result = run_powershell_script(STATUS_SCRIPT, timeout=90)
+    result = run_status_script(timeout=90)
     parsed = parse_status_output(result["output"])
 
     state_text = read_text_file(STATE_FILE, "").strip()
@@ -312,11 +427,11 @@ class DashboardHandler(BaseHTTPRequestHandler):
             return
 
         if path.endswith("/start"):
-            res = run_powershell_script(START_SCRIPT, timeout=120)
+            res = run_shell_script(START_SCRIPT, timeout=120) if not IS_WINDOWS else run_powershell_script(START_SCRIPT, timeout=120)
         elif path.endswith("/stop"):
-            res = run_powershell_script(STOP_SCRIPT, timeout=120)
+            res = run_shell_script(STOP_SCRIPT, timeout=120) if not IS_WINDOWS else run_powershell_script(STOP_SCRIPT, timeout=120)
         else:
-            res = run_powershell_script(STATUS_SCRIPT, timeout=90)
+            res = run_status_script(timeout=90)
 
         payload = {
             "timestamp": datetime.now(timezone.utc).isoformat(),

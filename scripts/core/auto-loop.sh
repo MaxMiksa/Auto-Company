@@ -444,7 +444,8 @@ run_claude_cycle() {
     set +e
     (
         cd "$PROJECT_DIR" || exit 1
-        local claude_cmd=("$RESOLVED_ENGINE_BIN" "-p" "$prompt" "--output-format" "json")
+        # Use env -u to properly unset CLAUDECODE for nested claude sessions
+        local claude_cmd=(env -u CLAUDECODE "$RESOLVED_ENGINE_BIN" "-p" "$prompt" "--output-format" "json")
         if [ -n "$MODEL" ]; then
             claude_cmd+=("--model" "$MODEL")
         fi
@@ -714,6 +715,23 @@ This is Cycle #$loop_count. Act decisively."
     else
         error_count=$((error_count + 1))
         log_cycle "$loop_count" "FAIL" "$cycle_failed_reason (cost: ${CYCLE_COST}, subtype: ${CYCLE_SUBTYPE}, errors: $error_count/$MAX_CONSECUTIVE_ERRORS)"
+
+        # === 新增：打印详细错误信息 ===
+        log_cycle "$loop_count" "ERROR_OUTPUT" "=== Cycle Error Details ==="
+        # 提取错误关键部分（前 50 行或包含 error/failed 的行）
+        if [ -n "$OUTPUT" ]; then
+            # 尝试从 JSON 输出中提取错误
+            if echo "$OUTPUT" | head -c 1 | grep -q '{'; then
+                # JSON 格式，尝试提取 error 字段
+                error_details=$(echo "$OUTPUT" | jq -r '.error // .errors // .message // empty' 2>/dev/null || true)
+                if [ -n "$error_details" ]; then
+                    log_cycle "$loop_count" "ERROR_DETAIL" "$(echo "$error_details" | head -c 1000)"
+                fi
+            fi
+            # 打印原始输出关键部分
+            log_cycle "$loop_count" "ERROR_RAW" "Raw output (first 1000 chars): $(echo "$OUTPUT" | head -c 1000 | tr '\n' ' ')"
+        fi
+        # === 错误打印结束 ===
 
         # Restore consensus on hard failure
         restore_consensus
