@@ -1,4 +1,4 @@
-.PHONY: start start-awake awake stop status last cycles monitor pause resume install uninstall team help
+.PHONY: start start-awake awake stop status last cycles monitor dashboard pause resume install uninstall team help
 
 UNAME_S := $(shell uname -s 2>/dev/null || echo Unknown)
 ENGINE ?= claude
@@ -45,6 +45,9 @@ cycles: ## Show cycle history summary
 
 monitor: ## Tail live logs (Ctrl+C to exit)
 	./scripts/core/monitor.sh
+
+dashboard: ## Start local dashboard server (Windows host or macOS host)
+	python3 dashboard/server.py
 
 # === Daemon (macOS launchd / Linux systemd --user) ===
 

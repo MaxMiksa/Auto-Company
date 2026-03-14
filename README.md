@@ -7,7 +7,7 @@
 14 AI agents, each modeled after world-class experts in their domain.
 They ideate products, make decisions, write code, deploy, and market - without human intervention.
 
-Powered by Claude Code (default) and [Codex CLI](https://www.npmjs.com/package/@openai/codex) on macOS + Windows/WSL.
+Powered by Claude Code (default) and [Codex CLI](https://www.npmjs.com/package/@openai/codex) on macOS + Windows/WSL, with a local dashboard on both hosts.
 
 [![macOS](https://img.shields.io/badge/Platform-macOS-blue)](#dependencies)
 [![Windows WSL](https://img.shields.io/badge/Platform-Windows%20WSL-blue)](#windows-wsl-quick-start)
@@ -134,7 +134,7 @@ For monitoring, dashboard, and autostart commands, see [`docs/windows-setup.md`]
 | Last cycle output | `make last` | `.\scripts\windows\last-win.ps1` |
 | Cycle summary | `make cycles` | `.\scripts\windows\cycles-win.ps1` |
 | Stop | `make stop` | `.\scripts\windows\stop-win.ps1` |
-| Web dashboard | N/A | `.\scripts\windows\dashboard-win.ps1` |
+| Web dashboard | `make dashboard` | `.\scripts\windows\dashboard-win.ps1` |
 | Install daemon | `make install` | Auto-installed/started by `start-win.ps1` |
 | Uninstall daemon | `make uninstall` | `wsl -d Ubuntu --cd <repo_wsl_path> bash -lc 'make uninstall'` |
 | Pause daemon | `make pause` | `wsl -d Ubuntu --cd <repo_wsl_path> bash -lc 'make pause'` |
@@ -235,7 +235,7 @@ auto-company/
 ├── PROMPT.md              # Per-cycle execution prompt (convergence rules)
 ├── Makefile               # Common command entry
 ├── INDEX.md               # script index + responsibility table
-├── dashboard/             # Local web status dashboard (started via dashboard-win.ps1)
+├── dashboard/             # Local web status dashboard (macOS: make dashboard, Windows: dashboard-win.ps1)
 ├── scripts/
 │   ├── core/              # Core loop and control scripts (auto-loop/monitor/stop)
 │   ├── windows/           # Windows entry/guardian/autostart scripts

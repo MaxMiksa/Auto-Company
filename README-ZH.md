@@ -7,7 +7,7 @@
 14 个 AI Agent，每个都是该领域世界顶级专家的思维分身。
 自主构思产品、做决策、写代码、部署上线、搞营销。没有人类参与。
 
-默认使用 Claude Code，并支持 [Codex CLI](https://www.npmjs.com/package/@openai/codex)（macOS 原生 + Windows/WSL）。
+默认使用 Claude Code，并支持 [Codex CLI](https://www.npmjs.com/package/@openai/codex)（macOS 原生 + Windows/WSL），两端都可启动本地 Dashboard。
 
 [![macOS](https://img.shields.io/badge/平台-macOS-blue)](#依赖)
 [![Windows WSL](https://img.shields.io/badge/平台-Windows%20WSL-blue)](#windows-wsl-快速开始)
@@ -135,7 +135,7 @@ cd auto-company
 | 最近一轮输出 | `make last` | `.\scripts\windows\last-win.ps1` |
 | 周期摘要 | `make cycles` | `.\scripts\windows\cycles-win.ps1` |
 | 停止 | `make stop` | `.\scripts\windows\stop-win.ps1` |
-| 可视化看板 | N/A | `.\scripts\windows\dashboard-win.ps1` |
+| 可视化看板 | `make dashboard` | `.\scripts\windows\dashboard-win.ps1` |
 | 安装守护 | `make install` | 由 `start-win.ps1` 自动安装/启动 WSL daemon |
 | 卸载守护 | `make uninstall` | `wsl -d Ubuntu --cd <repo_wsl_path> bash -lc 'make uninstall'` |
 | 暂停守护 | `make pause` | `wsl -d Ubuntu --cd <repo_wsl_path> bash -lc 'make pause'` |
@@ -236,7 +236,7 @@ auto-company/
 ├── PROMPT.md              # 每轮工作指令（收敛规则）
 ├── Makefile               # 常用命令
 ├── INDEX.md               # 脚本索引与职责表
-├── dashboard/             # 本地 Web 状态看板（dashboard-win.ps1 启动）
+├── dashboard/             # 本地 Web 状态看板（macOS 用 make dashboard，Windows 用 dashboard-win.ps1）
 ├── scripts/
 │   ├── core/              # 主循环与核心控制实现（auto-loop/monitor/stop）
 │   ├── windows/           # Windows 入口/守护/自启实现

@@ -140,7 +140,7 @@ function renderMarkdown(md) {
 function classForState(kind, state) {
   if (kind === "daemon") {
     if (state === "active") return "good";
-    if (state === "inactive" || state === "not_installed") return "warn";
+    if (state === "inactive" || state === "not_installed" || state === "unsupported") return "warn";
     return "bad";
   }
   if (kind === "loop") {
@@ -150,12 +150,12 @@ function classForState(kind, state) {
   }
   if (kind === "guardian") {
     if (state === "running") return "good";
-    if (state === "stopped") return "warn";
+    if (state === "stopped" || state === "unsupported") return "warn";
     return "bad";
   }
   if (kind === "autostart") {
     if (state === "configured") return "good";
-    if (state === "not_configured") return "warn";
+    if (state === "not_configured" || state === "unsupported") return "warn";
     return "bad";
   }
   return "warn";
@@ -218,7 +218,7 @@ async function fetchStatus() {
   applyCardState(els.cardLoop, "loop", loop.state);
 
   els.autostartState.textContent = (autostart.state || "unknown").toUpperCase();
-  els.autostartMeta.textContent = autostart.raw || "Task Scheduler";
+  els.autostartMeta.textContent = autostart.raw || "Autostart";
   applyCardState(els.cardAutostart, "autostart", autostart.state);
 
   renderStateList(parsed, data.stateFile || {});
