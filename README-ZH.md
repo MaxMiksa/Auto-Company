@@ -318,6 +318,7 @@ auto-company/
 
 ## 致谢
 
+- 感谢 [@JasonQWJ](https://github.com/JasonQWJ) 与 [@cnwillz](https://github.com/cnwillz) 提前推动 macOS dashboard 支持方向与实现尝试，这些工作帮助我最终落地并发布了 `v1.1.0` 的跨平台 dashboard 方案。
 - [nicepkg/auto-company](https://github.com/nicepkg/auto-company) — macOS初版
 - [continuous-claude](https://github.com/AnandChowdhary/continuous-claude) — 跨会话共享笔记
 - [ralph-claude-code](https://github.com/frankbria/ralph-claude-code) — 退出信号拦截

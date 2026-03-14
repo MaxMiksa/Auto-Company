@@ -317,6 +317,7 @@ Recommended flow:
 
 ## Acknowledgments
 
+- Thanks to [@JasonQWJ](https://github.com/JasonQWJ) and [@cnwillz](https://github.com/cnwillz) for earlier macOS dashboard support proposals and implementation attempts that helped inform the final cross-platform dashboard design released in `v1.1.0`.
 - [nicepkg/auto-company](https://github.com/nicepkg/auto-company) - initial macOS edition
 - [continuous-claude](https://github.com/AnandChowdhary/continuous-claude) - cross-session shared notes
 - [ralph-claude-code](https://github.com/frankbria/ralph-claude-code) - exit signal interception
