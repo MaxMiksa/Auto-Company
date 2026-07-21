@@ -1,0 +1,56 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+:root {
+  --background: hsl(0 0% 100%);
+  --foreground: hsl(220 14% 10%);
+  --primary: hsl(220 80% 45%);
+  --primary-foreground: hsl(0 0% 100%);
+  --muted: hsl(220 14% 96%);
+  --muted-foreground: hsl(220 9% 46%);
+  --accent: hsl(160 60% 45%);
+  --accent-foreground: hsl(0 0% 100%);
+  --card: hsl(0 0% 100%);
+  --border: hsl(220 13% 88%);
+  --ring: hsl(220 80% 45%);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: hsl(220 14% 8%);
+    --foreground: hsl(0 0% 95%);
+    --primary: hsl(220 80% 60%);
+    --primary-foreground: hsl(0 0% 100%);
+    --muted: hsl(220 14% 15%);
+    --muted-foreground: hsl(220 9% 64%);
+    --accent: hsl(160 60% 50%);
+    --accent-foreground: hsl(0 0% 100%);
+    --card: hsl(220 14% 12%);
+    --border: hsl(220 13% 25%);
+    --ring: hsl(220 80% 60%);
+  }
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-card: var(--card);
+  --color-border: var(--border);
+  --color-ring: var(--ring);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@layer base {
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-geist-sans), system-ui, sans-serif;
+  }
+}

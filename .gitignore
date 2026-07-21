@@ -146,6 +146,7 @@ memories/consensus.md.bak
 projects/*
 !projects/.gitkeep
 !projects/snapog/
+!projects/policyforge/
 
 # Local/private outputs (do not publish)
 AGENTS.md
@@ -183,6 +184,9 @@ docs/*
 docs/*/*
 !docs/*/.gitkeep
 !docs/windows-setup.md
+!docs/**/policyforge*.md
+!docs/sales/email-sequences.md
 # Ignore all memories (keep folder marker only)
 memories/*
 !memories/.gitkeep
+!memories/consensus.md

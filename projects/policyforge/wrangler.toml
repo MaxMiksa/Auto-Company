@@ -1,0 +1,27 @@
+# Cloudflare resource bindings for the PolicyForge monolith.
+# Replace ${...} placeholders with real values before running wrangler deploy.
+# No secrets belong in this file; store API tokens in GitHub Actions secrets or .dev.vars.
+
+name = "policyforge-monolith"
+main = "src/index.ts"
+compatibility_date = "2024-09-23"
+
+# Set via CLOUDFLARE_ACCOUNT_ID env var, or replace the placeholder below.
+account_id = "${CLOUDFLARE_ACCOUNT_ID}"
+
+# R2 bucket for generated policy packs, DOCX/Markdown/CSV exports, and PDF renders.
+[[r2_buckets]]
+binding = "POLICY_PACKS_BUCKET"
+bucket_name = "policyforge-packs"
+
+# Optional: Cloudflare D1 database for lightweight metadata, caching, or future Worker logic.
+[[d1_databases]]
+binding = "POLICY_FORGE_DB"
+database_name = "policyforge-db"
+database_id = "${D1_DATABASE_ID}"
+
+# Optional: Cloudflare KV namespace for config, rate-limits, and hot cache.
+[[kv_namespaces]]
+binding = "POLICY_FORGE_KV"
+id = "${KV_NAMESPACE_ID}"
+preview_id = "${KV_NAMESPACE_PREVIEW_ID}"
