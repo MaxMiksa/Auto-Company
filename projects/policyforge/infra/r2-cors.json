@@ -1,0 +1,9 @@
+[
+  {
+    "AllowedOrigins": ["https://policyforge.auto-company.dev"],
+    "AllowedMethods": ["GET", "HEAD"],
+    "AllowedHeaders": ["*"],
+    "ExposeHeaders": ["ETag"],
+    "MaxAgeSeconds": 3600
+  }
+]
