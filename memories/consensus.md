@@ -140,7 +140,9 @@ Do not start Week 3–4 feature engineering until Week 2 gate evidence is collec
 - **Branch:** `ricardoesintesis/feat/policyforge-week2-closeout`
 - **Commit:** `32ff8c7`
 - **Scope:** PolicyForge Next.js scaffold, role outputs, CI/CD workflow, provisioning script, and updated `.gitignore`.
-- **Blockers:** Cloud-provider tokens still missing (`VERCEL_TOKEN`, `CLOUDFLARE_API_TOKEN`, `GH_TOKEN`, `RESEND_API_KEY`, `STRIPE_SECRET_KEY`, `POSTGRES_URL`).
+- **Blockers:**
+  - Cloud-provider tokens still missing (`VERCEL_TOKEN`, `CLOUDFLARE_API_TOKEN`, `GH_TOKEN`, `RESEND_API_KEY`, `STRIPE_SECRET_KEY`, `POSTGRES_URL`).
+  - GitHub push blocked (403) because `gh` CLI is not installed and no `GITHUB_TOKEN`/`git credential` is configured in this environment.
 
 ## Next Action
 
