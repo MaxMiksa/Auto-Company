@@ -146,7 +146,7 @@ Do not start Week 3–4 feature engineering until Week 2 gate evidence is collec
 
 ## Next Action
 
-1. Push `ricardoesintesis/feat/policyforge-week2-closeout` to `origin` — **DONE (pushed to fork `Ricardoesintesis/Auto-Company`); PR URL pending.**
+1. Push `ricardoesintesis/feat/policyforge-week2-closeout` to `origin` — **DONE** — pushed to fork `Ricardoesintesis/Auto-Company` and opened PR https://github.com/MaxMiksa/Auto-Company/pull/7.
 2. `devops-hightower` to provision infrastructure as soon as tokens are available.
 3. `sales-ross` to build outreach lists and begin founder/consultant outreach.
 4. `product-norman` to run 5-second test using `docs/product/policyforge-5-second-test.md`.
