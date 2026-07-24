@@ -46,8 +46,8 @@ cycles: ## Show cycle history summary
 monitor: ## Tail live logs (Ctrl+C to exit)
 	./scripts/core/monitor.sh
 
-dashboard: ## Start local dashboard server (Windows host or macOS host)
-	python3 dashboard/server.py
+dashboard: ## Start local dashboard server (Windows/macOS/Linux host)
+	python3 dashboard/server.py --port 5402
 
 # === Daemon (macOS launchd / Linux systemd --user) ===
 
