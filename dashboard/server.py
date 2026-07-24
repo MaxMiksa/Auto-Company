@@ -25,9 +25,12 @@ WINDOWS_STATUS_SCRIPT = REPO_ROOT / "scripts" / "windows" / "status-win.ps1"
 WINDOWS_START_SCRIPT = REPO_ROOT / "scripts" / "windows" / "start-win.ps1"
 WINDOWS_STOP_SCRIPT = REPO_ROOT / "scripts" / "windows" / "stop-win.ps1"
 
+LINUX_STATUS_SCRIPT = REPO_ROOT / "scripts" / "linux" / "status-linux.sh"
 MACOS_STATUS_SCRIPT = REPO_ROOT / "scripts" / "macos" / "status-mac.sh"
 MACOS_START_SCRIPT = REPO_ROOT / "scripts" / "macos" / "install-daemon.sh"
 MACOS_STOP_SCRIPT = REPO_ROOT / "scripts" / "core" / "stop-loop.sh"
+
+STOP_SCRIPT = REPO_ROOT / "scripts" / "core" / "stop-loop.sh"
 
 LOG_FILE = REPO_ROOT / "logs" / "auto-loop.log"
 STATE_FILE = REPO_ROOT / ".auto-loop-state"
@@ -35,6 +38,7 @@ CONSENSUS_FILE = REPO_ROOT / "memories" / "consensus.md"
 
 WINDOWS_HOST = "windows"
 MACOS_HOST = "macos"
+LINUX_HOST = "linux"
 
 
 def ps_quote(value: str) -> str:
@@ -47,9 +51,9 @@ def detect_host_kind(system_name: str | None = None) -> str:
         return WINDOWS_HOST
     if name == "Darwin":
         return MACOS_HOST
-    raise RuntimeError(
-        "Dashboard only supports Windows hosts (with WSL backend) and macOS hosts."
-    )
+    if name == "Linux":
+        return LINUX_HOST
+    raise RuntimeError("Dashboard requires Windows (via WSL), macOS, or Linux host.")
 
 
 def run_powershell_script(
@@ -145,15 +149,27 @@ def get_host_profile(system_name: str | None = None) -> dict[str, Any]:
             "stop_script": WINDOWS_STOP_SCRIPT,
             "stop_args": None,
         }
+    if host == MACOS_HOST:
+        return {
+            "host": host,
+            "runner": run_shell_script,
+            "parser": parse_macos_status_output,
+            "status_script": MACOS_STATUS_SCRIPT,
+            "start_script": MACOS_START_SCRIPT,
+            "start_args": None,
+            "stop_script": MACOS_STOP_SCRIPT,
+            "stop_args": ["--pause-daemon"],
+        }
+    # LINUX_HOST
     return {
         "host": host,
         "runner": run_shell_script,
-        "parser": parse_macos_status_output,
-        "status_script": MACOS_STATUS_SCRIPT,
-        "start_script": MACOS_START_SCRIPT,
+        "parser": parse_linux_status_output,
+        "status_script": LINUX_STATUS_SCRIPT,
+        "start_script": REPO_ROOT / "scripts" / "core" / "auto-loop.sh",
         "start_args": None,
-        "stop_script": MACOS_STOP_SCRIPT,
-        "stop_args": ["--pause-daemon"],
+        "stop_script": STOP_SCRIPT,
+        "stop_args": None,
     }
 
 
@@ -367,6 +383,48 @@ def parse_macos_status_output(raw: str) -> dict[str, Any]:
     parsed["loop"]["daemonSummary"] = loop_fields.get("DaemonSummary", "unknown")
 
     state_file_fields = parse_key_values(sections.get("State File", []))
+    parsed["loop"]["engine"] = state_file_fields.get("ENGINE", "")
+    parsed["loop"]["model"] = state_file_fields.get("MODEL", "")
+    parsed["loop"]["lastRun"] = state_file_fields.get("LAST_RUN", "")
+    parsed["loop"]["errorCount"] = state_file_fields.get("ERROR_COUNT", "")
+    parsed["loop"]["loopCount"] = state_file_fields.get("LOOP_COUNT", "")
+
+    parsed["consensusPreview"] = "\n".join(sections.get("Latest Consensus", [])).strip()
+    parsed["recentLog"] = "\n".join(sections.get("Recent Log", [])).strip()
+    return parsed
+
+
+def parse_linux_status_output(raw: str) -> dict[str, Any]:
+    """Parse status output from scripts/linux/status-linux.sh."""
+    sections = parse_sections(raw)
+
+    parsed = blank_parsed()
+
+    loop_fields = parse_key_values(sections.get("Loop", []))
+    parsed["loop"]["state"] = loop_fields.get("State", "unknown") or "unknown"
+    parsed["loop"]["pid"] = parse_int(loop_fields.get("Pid"))
+    parsed["loop"]["raw"] = "\n".join(sections.get("Loop", [])).strip()
+
+    daemon_fields = parse_key_values(sections.get("Daemon", []))
+    daemon_state = daemon_fields.get("State", "unknown") or "unknown"
+    parsed["daemon"]["state"] = daemon_state
+    parsed["daemon"]["mainPid"] = parse_int(daemon_fields.get("MainPID"))
+    parsed["daemon"]["activeState"] = daemon_fields.get("ActiveState", "")
+    parsed["daemon"]["subState"] = daemon_fields.get("SubState", "")
+    parsed["daemon"]["raw"] = daemon_fields.get("Raw", "")
+
+    # No guardian/autostart on Linux
+    parsed["guardian"]["state"] = "not_available"
+    parsed["guardian"]["raw"] = "No sleep guard on Linux"
+    parsed["autostart"]["state"] = "not_configured"
+    parsed["autostart"]["raw"] = "systemd unit not installed"
+
+    # daemonSummary for frontend fallback (line 184 of app.js)
+    active_state = daemon_fields.get("ActiveState", "") or daemon_fields.get("SubState", "")
+    parsed["loop"]["daemonSummary"] = active_state or "unknown"
+
+    state_lines = sections.get("State File", [])
+    state_file_fields = parse_key_values(state_lines) if state_lines else {}
     parsed["loop"]["engine"] = state_file_fields.get("ENGINE", "")
     parsed["loop"]["model"] = state_file_fields.get("MODEL", "")
     parsed["loop"]["lastRun"] = state_file_fields.get("LAST_RUN", "")
