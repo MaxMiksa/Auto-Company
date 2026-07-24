@@ -136,6 +136,44 @@ def run_shell_script(
     }
 
 
+def launch_detached_script(
+    script_path: Path, args: list[str] | None = None, timeout: int = 30  # noqa: ARG001
+) -> dict[str, Any]:
+    """Run a script detached from the dashboard process.
+
+    Uses nohup + background to avoid the server waiting for a forever-running
+    process to exit (which causes the 120s TimeoutExpired).
+    """
+    cmd = ["nohup", "/bin/bash", str(script_path)]
+    if args:
+        cmd.extend(args)
+
+    start = time.time()
+    try:
+        proc = subprocess.Popen(
+            cmd,
+            cwd=str(REPO_ROOT),
+            start_new_session=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        elapsed_ms = int((time.time() - start) * 1000)
+        return {
+            "ok": True,
+            "exitCode": 0,
+            "elapsedMs": elapsed_ms,
+            "output": f"launched (PID {proc.pid})",
+        }
+    except Exception as exc:
+        elapsed_ms = int((time.time() - start) * 1000)
+        return {
+            "ok": False,
+            "exitCode": 1,
+            "elapsedMs": elapsed_ms,
+            "output": str(exc),
+        }
+
+
 def get_host_profile(system_name: str | None = None) -> dict[str, Any]:
     host = detect_host_kind(system_name)
     if host == WINDOWS_HOST:
@@ -170,6 +208,7 @@ def get_host_profile(system_name: str | None = None) -> dict[str, Any]:
         "start_args": None,
         "stop_script": STOP_SCRIPT,
         "stop_args": None,
+        "launch_runner": launch_detached_script,  # noqa: FBT003
     }
 
 
@@ -456,8 +495,9 @@ def run_status_command(system_name: str | None = None) -> dict[str, Any]:
 def run_dashboard_action(action: str, system_name: str | None = None) -> dict[str, Any]:
     profile = get_host_profile(system_name)
     if action == "start":
-        return profile["runner"](
-            profile["start_script"], args=profile["start_args"], timeout=120
+        launcher = profile.get("launch_runner") or profile["runner"]
+        return launcher(
+            profile["start_script"], args=profile["start_args"], timeout=30
         )
     if action == "stop":
         return profile["runner"](
