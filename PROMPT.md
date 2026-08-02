@@ -8,6 +8,10 @@
 
 当前共识已预加载在本 prompt 末尾。如果没有，读 `memories/consensus.md`。
 
+> **长程记忆（向量库）**：本轮 prompt 还会附带一段从 `memories/vault/` 语义检索出的"相关历史记忆"（`## Highly-relevant past memory`）。它补充了 consensus 里被折叠掉的历史上下文——包括更早的决策、docs 里的方案细节。当前共识 `.md` 是最新/最权威的，检索出的历史仅作为背景参考，两者冲突时以共识为准。
+
+每轮 cycle 结束后，脚本会把最新的 consensus 快照与 `docs/` 产出分块向量化并存入 `memories/vault/index.json`，供后续周期语义召回。这是自动进行的，agent 无需手动维护 vault。
+
 ### 2. 决策
 
 - 有明确 Next Action → 执行它

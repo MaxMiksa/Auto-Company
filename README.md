@@ -41,7 +41,7 @@ daemon (launchd / systemd --user, auto-restart on crash)
         └── sleep -> next cycle
 ```
 
-Each cycle is an independent CLI call. `memories/consensus.md` is the only cross-cycle state.
+Each cycle is an independent CLI call. `memories/consensus.md` is the cross-cycle running-state baton. A supplemental persistent **vector memory** (`memories/vault/`) is auto-built from consensus snapshots + `docs/` and injected semantically each cycle for long-term recall (see Layer 2).
 
 ## Where To Start (By Platform)
 
@@ -187,7 +187,8 @@ Auto-Company is not a simple LLM API wrapper, but a highly decoupled **Multi-Age
 
 ### Layer 2: Orchestration & State Machine
 *   **The Auto-Loop**: The execution loop controlled by `scripts/core/auto-loop.sh` frees the AI from "single-turn conversations", enabling 24/7 continuous operation.
-*   **Lightweight State Machine (Consensus Memory)**: Forgoes complex vector databases or memory management, compressing cross-cycle context into a single Markdown file: `memories/consensus.md`. Read before every cycle and rewritten before it ends, acting as the system's "baton".
+*   **Lightweight State Machine (Consensus Memory)**: Compresses cross-cycle running context into a single Markdown file: `memories/consensus.md` (read before every cycle, rewritten before it ends — the "baton").
+*   **Persistent Vector Memory (Long-term Recall)**: Layered on top of the baton. `scripts/core/memory_vault.py` indexes consensus snapshots + `docs/` outputs into `memories/vault/index.json` (pure-Python TF-IDF + cosine, zero external deps, ~zero cost). Each new cycle auto-retrieves the top semantically-relevant historical blocks and injects them into the prompt, so past decisions and details that consensus.md has collapsed away remain recallable. Swappable backend: replace `_embed_chunk()` to plug in ChromaDB or a model embedding.
 *   **Resilience & Self-Healing**: Built-in circuit breakers (cooldown triggered by consecutive errors), rate-limit backoff (auto-sleep on 429 errors), and sandbox reset (auto-rollback if a valid consensus is not output).
 
 ### Layer 1: Execution Engine & Infrastructure
