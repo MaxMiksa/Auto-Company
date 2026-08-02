@@ -186,3 +186,5 @@ docs/*/*
 # Ignore all memories (keep folder marker only)
 memories/*
 !memories/.gitkeep
+memories/vault/*
+!memories/vault/.gitkeep

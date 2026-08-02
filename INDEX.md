@@ -57,7 +57,8 @@
 | 守护 | `scripts/wsl/uninstall-wsl-daemon.sh` | 卸载 WSL daemon |
 | 守护 | `scripts/wsl/wsl-daemon-status.sh` | 查询 WSL daemon 状态 |
 | 守护 | `scripts/macos/install-daemon.sh` | macOS launchd 安装/卸载 |
-| 核心 | `scripts/core/auto-loop.sh` | 主循环执行、熔断、日志、共识更新 |
+| 核心 | `scripts/core/auto-loop.sh` | 主循环执行、熔断、日志、共识更新、向量记忆召回/沉淀 |
+| 记忆 | `scripts/core/memory_vault.py` | 向量记忆库：`index`(沉淀共识+docs)、`search`(语义召回)、`status`、`clear`。纯 Python 零依赖，TF-IDF+余弦 |
 | 核心 | `scripts/core/monitor.sh` | 核心状态/日志输出 |
 | 核心 | `scripts/core/stop-loop.sh` | 核心停止/暂停/恢复控制 |
 
