@@ -87,6 +87,29 @@
       </article>
     </section>
 
+    <section class="panel reveal-5 panel-vault">
+      <div class="panel-head panel-head-wrap">
+        <div>
+          <h3>Memory Vault</h3>
+          <p class="muted" id="vaultSubtitle">Persistent vector memory index</p>
+        </div>
+        <div class="vault-controls">
+          <input id="vaultQuery" class="vault-input" type="text"
+                 placeholder="Semantic search memory… (e.g. pricing, launch)" />
+          <button id="btnVaultSearch" class="btn btn-ghost small">Search</button>
+          <button id="btnVaultRefresh" class="btn btn-ghost small">Refresh</button>
+        </div>
+      </div>
+      <div class="vault-row">
+        <div class="vault-stats" id="vaultStats"></div>
+        <div class="vault-bar-wrap">
+          <canvas id="vaultChart" class="vault-chart" width="520" height="180"></canvas>
+        </div>
+      </div>
+      <div id="vaultLatest" class="vault-latest"></div>
+      <div id="vaultResults" class="vault-results hidden"></div>
+    </section>
+
     <section class="panel reveal-5">
       <div class="panel-head">
         <h3>Recent Log</h3>

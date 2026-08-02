@@ -181,6 +181,11 @@ All skills are under `.claude/skills/`. Any agent can use any skill when relevan
 ## Consensus Memory
 
 - `memories/consensus.md` - cross-cycle baton; must be updated before cycle end
+- `memories/vault/` - persistent vector memory index (`index.json`), auto-built by
+  `scripts/core/memory_vault.py` from consensus snapshots + `docs/` outputs. Every
+  cycle auto-loop injects the top semantically-relevant blocks into the prompt so
+  agents can recall historical decisions long collapsed out of consensus.md. It is
+  generated automatically; no manual upkeep needed.
 - `docs/<role>/` - agent outputs
 - `projects/` - all created projects
 
