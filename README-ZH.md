@@ -41,7 +41,7 @@ daemon (launchd / systemd --user, 崩溃自重启)
         └── sleep → 下一轮
 ```
 
-每个周期是一次独立的 CLI 调用。`memories/consensus.md` 是唯一的跨周期状态——类似接力赛传棒。
+每个周期是一次独立的 CLI 调用。`memories/consensus.md` 是跨周期运行状态的接力棒。另外系统会自动把 consensus 快照与 `docs/` 产出向量化沉淀到长期记忆库 `memories/vault/`，并在每个周期语义注入相关历史供长期召回（见第 2 层）。
 
 ## 你该看哪一节（按平台）
 
@@ -188,7 +188,8 @@ Auto-Company 并非简单调用 LLM API，而是一个高度解耦的 **多智�
 
 ### 第 2 层：编排与状态控制层 (Orchestration & State Machine)
 *   **永续主循环 (The Auto-Loop)**：通过 `scripts/core/auto-loop.sh` 控制的执行循环，让 AI 摆脱“单次对话”，实现 24/7 永续运行。
-*   **轻量级状态机 (Consensus Memory)**：放弃复杂的向量数据库或内存管理，将跨周期的上下文压缩为一个 Markdown 文件：`memories/consensus.md`。每次循环开始前读取，结束前必须重写，作为整个系统的“接力棒”。
+*   **轻量级状态机 (Consensus Memory)**：将跨周期的运行上下文压缩为一个 Markdown 文件：`memories/consensus.md`。每次循环开始前读取，结束前必须重写，作为整个系统的“接力棒”。
+*   **持久化向量记忆 (Long-term Recall)**：在接力棒之上再加一层。`scripts/core/memory_vault.py` 把 consensus 快照与 `docs/` 产出向量化沉淀到 `memories/vault/index.json`（纯 Python 的 TF-IDF + 余弦相似度，零外部依赖、近零成本）。每个新周期自动语义检索最相关的历史知识块注入 prompt，使 consensus 中已被折叠的历史决策与细节依然可召回。存储后端可替换：改 `_embed_chunk()` 即可接上 ChromaDB 或模型 embedding。
 *   **高可用容错机制 (Resilience & Self-Healing)**：内置熔断器 (连续错误触发冷却)、限流退避 (429 报错自动休眠) 和沙箱重置 (未成功输出有效共识时自动回滚)。
 
 ### 第 1 层：基础设施与执行引擎层 (Execution Engine & Infrastructure)

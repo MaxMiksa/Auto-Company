@@ -32,6 +32,8 @@ MACOS_STOP_SCRIPT = REPO_ROOT / "scripts" / "core" / "stop-loop.sh"
 LOG_FILE = REPO_ROOT / "logs" / "auto-loop.log"
 STATE_FILE = REPO_ROOT / ".auto-loop-state"
 CONSENSUS_FILE = REPO_ROOT / "memories" / "consensus.md"
+VAULT_FILE = REPO_ROOT / "memories" / "vault" / "index.json"
+VAULT_PY = REPO_ROOT / "scripts" / "core" / "memory_vault.py"
 
 WINDOWS_HOST = "windows"
 MACOS_HOST = "macos"
@@ -415,7 +417,167 @@ def parse_status_output(raw: str, system_name: str | None = None) -> dict[str, A
     return profile["parser"](raw)
 
 
-def gather_status_payload(system_name: str | None = None) -> dict[str, Any]:
+def gather_status_payload() -> dict[str, Any]:
+    """Gather live status for the dashboard.
+
+    Runs the host status script, parses its output, and layers in the
+    state file, consensus preview, and recent log for the UI.
+    """
+    payload: dict[str, Any] = {
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "ok": False,
+        "parsed": blank_parsed(),
+        "stateFile": {},
+        "consensusHead": "",
+        "logTail": "",
+        "raw": "",
+    }
+
+    try:
+        result = run_status_command()
+    except Exception as exc:  # pragma: no cover - defensive
+        payload["raw"] = f"(status command error: {exc})"
+        return payload
+
+    raw = result.get("output", "")
+    payload["ok"] = bool(result.get("ok"))
+    payload["raw"] = raw
+    if raw:
+        payload["parsed"] = parse_status_output(raw)
+    payload["stateFile"] = read_state_file_pairs()
+    payload["consensusHead"] = read_text_file(CONSENSUS_FILE, "").strip()[:2000]
+    payload["logTail"] = read_tail(LOG_FILE, lines=120)
+    return payload
+
+
+def gather_vault_payload(query: str | None = None, top_k: int = 5) -> dict[str, Any]:
+    """Summarize the vector memory vault + optional semantic search.
+
+    Reads the vault index directly (no subprocess). Stat fields: total chunks,
+    per-source breakdown, distinct terms, memory footprint, last index time.
+    If `query` is provided, does an in-process cosine search over the chunks.
+    """
+    payload: dict[str, Any] = {
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "ok": True,
+        "exists": VAULT_FILE.exists(),
+        "stats": None,
+        "bySource": {},
+        "latest": [],
+        "search": None,
+    }
+
+    if not VAULT_FILE.exists():
+        payload["ok"] = False
+        return payload
+
+    try:
+        with open(VAULT_FILE, "r", encoding="utf-8") as fh:
+            index = json.load(fh)
+    except (OSError, json.JSONDecodeError):
+        payload["ok"] = False
+        return payload
+
+    chunks = index.get("chunks", [])
+    by_source: dict[str, int] = {}
+    latest: list[dict[str, Any]] = []
+    for c in chunks:
+        src = c.get("source", "?")
+        by_source[src] = by_source.get(src, 0) + 1
+        latest.append({
+            "id": c.get("id", ""),
+            "source": src,
+            "kind": c.get("kind", "?"),
+            "page": c.get("page", ""),
+            "text": c.get("text", "")[:120],
+        })
+    # Keep "latest" = N most recent by id order (append-ordered in the file).
+    latest = latest[-5:][::-1]
+
+    try:
+        size_mb = round(VAULT_FILE.stat().st_size / (1024 * 1024), 3)
+    except OSError:
+        size_mb = 0.0
+
+    payload["stats"] = {
+        "chunks": len(chunks),
+        "sources": len(by_source),
+        "distinctTerms": len({
+            t for c in chunks for t in (c.get("embeddings", {}) or {}).keys()
+        }),
+        "sizeMb": size_mb,
+        "lastIndexed": index.get("last_indexed", "never"),
+        "maxChunks": index.get("count"),
+    }
+    payload["bySource"] = by_source
+    payload["latest"] = latest
+
+    if query and query.strip():
+        payload["search"] = memory_search_in_process(chunks, query, top_k=top_k)
+
+    return payload
+
+
+def _cosine(a: dict, b: dict) -> float:
+    if not a or not b:
+        return 0.0
+    if len(a) > len(b):
+        a, b = b, a
+    dot = 0.0
+    for term, w in a.items():
+        wb = b.get(term)
+        if wb:
+            dot += w * wb
+    return dot
+
+
+def _query_grams(text: str) -> dict:
+    """Inline copy of memory_vault n-gram embedding for dashboard search."""
+    import math as _m
+
+    stop_set = set(" \t\r\n\"'`.,;:!?()[]{}<>-_=+|/\\@#$%^&*~·。，；：！？、（）《》【】—…•")
+    text = re.sub(r"[\r\n\t]+", " ", text).strip()
+    if not text:
+        return {}
+    low = text.lower()
+    counts: dict = {}
+    n_chars = len(low)
+    for n in range(2, min(3, n_chars) + 1):
+        for i in range(n_chars - n + 1):
+            gram = low[i:i + n]
+            if any(c in stop_set for c in gram):
+                continue
+            if not (any(c.isalpha() for c in gram) or re.search(
+                r"[\u3040-\u30ff\u4e00-\u9fff\uac00-\ud7af]", gram)):
+                continue
+            counts[gram] = counts.get(gram, 0) + 1
+    tf = {g: 1.0 + _m.log(c) for g, c in counts.items()}
+    norm = _m.sqrt(sum(v * v for v in tf.values())) or 1.0
+    return {g: v / norm for g, v in tf.items()}
+
+
+def memory_search_in_process(chunks: list[dict], query: str, top_k: int = 5) -> dict[str, Any]:
+    q = _query_grams(query)
+    if not q or not chunks:
+        return {"hits": []}
+    scored = []
+    for c in chunks:
+        emb = c.get("embeddings", {})
+        if not emb:
+            continue
+        score = _cosine(q, emb)
+        if score >= 0.05:
+            scored.append({
+                "score": round(score, 3),
+                "source": c.get("source", "?"),
+                "id": c.get("id", ""),
+                "text": c.get("text", "")[:160],
+            })
+    scored.sort(key=lambda x: x["score"], reverse=True)
+    return {"hits": scored[:top_k]}
+
+
+
     result = run_status_command(system_name)
     parsed = parse_status_output(result["output"], system_name)
     return {
@@ -479,6 +641,12 @@ class DashboardHandler(BaseHTTPRequestHandler):
             return
         if path == "/api/status":
             self._json(gather_status_payload())
+            return
+        if path == "/api/vault":
+            qs = parse_qs(parsed.query)
+            query = qs.get("q", [None])[0]
+            top_k = parse_positive_int(qs.get("top_k", ["5"])[0], default=5)
+            self._json(gather_vault_payload(query=query, top_k=top_k))
             return
         if path == "/api/log-tail":
             qs = parse_qs(parsed.query)

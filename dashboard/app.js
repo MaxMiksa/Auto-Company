@@ -23,6 +23,15 @@ const els = {
   logText: document.getElementById("logText"),
   rawText: document.getElementById("rawText"),
 
+  vaultSubtitle: document.getElementById("vaultSubtitle"),
+  vaultStats: document.getElementById("vaultStats"),
+  vaultChart: document.getElementById("vaultChart"),
+  vaultLatest: document.getElementById("vaultLatest"),
+  vaultResults: document.getElementById("vaultResults"),
+  vaultQuery: document.getElementById("vaultQuery"),
+  btnVaultSearch: document.getElementById("btnVaultSearch"),
+  btnVaultRefresh: document.getElementById("btnVaultRefresh"),
+
   btnRefresh: document.getElementById("btnRefresh"),
   btnStart: document.getElementById("btnStart"),
   btnStop: document.getElementById("btnStop"),
@@ -236,6 +245,130 @@ async function fetchStatus() {
   els.latency.textContent = `Roundtrip: ${elapsed}ms`;
 }
 
+function drawVaultChart(bySource) {
+  const canvas = els.vaultChart;
+  if (!canvas || !bySource) return;
+  const ctx = canvas.getContext("2d");
+  const { width: W, height: H } = canvas;
+  ctx.clearRect(0, 0, W, H);
+
+  const entries = Object.entries(bySource).sort((a, b) => b[1] - a[1]).slice(0, 8);
+  if (entries.length === 0) {
+    ctx.fillStyle = "#5b6b7a";
+    ctx.font = "14px 'Rajdhani', sans-serif";
+    ctx.fillText("no chunks indexed yet", 16, H / 2);
+    return;
+  }
+
+  const max = Math.max(...entries.map((e) => e[1]), 1);
+  const padL = 14, padT = 14;
+  const rowH = (H - padT * 2) / entries.length;
+  const barMax = W - padL - 16;
+
+  // subtle axes
+  ctx.strokeStyle = "rgba(255,255,255,0.06)";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(padL, padT - 4);
+  ctx.lineTo(padL, H - padT);
+  ctx.moveTo(padL, H - padT);
+  ctx.lineTo(W - 8, H - padT);
+  ctx.stroke();
+
+  entries.forEach(([src, count], i) => {
+    const y = padT + i * rowH + rowH / 2;
+    const len = count / max * barMax;
+    const grad = ctx.createLinearGradient(padL, 0, padL + len, 0);
+    grad.addColorStop(0, "#5ee7df");
+    grad.addColorStop(1, "#7c5cff");
+    ctx.fillStyle = grad;
+    const r = 3;
+    ctx.beginPath();
+    ctx.roundRect(padL, y - 7, Math.max(len, 2), 14, r);
+    ctx.fill();
+
+    // label
+    ctx.fillStyle = "rgba(220,230,240,0.85)";
+    ctx.font = "600 12px 'Rajdhani', sans-serif";
+    let label = src.replace(/\.md$/i, "");
+    if (label.length > 18) label = "…" + label.slice(-17);
+    ctx.fillText(label, padL + Math.max(len, 2) + 8, y + 4);
+    ctx.fillStyle = "#5ee7df";
+    ctx.font = "700 12px 'Rajdhani', sans-serif";
+    ctx.fillText(String(count), W - 10, y + 4);
+  });
+}
+
+function truncateMiddle(text, n = 150) {
+  const t = String(text || "").replace(/\s+/g, " ").trim();
+  if (t.length <= n) return t;
+  return t.slice(0, n) + "…";
+}
+
+function renderVault(data) {
+  if (!data.ok || !data.stats) {
+    els.vaultSubtitle.textContent = "Vault not initialized yet — will appear after the first cycle.";
+    els.vaultStats.innerHTML = "<p class='muted'>Waiting for memories/vault/index.json…</p>";
+    drawVaultChart(null);
+    els.vaultLatest.innerHTML = "";
+    return;
+  }
+
+  const s = data.stats;
+  const lastIdx = data.timestamp ? "" : "";
+  els.vaultSubtitle.textContent =
+    `Indexed ${s.lastIndexed || "recently"} · ${s.sizeMb} MB`;
+
+  const cols = [
+    ["Chunks", s.chunks],
+    ["Sources", s.sources],
+    ["Distinct Terms", s.distinctTerms],
+    ["Size", `${s.sizeMb} MB`],
+  ];
+  els.vaultStats.innerHTML = cols
+    .map(([k, v]) => `<div class="vault-stat"><dt>${k}</dt><dd>${v}</dd></div>`)
+    .join("");
+
+  drawVaultChart(data.bySource || {});
+
+  const latest = data.latest || [];
+  if (latest.length) {
+    els.vaultLatest.innerHTML = `<div class="vault-latest-title">Latest entries</div>` +
+      latest.map((c) =>
+        `<div class="vault-entry"><span class="tag">${escapeHtml(c.source)}</span>` +
+        `<span class="muted mono">${escapeHtml(truncateMiddle(c.text, 110))}</span></div>`
+      ).join("");
+  } else {
+    els.vaultLatest.innerHTML = "";
+  }
+}
+
+function renderVaultSearch(data) {
+  const hits = (data.search && data.search.hits) || [];
+  if (!hits.length) {
+    els.vaultResults.innerHTML = "<p class='muted'>No relevant memory found.</p>";
+    els.vaultResults.classList.remove("hidden");
+    return;
+  }
+  els.vaultResults.innerHTML =
+    `<div class="vault-latest-title">Top ${hits.length} semantic matches</div>` +
+    hits.map((h) =>
+      `<div class="vault-entry"><span class="tag tag-score">${h.score.toFixed(3)}</span>` +
+      `<span class="tag">${escapeHtml(h.source)}</span>` +
+      `<span class="muted mono">${escapeHtml(truncateMiddle(h.text, 140))}</span></div>`
+    ).join("");
+  els.vaultResults.classList.remove("hidden");
+}
+
+async function fetchVault(query) {
+  const qs = query ? `?q=${encodeURIComponent(query)}&top_k=6` : "?top_k=6";
+  const res = await fetch(`/api/vault${qs}`, { cache: "no-store" });
+  const data = await res.json();
+  renderVault(data);
+  if (query) renderVaultSearch(data);
+  return data;
+}
+
 async function runAction(action) {
   const btn = action === "start" ? els.btnStart : els.btnStop;
   const label = btn.textContent;
@@ -280,8 +413,23 @@ els.btnRaw.addEventListener("click", () => {
 els.autoToggle.addEventListener("change", resetAutoTimer);
 els.refreshInterval.addEventListener("change", resetAutoTimer);
 
+els.btnVaultRefresh.addEventListener("click", () => {
+  fetchVault().catch(() => {});
+});
+els.btnVaultSearch.addEventListener("click", () => {
+  const q = els.vaultQuery.value.trim();
+  if (q) fetchVault(q).catch(() => {});
+});
+els.vaultQuery.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    const q = els.vaultQuery.value.trim();
+    if (q) fetchVault(q).catch(() => {});
+  }
+});
+
 fetchStatus().catch((err) => {
   const msg = err instanceof Error ? err.message : String(err);
   els.rawText.textContent = msg;
 });
+fetchVault().catch(() => {});
 resetAutoTimer();
