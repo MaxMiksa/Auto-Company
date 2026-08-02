@@ -383,6 +383,42 @@ resolve_engine_bin() {
     esac
 }
 
+# === Vector Memory Vault helpers ===
+# Long-term semantic memory, layered on top of the single-file consensus baton.
+# Script: scripts/core/memory_vault.py (pure-python, zero external deps).
+
+VAULT_PY="$PROJECT_DIR/scripts/core/memory_vault.py"
+
+# Retrieve the top-K memory blocks most relevant to the next task.
+# Prints nothing on failure. Returns "" if no python or no vault.
+vault_retrieve_prompt() {
+    local query="$1"
+    [ -f "$VAULT_PY" ] || return 0
+    [ -n "$query" ] || query="$(
+        awk '/^## Next Action/{getline; print}' "$CONSENSUS_FILE" 2>/dev/null |
+        head -n1 | tr -d '\r'
+    )"
+    [ -z "$query" ] && return 0
+    command -v python3 >/dev/null 2>&1 || return 0
+    python3 "$VAULT_PY" --vault "$PROJECT_DIR/memories/vault" search "$query" \
+        --top-k "${VAULT_TOP_K:-5}" --min-score "${VAULT_MIN_SCORE:-0.05}" 2>/dev/null
+}
+
+# Index current consensus + per-role docs into the vault.
+# Non-fatal: failures only log a guard line, never abort the loop.
+vault_index_cycle() {
+    [ -f "$VAULT_PY" ] || return 0
+    command -v python3 >/dev/null 2>&1 || return 0
+    local out
+    out=$(python3 "$VAULT_PY" --vault "$PROJECT_DIR/memories/vault" index \
+        --consensus "$CONSENSUS_FILE" \
+        --docs-dir "$PROJECT_DIR/docs" \
+        --max-chunks "${VAULT_MAX_CHUNKS:-5000}" 2>&1)
+    if [ -n "$out" ]; then
+        log_cycle "$loop_count" "VAULT" "$out"
+    fi
+}
+
 run_codex_cycle() {
     local prompt="$1"
     local output_file timeout_flag message_file
@@ -559,7 +595,7 @@ extract_cycle_metadata() {
 
 # === Setup ===
 
-mkdir -p "$LOG_DIR" "$PROJECT_DIR/memories"
+mkdir -p "$LOG_DIR" "$PROJECT_DIR/memories" "$PROJECT_DIR/memories/vault"
 
 # Clean up stale stop file from previous run
 rm -f "$PROJECT_DIR/.auto-loop-stop"
@@ -650,6 +686,10 @@ while true; do
     # Build prompt with consensus pre-injected
     PROMPT=$(cat "$PROMPT_FILE")
     CONSENSUS=$(cat "$CONSENSUS_FILE" 2>/dev/null || echo "No consensus file found. This is the very first cycle.")
+
+    # Semantic retrieval of relevant long-term memory (best-effort, non-fatal)
+    MEMORY_BLOCK=$(vault_retrieve_prompt "")
+
     FULL_PROMPT="$PROMPT
 
 ---
@@ -667,6 +707,7 @@ while true; do
 ## Current Consensus (pre-loaded, do NOT re-read this file)
 
 $CONSENSUS
+$([ -n "$MEMORY_BLOCK" ] && printf '\n\n---\n## Highly-relevant past memory (from vector vault; use as context, trust current consensus)\n\n%s\n' "$MEMORY_BLOCK" || true)
 
 ---
 
@@ -705,12 +746,14 @@ This is Cycle #$loop_count. Act decisively."
             log_cycle "$loop_count" "SUMMARY" "$(echo "$RESULT_TEXT" | head -c 300)"
         fi
         error_count=0
+        vault_index_cycle
     elif [ -z "$cycle_failed_reason" ]; then
         log_cycle "$loop_count" "OK" "Completed (cost: ${CYCLE_COST}, subtype: ${CYCLE_SUBTYPE})"
         if [ -n "$RESULT_TEXT" ]; then
             log_cycle "$loop_count" "SUMMARY" "$(echo "$RESULT_TEXT" | head -c 300)"
         fi
         error_count=0
+        vault_index_cycle
     else
         error_count=$((error_count + 1))
         log_cycle "$loop_count" "FAIL" "$cycle_failed_reason (cost: ${CYCLE_COST}, subtype: ${CYCLE_SUBTYPE}, errors: $error_count/$MAX_CONSECUTIVE_ERRORS)"
