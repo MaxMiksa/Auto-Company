@@ -707,7 +707,7 @@ while true; do
 ## Current Consensus (pre-loaded, do NOT re-read this file)
 
 $CONSENSUS
-$([ -n "$MEMORY_BLOCK" ] && printf '\n\n---\n## Highly-relevant past memory (from vector vault; use as context, trust current consensus)\n\n%s\n' "$MEMORY_BLOCK")
+$([ -n "$MEMORY_BLOCK" ] && printf '\n\n---\n## Highly-relevant past memory (from vector vault; use as context, trust current consensus)\n\n%s\n' "$MEMORY_BLOCK" || true)
 
 ---
 
