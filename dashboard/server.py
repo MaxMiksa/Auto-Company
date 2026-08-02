@@ -417,6 +417,39 @@ def parse_status_output(raw: str, system_name: str | None = None) -> dict[str, A
     return profile["parser"](raw)
 
 
+def gather_status_payload() -> dict[str, Any]:
+    """Gather live status for the dashboard.
+
+    Runs the host status script, parses its output, and layers in the
+    state file, consensus preview, and recent log for the UI.
+    """
+    payload: dict[str, Any] = {
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "ok": False,
+        "parsed": blank_parsed(),
+        "stateFile": {},
+        "consensusHead": "",
+        "logTail": "",
+        "raw": "",
+    }
+
+    try:
+        result = run_status_command()
+    except Exception as exc:  # pragma: no cover - defensive
+        payload["raw"] = f"(status command error: {exc})"
+        return payload
+
+    raw = result.get("output", "")
+    payload["ok"] = bool(result.get("ok"))
+    payload["raw"] = raw
+    if raw:
+        payload["parsed"] = parse_status_output(raw)
+    payload["stateFile"] = read_state_file_pairs()
+    payload["consensusHead"] = read_text_file(CONSENSUS_FILE, "").strip()[:2000]
+    payload["logTail"] = read_tail(LOG_FILE, lines=120)
+    return payload
+
+
 def gather_vault_payload(query: str | None = None, top_k: int = 5) -> dict[str, Any]:
     """Summarize the vector memory vault + optional semantic search.
 
