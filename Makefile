@@ -1,6 +1,15 @@
-.PHONY: start start-awake awake stop status last cycles monitor dashboard pause resume install uninstall team help
+.PHONY: start start-awake awake stop status last cycles monitor dashboard pause resume install uninstall team engine vllm-check help
 
 UNAME_S := $(shell uname -s 2>/dev/null || echo Unknown)
+
+# Local machine defaults (gitignored). Command-line overrides still win:
+#   ENGINE=cursor make start
+-include .auto-loop.env
+export ENGINE MODEL CLAUDE_PERMISSION_MODE CLAUDE_BIN CODEX_BIN CODEX_SANDBOX_MODE
+export CURSOR_BIN CURSOR_SANDBOX_MODE CURSOR_FORCE CURSOR_API_KEY
+export VLLM_BASE_URL VLLM_MODEL VLLM_API_KEY VLLM_TIMEOUT VLLM_MAX_STEPS
+export LOOP_INTERVAL CYCLE_TIMEOUT_SECONDS MAX_CONSECUTIVE_ERRORS COOLDOWN_SECONDS LIMIT_WAIT_SECONDS MAX_LOGS
+
 ENGINE ?= claude
 
 # === Quick Start ===
@@ -85,13 +94,20 @@ endif
 
 # === Interactive ===
 
-team: ## Start selected engine interactive session (ENGINE=claude|codex)
+engine: ## Interactively pick engine: cursor / codex / vllm
+	./scripts/macos/select-engine.sh
+
+vllm-check: ## Ping LAN vLLM / Qwen3.8 endpoint
+	AUTO_COMPANY_ROOT="$(CURDIR)" python3 scripts/core/vllm-agent.py --ping
+
+team: ## Start selected engine interactive session (ENGINE=claude|codex|cursor|vllm)
 	@engine="$$(printf '%s' "$(ENGINE)" | tr '[:upper:]' '[:lower:]')"; \
-	if [ "$$engine" != "claude" ] && [ "$$engine" != "codex" ]; then \
-		echo "Unsupported ENGINE='$(ENGINE)'. Use ENGINE=claude or ENGINE=codex."; \
-		exit 1; \
-	fi; \
-	cd "$(CURDIR)" && "$$engine"
+	case "$$engine" in \
+		claude|codex) cd "$(CURDIR)" && "$$engine" ;; \
+		cursor) cd "$(CURDIR)" && cursor-agent ;; \
+		vllm|qwen|free) echo "vLLM is headless. Test with: make vllm-check"; exit 0 ;; \
+		*) echo "Unsupported ENGINE='$(ENGINE)'. Use cursor, codex, or vllm."; exit 1 ;; \
+	esac
 
 # === Maintenance ===
 
@@ -108,6 +124,6 @@ reset-consensus: ## Reset consensus to initial Day 0 state (CAUTION)
 # === Help ===
 
 help: ## Show this help
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2}'
+	@grep -hE '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2}'
 
 .DEFAULT_GOAL := help

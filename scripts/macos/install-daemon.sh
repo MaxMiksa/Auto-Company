@@ -18,6 +18,23 @@ LABEL="com.autocompany.loop"
 PLIST_PATH="$HOME/Library/LaunchAgents/${LABEL}.plist"
 PAUSE_FLAG="${PROJECT_DIR}/.auto-loop-paused"
 OS_NAME="$(uname -s)"
+
+# Load gitignored local defaults without overriding already-exported env vars.
+if [ -f "$PROJECT_DIR/.auto-loop.env" ]; then
+    while IFS= read -r line || [ -n "$line" ]; do
+        case "$line" in
+            ''|\#*|\;*) continue ;;
+        esac
+        key="${line%%=*}"
+        val="${line#*=}"
+        key="$(printf '%s' "$key" | tr -d '[:space:]')"
+        [ -n "$key" ] || continue
+        if [ -z "${!key+x}" ]; then
+            export "$key=$val"
+        fi
+    done < "$PROJECT_DIR/.auto-loop.env"
+fi
+
 ENGINE="${ENGINE:-claude}"
 ENGINE="$(echo "$ENGINE" | tr '[:upper:]' '[:lower:]')"
 MODEL="${MODEL:-}"
@@ -25,9 +42,21 @@ CLAUDE_BIN="${CLAUDE_BIN:-}"
 CLAUDE_PERMISSION_MODE="${CLAUDE_PERMISSION_MODE:-bypassPermissions}"
 CODEX_BIN="${CODEX_BIN:-}"
 CODEX_SANDBOX_MODE="${CODEX_SANDBOX_MODE:-danger-full-access}"
+CURSOR_BIN="${CURSOR_BIN:-}"
+CURSOR_SANDBOX_MODE="${CURSOR_SANDBOX_MODE:-disabled}"
+CURSOR_FORCE="${CURSOR_FORCE:-1}"
+VLLM_BASE_URL="${VLLM_BASE_URL:-http://58.241.131.10:30000/v1}"
+VLLM_MODEL="${VLLM_MODEL:-Qwen/Qwen3.8-27B}"
+VLLM_API_KEY="${VLLM_API_KEY:-EMPTY}"
+VLLM_TIMEOUT="${VLLM_TIMEOUT:-180}"
+VLLM_MAX_STEPS="${VLLM_MAX_STEPS:-24}"
 
-if [ "$ENGINE" != "claude" ] && [ "$ENGINE" != "codex" ]; then
-    echo "Error: ENGINE must be 'claude' or 'codex' (received: '$ENGINE')."
+case "$ENGINE" in
+    qwen|qwen3|qwen3.8|free) ENGINE="vllm" ;;
+esac
+
+if [ "$ENGINE" != "claude" ] && [ "$ENGINE" != "codex" ] && [ "$ENGINE" != "cursor" ] && [ "$ENGINE" != "vllm" ]; then
+    echo "Error: ENGINE must be 'claude', 'codex', 'cursor', or 'vllm' (received: '$ENGINE')."
     exit 1
 fi
 
@@ -90,6 +119,47 @@ case "$ENGINE" in
             exit 1
         fi
         ;;
+    cursor)
+        if [ -n "$CURSOR_BIN" ]; then
+            if [ -x "$CURSOR_BIN" ]; then
+                ENGINE_PATH="$CURSOR_BIN"
+            elif command -v "$CURSOR_BIN" >/dev/null 2>&1; then
+                ENGINE_PATH="$(command -v "$CURSOR_BIN")"
+            fi
+        fi
+        if [ -z "$ENGINE_PATH" ]; then
+            for candidate in \
+                "$HOME/.local/bin/cursor-agent" \
+                "$HOME/.local/bin/agent" \
+                "/Applications/Cursor.app/Contents/Resources/app/bin/cursor"
+            do
+                if [ -x "$candidate" ]; then
+                    ENGINE_PATH="$candidate"
+                    break
+                fi
+            done
+        fi
+        if [ -z "$ENGINE_PATH" ] && command -v cursor-agent >/dev/null 2>&1; then
+            ENGINE_PATH="$(command -v cursor-agent)"
+        fi
+        if [ -z "$ENGINE_PATH" ] && command -v agent >/dev/null 2>&1; then
+            ENGINE_PATH="$(command -v agent)"
+        fi
+        if [ -z "$ENGINE_PATH" ]; then
+            echo "Error: Cursor Agent CLI not found. Install with: curl https://cursor.com/install -fsS | bash"
+            echo "Or set CURSOR_BIN. Then run: cursor-agent login"
+            exit 1
+        fi
+        ;;
+    vllm)
+        if command -v python3 >/dev/null 2>&1; then
+            ENGINE_PATH="$(command -v python3)"
+        fi
+        if [ -z "$ENGINE_PATH" ] || [ ! -f "$PROJECT_DIR/scripts/core/vllm-agent.py" ]; then
+            echo "Error: Free vLLM engine needs python3 and scripts/core/vllm-agent.py."
+            exit 1
+        fi
+        ;;
 esac
 
 ENGINE_DIR="$(dirname "$ENGINE_PATH")"
@@ -103,7 +173,7 @@ fi
 # Build PATH: include all tool directories
 DAEMON_PATH="${ENGINE_DIR}"
 [ -n "$NODE_DIR" ] && DAEMON_PATH="${DAEMON_PATH}:${NODE_DIR}"
-DAEMON_PATH="${DAEMON_PATH}:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+DAEMON_PATH="${DAEMON_PATH}:$HOME/.local/bin:/Applications/Cursor.app/Contents/Resources/app/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 
 echo "Installing Auto Company daemon..."
 echo "  Project: $PROJECT_DIR"
@@ -179,6 +249,22 @@ cat > "$PLIST_PATH" << EOF
         <string>${CODEX_BIN}</string>
         <key>CODEX_SANDBOX_MODE</key>
         <string>${CODEX_SANDBOX_MODE}</string>
+        <key>CURSOR_BIN</key>
+        <string>${CURSOR_BIN}</string>
+        <key>CURSOR_SANDBOX_MODE</key>
+        <string>${CURSOR_SANDBOX_MODE}</string>
+        <key>CURSOR_FORCE</key>
+        <string>${CURSOR_FORCE}</string>
+        <key>VLLM_BASE_URL</key>
+        <string>${VLLM_BASE_URL}</string>
+        <key>VLLM_MODEL</key>
+        <string>${VLLM_MODEL}</string>
+        <key>VLLM_API_KEY</key>
+        <string>${VLLM_API_KEY}</string>
+        <key>VLLM_TIMEOUT</key>
+        <string>${VLLM_TIMEOUT}</string>
+        <key>VLLM_MAX_STEPS</key>
+        <string>${VLLM_MAX_STEPS}</string>
     </dict>
 
     <key>ThrottleInterval</key>

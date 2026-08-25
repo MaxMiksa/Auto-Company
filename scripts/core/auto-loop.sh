@@ -2,7 +2,7 @@
 # ============================================================
 # Auto Company — 24/7 Autonomous Loop
 # ============================================================
-# Keeps selected CLI engine (Claude/Codex) running continuously.
+# Keeps selected CLI engine (Claude/Codex/Cursor) running continuously.
 # Uses fresh sessions with consensus.md as the relay baton.
 #
 # Usage:
@@ -14,7 +14,7 @@
 #   kill $(cat .auto-loop.pid)  # Force stop
 #
 # Config (env vars):
-#   ENGINE=claude               # Engine selection: claude|codex (default: claude)
+#   ENGINE=claude               # Engine selection: claude|codex|cursor (default: claude)
 #   MODEL=...                   # Optional model override (empty = engine default)
 #   CLAUDE_BIN=...              # Optional Claude executable override
 #   CLAUDE_PERMISSION_MODE=bypassPermissions
@@ -22,6 +22,14 @@
 #   CODEX_BIN=...               # Optional Codex executable override
 #   CODEX_SANDBOX_MODE=danger-full-access
 #                               # Codex sandbox mode (only for ENGINE=codex)
+#   CURSOR_BIN=...              # Optional Cursor Agent executable override
+#   CURSOR_SANDBOX_MODE=disabled
+#                               # Cursor sandbox: enabled|disabled (only for ENGINE=cursor)
+#   CURSOR_FORCE=1              # Cursor --force / yolo (default: 1)
+#   ENGINE=vllm                 # Free LAN engine: vLLM OpenAI-compatible Qwen
+#   VLLM_BASE_URL=http://host:8000/v1
+#   VLLM_MODEL=qwen3.8
+#   VLLM_API_KEY=EMPTY
 #   LOOP_INTERVAL=30            # Seconds between cycles (default: 30)
 #   CYCLE_TIMEOUT_SECONDS=1800  # Max seconds per cycle before force-kill
 #   MAX_CONSECUTIVE_ERRORS=5    # Circuit breaker threshold
@@ -44,15 +52,42 @@ PROMPT_FILE="$PROJECT_DIR/PROMPT.md"
 PID_FILE="$PROJECT_DIR/.auto-loop.pid"
 STATE_FILE="$PROJECT_DIR/.auto-loop-state"
 
+# Load gitignored local defaults without overriding already-exported env vars.
+if [ -f "$PROJECT_DIR/.auto-loop.env" ]; then
+    while IFS= read -r line || [ -n "$line" ]; do
+        case "$line" in
+            ''|\#*|\;*) continue ;;
+        esac
+        key="${line%%=*}"
+        val="${line#*=}"
+        key="$(printf '%s' "$key" | tr -d '[:space:]')"
+        [ -n "$key" ] || continue
+        if [ -z "${!key+x}" ]; then
+            export "$key=$val"
+        fi
+    done < "$PROJECT_DIR/.auto-loop.env"
+fi
+
 # Loop settings (all overridable via env vars)
 ENGINE="${ENGINE:-claude}"
 ENGINE="$(echo "$ENGINE" | tr '[:upper:]' '[:lower:]')"
+case "$ENGINE" in
+    qwen|qwen3|qwen3.8|free) ENGINE="vllm" ;;
+esac
 MODEL="${MODEL:-}"
 MODEL_LABEL="${MODEL:-config-default}"
 CLAUDE_BIN="${CLAUDE_BIN:-}"
 CLAUDE_PERMISSION_MODE="${CLAUDE_PERMISSION_MODE:-bypassPermissions}"
 CODEX_BIN="${CODEX_BIN:-}"
 CODEX_SANDBOX_MODE="${CODEX_SANDBOX_MODE:-danger-full-access}"
+CURSOR_BIN="${CURSOR_BIN:-}"
+CURSOR_SANDBOX_MODE="${CURSOR_SANDBOX_MODE:-disabled}"
+CURSOR_FORCE="${CURSOR_FORCE:-1}"
+VLLM_BASE_URL="${VLLM_BASE_URL:-http://58.241.131.10:30000/v1}"
+VLLM_MODEL="${VLLM_MODEL:-Qwen/Qwen3.8-27B}"
+VLLM_API_KEY="${VLLM_API_KEY:-EMPTY}"
+VLLM_TIMEOUT="${VLLM_TIMEOUT:-180}"
+VLLM_MAX_STEPS="${VLLM_MAX_STEPS:-24}"
 LOOP_INTERVAL="${LOOP_INTERVAL:-30}"
 CYCLE_TIMEOUT_SECONDS="${CYCLE_TIMEOUT_SECONDS:-1800}"
 MAX_CONSECUTIVE_ERRORS="${MAX_CONSECUTIVE_ERRORS:-5}"
@@ -62,8 +97,8 @@ MAX_LOGS="${MAX_LOGS:-200}"
 AUTO_LOOP_PROTECT_GITIGNORE="${AUTO_LOOP_PROTECT_GITIGNORE:-1}"
 RESOLVED_ENGINE_BIN=""
 
-if [ "$ENGINE" != "claude" ] && [ "$ENGINE" != "codex" ]; then
-    echo "Error: ENGINE must be 'claude' or 'codex' (received: '$ENGINE')."
+if [ "$ENGINE" != "claude" ] && [ "$ENGINE" != "codex" ] && [ "$ENGINE" != "cursor" ] && [ "$ENGINE" != "vllm" ]; then
+    echo "Error: ENGINE must be 'claude', 'codex', 'cursor', or 'vllm' (received: '$ENGINE')."
     exit 1
 fi
 
@@ -369,6 +404,59 @@ resolve_claude_bin() {
     return 1
 }
 
+resolve_cursor_bin() {
+    if [ -n "$CURSOR_BIN" ]; then
+        if [ -x "$CURSOR_BIN" ]; then
+            echo "$CURSOR_BIN"
+            return 0
+        fi
+        if command -v "$CURSOR_BIN" >/dev/null 2>&1; then
+            command -v "$CURSOR_BIN"
+            return 0
+        fi
+    fi
+
+    local candidate
+    for candidate in \
+        "$HOME/.local/bin/cursor-agent" \
+        "$HOME/.local/bin/agent" \
+        "/Applications/Cursor.app/Contents/Resources/app/bin/cursor"
+    do
+        if [ -x "$candidate" ]; then
+            echo "$candidate"
+            return 0
+        fi
+    done
+
+    local interactive_candidate
+    interactive_candidate=$(bash -ic 'command -v cursor-agent || command -v agent' 2>/dev/null | tail -n1 | tr -d '\r' || true)
+    if [ -n "$interactive_candidate" ] && [ -x "$interactive_candidate" ]; then
+        echo "$interactive_candidate"
+        return 0
+    fi
+
+    if command -v cursor-agent >/dev/null 2>&1; then
+        command -v cursor-agent
+        return 0
+    fi
+    if command -v agent >/dev/null 2>&1; then
+        command -v agent
+        return 0
+    fi
+
+    return 1
+}
+
+resolve_vllm_bin() {
+    if ! command -v python3 >/dev/null 2>&1; then
+        return 1
+    fi
+    if [ ! -f "$PROJECT_DIR/scripts/core/vllm-agent.py" ]; then
+        return 1
+    fi
+    echo "$PROJECT_DIR/scripts/core/vllm-agent.py"
+}
+
 resolve_engine_bin() {
     case "$ENGINE" in
         claude)
@@ -376,6 +464,12 @@ resolve_engine_bin() {
             ;;
         codex)
             resolve_codex_bin
+            ;;
+        cursor)
+            resolve_cursor_bin
+            ;;
+        vllm)
+            resolve_vllm_bin
             ;;
         *)
             return 1
@@ -486,6 +580,121 @@ run_claude_cycle() {
     rm -f "$timeout_flag"
 }
 
+run_cursor_cycle() {
+    local prompt="$1"
+    local output_file timeout_flag
+
+    output_file=$(mktemp)
+    timeout_flag=$(mktemp)
+
+    set +e
+    (
+        cd "$PROJECT_DIR" || exit 1
+        local cursor_cmd=("$RESOLVED_ENGINE_BIN")
+        case "$(basename "$RESOLVED_ENGINE_BIN")" in
+            cursor)
+                cursor_cmd+=("agent")
+                ;;
+        esac
+        cursor_cmd+=("-p" "--output-format" "json" "--trust" "--workspace" "$PROJECT_DIR")
+        if [ "$CURSOR_FORCE" = "1" ]; then
+            cursor_cmd+=("--force")
+        fi
+        if [ -n "$CURSOR_SANDBOX_MODE" ]; then
+            cursor_cmd+=("--sandbox" "$CURSOR_SANDBOX_MODE")
+        fi
+        if [ -n "$MODEL" ]; then
+            cursor_cmd+=("--model" "$MODEL")
+        fi
+        cursor_cmd+=("$prompt")
+        "${cursor_cmd[@]}"
+    ) > "$output_file" 2>&1 &
+    local cursor_pid=$!
+
+    (
+        sleep "$CYCLE_TIMEOUT_SECONDS"
+        if kill -0 "$cursor_pid" 2>/dev/null; then
+            echo "1" > "$timeout_flag"
+            kill -TERM "$cursor_pid" 2>/dev/null || true
+            sleep 5
+            kill -KILL "$cursor_pid" 2>/dev/null || true
+        fi
+    ) &
+    local watchdog_pid=$!
+
+    wait "$cursor_pid"
+    EXIT_CODE=$?
+
+    kill "$watchdog_pid" 2>/dev/null || true
+    wait "$watchdog_pid" 2>/dev/null || true
+    set -e
+
+    OUTPUT=$(cat "$output_file")
+    RESULT_MESSAGE="$OUTPUT"
+    rm -f "$output_file"
+
+    if [ -s "$timeout_flag" ]; then
+        CYCLE_TIMED_OUT=1
+        EXIT_CODE=124
+    else
+        CYCLE_TIMED_OUT=0
+    fi
+    rm -f "$timeout_flag"
+}
+
+run_vllm_cycle() {
+    local prompt="$1"
+    local output_file timeout_flag prompt_file
+
+    output_file=$(mktemp)
+    timeout_flag=$(mktemp)
+    prompt_file=$(mktemp)
+    printf '%s' "$prompt" > "$prompt_file"
+
+    set +e
+    (
+        cd "$PROJECT_DIR" || exit 1
+        AUTO_COMPANY_ROOT="$PROJECT_DIR" \
+        VLLM_BASE_URL="$VLLM_BASE_URL" \
+        VLLM_MODEL="${MODEL:-$VLLM_MODEL}" \
+        VLLM_API_KEY="$VLLM_API_KEY" \
+        VLLM_TIMEOUT="$VLLM_TIMEOUT" \
+        VLLM_MAX_STEPS="$VLLM_MAX_STEPS" \
+        python3 "$RESOLVED_ENGINE_BIN" --prompt-file "$prompt_file"
+    ) > "$output_file" 2>&1 &
+    local vllm_pid=$!
+
+    (
+        sleep "$CYCLE_TIMEOUT_SECONDS"
+        if kill -0 "$vllm_pid" 2>/dev/null; then
+            echo "1" > "$timeout_flag"
+            kill -TERM "$vllm_pid" 2>/dev/null || true
+            sleep 5
+            kill -KILL "$vllm_pid" 2>/dev/null || true
+        fi
+    ) &
+    local watchdog_pid=$!
+
+    wait "$vllm_pid"
+    EXIT_CODE=$?
+
+    kill "$watchdog_pid" 2>/dev/null || true
+    wait "$watchdog_pid" 2>/dev/null || true
+    set -e
+
+    OUTPUT=$(cat "$output_file")
+    RESULT_MESSAGE="$OUTPUT"
+    rm -f "$output_file" "$prompt_file"
+
+    if [ -s "$timeout_flag" ]; then
+        CYCLE_TIMED_OUT=1
+        EXIT_CODE=124
+    else
+        CYCLE_TIMED_OUT=0
+    fi
+    rm -f "$timeout_flag"
+}
+
 run_engine_cycle() {
     local prompt="$1"
     case "$ENGINE" in
@@ -494,6 +703,12 @@ run_engine_cycle() {
             ;;
         codex)
             run_codex_cycle "$prompt"
+            ;;
+        cursor)
+            run_cursor_cycle "$prompt"
+            ;;
+        vllm)
+            run_vllm_cycle "$prompt"
             ;;
         *)
             echo "Error: Unsupported ENGINE '$ENGINE'" >&2
@@ -508,7 +723,7 @@ extract_cycle_metadata() {
     CYCLE_SUBTYPE="unknown"
     CYCLE_TYPE="${ENGINE}_exec"
 
-    if [ "$ENGINE" = "claude" ]; then
+    if [ "$ENGINE" = "claude" ] || [ "$ENGINE" = "cursor" ] || [ "$ENGINE" = "vllm" ]; then
         if command -v jq >/dev/null 2>&1; then
             RESULT_TEXT=$(echo "$RESULT_MESSAGE" | jq -r '.result // .message // .output_text // empty' 2>/dev/null | head -c 2000 || true)
             if [ -z "$RESULT_TEXT" ]; then
@@ -575,17 +790,58 @@ fi
 
 # Check dependencies
 if ! RESOLVED_ENGINE_BIN="$(resolve_engine_bin)"; then
-    if [ "$ENGINE" = "claude" ]; then
-        echo "Error: Claude CLI not found. Install Claude Code in WSL and verify with 'claude --version'."
-    else
-        echo "Error: Codex CLI not found. Install Codex in WSL and verify with 'codex --version'."
-    fi
+    case "$ENGINE" in
+        claude)
+            echo "Error: Claude CLI not found. Install Claude Code and verify with 'claude --version'."
+            ;;
+        codex)
+            echo "Error: Codex CLI not found. Install Codex and verify with 'codex --version'."
+            ;;
+        cursor)
+            echo "Error: Cursor Agent CLI not found. Install with: curl https://cursor.com/install -fsS | bash"
+            echo "Then login: cursor-agent login"
+            ;;
+        vllm)
+            echo "Error: Free vLLM engine needs python3 and scripts/core/vllm-agent.py."
+            echo "Set VLLM_BASE_URL / VLLM_MODEL in .auto-loop.env, then run: make vllm-check"
+            ;;
+    esac
     exit 1
 fi
 
 if [ ! -f "$PROMPT_FILE" ]; then
     echo "Error: PROMPT.md not found at $PROMPT_FILE"
     exit 1
+fi
+
+if [ "$ENGINE" = "vllm" ]; then
+    if [ -z "$VLLM_BASE_URL" ] || echo "$VLLM_BASE_URL" | grep -q '172.16.40.100'; then
+        echo "Warning: VLLM_BASE_URL is still the placeholder ($VLLM_BASE_URL)."
+        echo "Edit .auto-loop.env and set the LAN vLLM address, e.g. http://172.16.40.xx:8000/v1"
+    fi
+    if ! AUTO_COMPANY_ROOT="$PROJECT_DIR" VLLM_BASE_URL="$VLLM_BASE_URL" VLLM_MODEL="${MODEL:-$VLLM_MODEL}" VLLM_API_KEY="$VLLM_API_KEY" \
+        python3 "$RESOLVED_ENGINE_BIN" --ping >/tmp/auto-company-vllm-ping.log 2>&1; then
+        echo "Error: vLLM endpoint is not reachable."
+        echo "  VLLM_BASE_URL=$VLLM_BASE_URL"
+        echo "  VLLM_MODEL=${MODEL:-$VLLM_MODEL}"
+        echo "Ping log:"
+        cat /tmp/auto-company-vllm-ping.log 2>/dev/null || true
+        echo "Fix the address in .auto-loop.env, then: make vllm-check"
+        exit 1
+    fi
+fi
+
+if [ "$ENGINE" = "cursor" ] && [ -z "${CURSOR_API_KEY:-}" ]; then
+    cursor_status_bin=("$RESOLVED_ENGINE_BIN")
+    case "$(basename "$RESOLVED_ENGINE_BIN")" in
+        cursor) cursor_status_bin+=("agent") ;;
+    esac
+    if ! "${cursor_status_bin[@]}" status >/dev/null 2>&1; then
+        echo "Error: Cursor Agent is not logged in."
+        echo "Run: cursor-agent login"
+        echo "Or set CURSOR_API_KEY in .auto-loop.env (https://cursor.com/dashboard/api)"
+        exit 1
+    fi
 fi
 
 # Write PID file
@@ -600,28 +856,33 @@ error_count=0
 
 log "=== Auto Company Loop Started (PID $$) ==="
 log "Project: $PROJECT_DIR"
-if [ "$ENGINE" = "codex" ]; then
-    log "Engine: codex | Model: $MODEL_LABEL | Sandbox: $CODEX_SANDBOX_MODE"
-else
-    log "Engine: claude | Model: $MODEL_LABEL | PermissionMode: $CLAUDE_PERMISSION_MODE"
-fi
+case "$ENGINE" in
+    codex)
+        log "Engine: codex | Model: $MODEL_LABEL | Sandbox: $CODEX_SANDBOX_MODE"
+        ;;
+    cursor)
+        log "Engine: cursor | Model: $MODEL_LABEL | Sandbox: $CURSOR_SANDBOX_MODE | Force: $CURSOR_FORCE"
+        ;;
+    vllm)
+        log "Engine: vllm | Model: ${MODEL:-$VLLM_MODEL} | Base: $VLLM_BASE_URL"
+        ;;
+    *)
+        log "Engine: claude | Model: $MODEL_LABEL | PermissionMode: $CLAUDE_PERMISSION_MODE"
+        ;;
+esac
 log "Engine bin: $RESOLVED_ENGINE_BIN"
-engine_version=$("$RESOLVED_ENGINE_BIN" --version 2>/dev/null | head -n1 || true)
+if [ "$ENGINE" = "vllm" ]; then
+    engine_version=$(python3 --version 2>/dev/null | head -n1 || true)
+else
+    engine_version=$("$RESOLVED_ENGINE_BIN" --version 2>/dev/null | head -n1 || true)
+fi
 case "$RESOLVED_ENGINE_BIN" in
     /mnt/c/*)
-        if [ "$ENGINE" = "codex" ]; then
-            log "Warning: Codex binary resolves to Windows-mounted path. Prefer WSL-local install for stability."
-        else
-            log "Warning: Claude binary resolves to Windows-mounted path. Prefer WSL-local install for stability."
-        fi
+        log "Warning: $ENGINE binary resolves to Windows-mounted path. Prefer a native install for stability."
         ;;
 esac
 if [ -n "$engine_version" ]; then
-    if [ "$ENGINE" = "codex" ]; then
-        log "Codex version: $engine_version"
-    else
-        log "Claude version: $engine_version"
-    fi
+    log "$ENGINE version: $engine_version"
 fi
 log "Interval: ${LOOP_INTERVAL}s | Timeout: ${CYCLE_TIMEOUT_SECONDS}s | Breaker: ${MAX_CONSECUTIVE_ERRORS} errors"
 
