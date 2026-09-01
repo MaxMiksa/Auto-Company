@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# 镜场 CineForge — Maintainer 一键简报（Cycle 27 pivot）
-# 聚合：preflight + confidence pack + daemon + desktop nudge + deeplink
+# 镜场 CineForge — Maintainer 一键简报（Cycle 28 pivot）
+# 聚合：preflight + confidence pack + LaunchAgent/daemon + desktop nudge + deeplink
 # 用法：./projects/cineforge/scripts/maintainer-one-shot.sh
-# 可选：UPSTREAM=MaxMiksa/Auto-Company PR=19 ISSUE=17 CYCLE=27
+# 可选：UPSTREAM=MaxMiksa/Auto-Company PR=19 ISSUE=17 CYCLE=28
 #       OPEN=1 DIALOG=1 POST=1
 set -euo pipefail
 
@@ -11,7 +11,7 @@ CF="${ROOT}/projects/cineforge"
 UPSTREAM="${UPSTREAM:-MaxMiksa/Auto-Company}"
 PR="${PR:-19}"
 ISSUE="${ISSUE:-17}"
-CYCLE="${CYCLE:-27}"
+CYCLE="${CYCLE:-28}"
 OPEN="${OPEN:-0}"
 DIALOG="${DIALOG:-0}"
 POST="${POST:-1}"
@@ -66,9 +66,17 @@ PUSH_READY=$(python3 -c "import json; print(json.load(open('${CF}/scripts/fixtur
 VERDICT=$(python3 -c "import json; print(json.load(open('${CF}/scripts/fixtures/merge-confidence.json'))['verdict'])" 2>/dev/null || echo "unknown")
 echo
 
-# --- 3) daemon 自愈 ---
-echo "━━ 3/5 merge-watch daemon ━━"
-RESTART=1 "${CF}/scripts/daemon-health.sh" | sed 's/^/   /'
+# --- 3) merge-watch 自愈（LaunchAgent 优先） ---
+echo "━━ 3/5 merge-watch（LaunchAgent 优先）━━"
+LAUNCHAGENT="${CF}/scripts/merge-watch-launchagent.sh"
+if [[ "$(uname -s)" == "Darwin" && -x "$LAUNCHAGENT" ]]; then
+  if ! "$LAUNCHAGENT" 2>&1 | sed 's/^/   /'; then
+    echo "   WARN: LaunchAgent 安装失败 — 回退 daemon-health"
+    RESTART=1 "${CF}/scripts/daemon-health.sh" | sed 's/^/   /' || true
+  fi
+else
+  RESTART=1 "${CF}/scripts/daemon-health.sh" | sed 's/^/   /'
+fi
 echo
 
 # --- 4) desktop nudge ---
@@ -87,7 +95,7 @@ ARTIFACT="${CF}/scripts/fixtures/merge-confidence.json"
 BODY=$(cat <<EOF
 ## Cycle ${CYCLE} — Maintainer One-Shot（收敛规则 #5 pivot #11）
 
-Agent 仍无法绕过 fork workflow 批准。本轮 ship **一键 Maintainer 简报** \`make cineforge-maintainer-one-shot\` — 单命令聚合 preflight + 证据包 + daemon 自愈 + 桌面通知 + 深链。
+Agent 仍无法绕过 fork workflow 批准。本轮 ship **macOS LaunchAgent** 持久化 merge-watch（\`make cineforge-merge-watch-launchagent\`）— 解决 Cycle 27 nohup/disown 在 agent shell 退出后仍被杀的问题；一键简报继续聚合 preflight + 证据包 + LaunchAgent 自愈 + 桌面通知 + 深链。
 
 ### 快照
 | 项 | 值 |
@@ -102,6 +110,7 @@ Agent 仍无法绕过 fork workflow 批准。本轮 ship **一键 Maintainer 简
 2. [**Merge pull request**](${PR_URL})
 
 \`\`\`bash
+make cineforge-merge-watch-launchagent   # 推荐：LaunchAgent 跨 session 存活
 make cineforge-maintainer-one-shot OPEN=1 DIALOG=1   # 一键简报 + 浏览器 + 对话框
 make cineforge-unblock-card                         # 人类行动卡
 \`\`\`
@@ -109,7 +118,7 @@ make cineforge-unblock-card                         # 人类行动卡
 证据包：\`projects/cineforge/scripts/fixtures/merge-confidence.json\`
 
 ---
-_Auto Company Cycle ${CYCLE} — maintainer-one-shot_
+_Auto Company Cycle ${CYCLE} — maintainer-one-shot + LaunchAgent_
 EOF
 )
 

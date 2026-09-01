@@ -1,4 +1,4 @@
-.PHONY: start start-awake awake stop status last cycles monitor dashboard pause resume install uninstall team engine vllm-check cineforge-ci-gate cineforge-health cineforge-waitlist cineforge-push-ready cineforge-stage cineforge-ship-pr cineforge-ship-pr-fork cineforge-verify-post-merge cineforge-pr-readiness cineforge-pre-merge-preflight cineforge-merge-escalate cineforge-merge-watch cineforge-merge-watch-daemon cineforge-daemon-health cineforge-unblock-card cineforge-pr-handoff cineforge-merge-nudge cineforge-maintainer-deeplink cineforge-issue-nudge cineforge-desktop-nudge cineforge-merge-confidence cineforge-maintainer-one-shot cineforge-post-merge-dry-run cineforge-render-preflight cineforge-blockers cineforge-handoff help
+.PHONY: start start-awake awake stop status last cycles monitor dashboard pause resume install uninstall team engine vllm-check cineforge-ci-gate cineforge-health cineforge-waitlist cineforge-push-ready cineforge-stage cineforge-ship-pr cineforge-ship-pr-fork cineforge-verify-post-merge cineforge-pr-readiness cineforge-pre-merge-preflight cineforge-merge-escalate cineforge-merge-watch cineforge-merge-watch-daemon cineforge-merge-watch-launchagent cineforge-daemon-health cineforge-unblock-card cineforge-pr-handoff cineforge-merge-nudge cineforge-maintainer-deeplink cineforge-issue-nudge cineforge-desktop-nudge cineforge-merge-confidence cineforge-maintainer-one-shot cineforge-post-merge-dry-run cineforge-render-preflight cineforge-blockers cineforge-handoff help
 
 UNAME_S := $(shell uname -s 2>/dev/null || echo Unknown)
 
@@ -151,6 +151,9 @@ cineforge-merge-watch: ## Poll PR until merged, then run verify-post-merge
 cineforge-merge-watch-daemon: ## Background merge-watch (macOS/Linux, no setsid)
 	./projects/cineforge/scripts/merge-watch-daemon.sh
 
+cineforge-merge-watch-launchagent: ## macOS LaunchAgent for merge-watch (survives agent shell exit)
+	./projects/cineforge/scripts/merge-watch-launchagent.sh
+
 cineforge-daemon-health: ## Check merge-watch daemon; RESTART=1 auto-restart if dead
 	RESTART=$${RESTART:-1} ./projects/cineforge/scripts/daemon-health.sh
 
@@ -167,16 +170,16 @@ cineforge-maintainer-deeplink: ## Print/open Checks + Merge URLs for maintainer 
 	OPEN=$${OPEN:-0} ./projects/cineforge/scripts/maintainer-merge-deeplink.sh
 
 cineforge-issue-nudge: ## Issue #17 assign + label + @mention (alternate notify channel)
-	CYCLE=$${CYCLE:-26} ./projects/cineforge/scripts/issue-assign-nudge.sh
+	CYCLE=$${CYCLE:-28} ./projects/cineforge/scripts/issue-assign-nudge.sh
 
 cineforge-desktop-nudge: ## macOS desktop notification (non-GitHub channel)
-	CYCLE=$${CYCLE:-27} DIALOG=$${DIALOG:-0} SOUND=$${SOUND:-1} ./projects/cineforge/scripts/maintainer-desktop-nudge.sh
+	CYCLE=$${CYCLE:-28} DIALOG=$${DIALOG:-0} SOUND=$${SOUND:-1} ./projects/cineforge/scripts/maintainer-desktop-nudge.sh
 
 cineforge-merge-confidence: ## Generate merge confidence artifact + post to Issue #17
-	CYCLE=$${CYCLE:-27} POST=$${POST:-1} ./projects/cineforge/scripts/merge-confidence-pack.sh
+	CYCLE=$${CYCLE:-28} POST=$${POST:-1} ./projects/cineforge/scripts/merge-confidence-pack.sh
 
 cineforge-maintainer-one-shot: ## One-shot maintainer briefing (preflight + confidence + nudge + deeplink)
-	CYCLE=$${CYCLE:-27} OPEN=$${OPEN:-0} DIALOG=$${DIALOG:-0} POST=$${POST:-1} ./projects/cineforge/scripts/maintainer-one-shot.sh
+	CYCLE=$${CYCLE:-28} OPEN=$${OPEN:-0} DIALOG=$${DIALOG:-0} POST=$${POST:-1} ./projects/cineforge/scripts/maintainer-one-shot.sh
 
 cineforge-post-merge-dry-run: ## Verify post-merge automation ready (no merge required)
 	./projects/cineforge/scripts/post-merge-dry-run.sh

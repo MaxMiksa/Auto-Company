@@ -84,6 +84,8 @@ cat <<EOF
 
 ━━ Merge 后自动验证 ━━
   merge-watch daemon: ${DAEMON_STATUS}
+  推荐持久化:        make cineforge-merge-watch-launchagent
+                       （macOS LaunchAgent，跨 session 存活；替代 Terminal 手动跑 daemon）
   健康检查/重启:      make cineforge-daemon-health
   手动验证:           make cineforge-verify-post-merge
   双轨仪表盘:         make cineforge-blockers

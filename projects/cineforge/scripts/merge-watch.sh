@@ -18,6 +18,9 @@ cleanup() {
 }
 trap cleanup EXIT
 
+# LaunchAgent / daemon 共用：自写 pid，供 health 检测
+echo "$$" >"$PIDFILE"
+
 die() {
   echo "FAIL: $*" >&2
   exit 1
