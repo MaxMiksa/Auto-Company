@@ -54,11 +54,13 @@ FORBIDDEN=(
   "projects/cineforge/app/.env"
   "projects/cineforge/app/.env.local"
 )
-for path in "${PENDING[@]}"; do
-  for bad in "${FORBIDDEN[@]}"; do
-    [[ "$path" == "$bad" || "$path" == "$bad"/* ]] && die "敏感路径不应入库: $path"
+if [[ ${#PENDING[@]} -gt 0 ]]; then
+  for path in "${PENDING[@]}"; do
+    for bad in "${FORBIDDEN[@]}"; do
+      [[ "$path" == "$bad" || "$path" == "$bad"/* ]] && die "敏感路径不应入库: $path"
+    done
   done
-done
+fi
 echo "OK 无 .data / node_modules / .next / .env 纳入"
 echo
 
@@ -78,13 +80,17 @@ scan_file() {
   fi
 }
 
-for path in "${PENDING[@]}"; do
-  case "$path" in
-    *.ts|*.tsx|*.js|*.jsx|*.json|*.md|*.yml|*.yaml|*.sh|*.toml|*.env*)
-      scan_file "$ROOT/$path"
-      ;;
-  esac
-done
+if [[ ${#PENDING[@]} -gt 0 ]]; then
+  for path in "${PENDING[@]}"; do
+    case "$path" in
+      *.ts|*.tsx|*.js|*.jsx|*.json|*.md|*.yml|*.yaml|*.sh|*.toml|*.env*)
+        scan_file "$ROOT/$path"
+        ;;
+    esac
+  done
+else
+  echo "SKIP 无待入库文件，跳过密钥扫描"
+fi
 
 [[ "$SECRET_HITS" -eq 0 ]] || die "发现 $SECRET_HITS 处疑似密钥，清理后再入库"
 echo "OK 未发现硬编码密钥"
