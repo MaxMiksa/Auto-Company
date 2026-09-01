@@ -105,11 +105,13 @@ else
 fi
 
 # --- ensure fork remote ---
+FORK_URL="git@github.com:${FORK_REPO}.git"
 if git remote get-url "$FORK_REMOTE" >/dev/null 2>&1; then
   echo "-- remote $FORK_REMOTE 已存在"
+  git remote set-url "$FORK_REMOTE" "$FORK_URL"
 else
   echo "-- git remote add $FORK_REMOTE"
-  git remote add "$FORK_REMOTE" "https://github.com/${FORK_REPO}.git"
+  git remote add "$FORK_REMOTE" "$FORK_URL"
 fi
 
 CURRENT=$(git branch --show-current)
