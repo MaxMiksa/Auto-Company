@@ -60,7 +60,13 @@ echo
 
 elapsed=0
 while [[ "$elapsed" -le "$MAX_WAIT" ]]; do
-  STATE=$(gh pr view "$PR" --repo "$UPSTREAM" --json state -q .state)
+  STATE=""
+  if ! STATE=$(gh pr view "$PR" --repo "$UPSTREAM" --json state -q .state 2>/dev/null); then
+    echo "   $(date '+%H:%M:%S') gh 暂不可用 — 重试 (${elapsed}s / ${MAX_WAIT}s)"
+    sleep "$POLL_SEC"
+    elapsed=$((elapsed + POLL_SEC))
+    continue
+  fi
 
   if [[ "$STATE" == "MERGED" ]]; then
     echo

@@ -38,6 +38,15 @@ if [[ "$PR_STATE" == "MERGED" ]]; then
   COMPILE_STATUS="✅ 已 merge"
 fi
 
+DAEMON_STATUS="DEAD"
+PIDFILE="/tmp/cineforge-merge-watch.pid"
+if [[ -f "$PIDFILE" ]]; then
+  dp=$(cat "$PIDFILE" 2>/dev/null || true)
+  if [[ -n "$dp" ]] && kill -0 "$dp" 2>/dev/null; then
+    DAEMON_STATUS="alive (pid=$dp)"
+  fi
+fi
+
 cat <<EOF
 ╔══════════════════════════════════════════════════════════════════╗
 ║          镜场 CineForge — 人类 Unblock 行动卡                    ║
@@ -67,7 +76,8 @@ cat <<EOF
     C) 恢复 Omni: curl http://127.0.0.1:8092/health
 
 ━━ Merge 后自动验证 ━━
-  merge-watch daemon: make cineforge-merge-watch-daemon
+  merge-watch daemon: ${DAEMON_STATUS}
+  健康检查/重启:      make cineforge-daemon-health
   手动验证:           make cineforge-verify-post-merge
   双轨仪表盘:         make cineforge-blockers
 

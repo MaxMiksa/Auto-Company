@@ -10,7 +10,7 @@ UPSTREAM="${UPSTREAM:-MaxMiksa/Auto-Company}"
 PR="${PR:-19}"
 ISSUE="${ISSUE:-17}"
 DRY_RUN="${DRY_RUN:-0}"
-CYCLE="${CYCLE:-22}"
+CYCLE="${CYCLE:-23}"
 
 die() {
   echo "FAIL: $*" >&2
@@ -66,9 +66,14 @@ else
 fi
 
 BODY=$(cat <<EOF
-## Cycle ${CYCLE} — Merge 升级（收敛规则 #5 pivot）
+## Cycle ${CYCLE} — Merge 升级（收敛规则 #5 pivot #7）
 
-PR #${PR} 已连续多轮等待 MaxMiksa merge。Agent 本轮 ship **pre-merge preflight + 升级通知**，不再空转。
+PR #${PR} 已连续多轮等待 MaxMiksa merge。Agent 本轮 ship **daemon 容错修复 + PR 直接 handoff**，不再空转。
+
+### 本轮修复
+- \`merge-watch.sh\`：\`gh\` 瞬时失败不再杀死 daemon（Cycle 23 根因）
+- \`daemon-health.sh\` + \`make cineforge-daemon-health\`：检测 stale pid + 自动重启
+- PR 直接 handoff 评论（比 Issue 更醒目）
 
 ### 当前状态
 | 项 | 值 |
@@ -88,10 +93,11 @@ make cineforge-unblock-card
 1. [PR #${PR}](${PR_URL}) → **Checks** → **Approve and run workflows**（解除 \`action_required\`）
 2. 确认 \`cineforge-compile-gate\` 绿（或信任本地 push-ready PASS）→ **Merge pull request**
 
-### Merge 后自动验证（daemon 已修复 macOS setsid 问题）
+### Merge 后自动验证（daemon 已修复 gh 容错）
 \`\`\`bash
-make cineforge-merge-watch-daemon      # 后台等 merge → 自动 verify
-make cineforge-verify-post-merge       # 或手动一次性
+make cineforge-daemon-health              # 检查/重启 daemon
+make cineforge-merge-watch-daemon         # 后台等 merge → 自动 verify
+make cineforge-verify-post-merge          # 或手动一次性
 \`\`\`
 
 ### Agent 预检命令

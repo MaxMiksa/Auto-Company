@@ -8,7 +8,7 @@ ROOT="$(cd "$(dirname "$0")/../../.." && pwd)"
 CF="${ROOT}/projects/cineforge"
 UPSTREAM="${UPSTREAM:-MaxMiksa/Auto-Company}"
 PR="${PR:-19}"
-CYCLE="${CYCLE:-21}"
+CYCLE="${CYCLE:-23}"
 DRY_RUN="${DRY_RUN:-0}"
 
 die() {
@@ -75,14 +75,17 @@ BODY=$(cat <<EOF
 ### Merge 后立即跑
 
 \`\`\`bash
+make cineforge-daemon-health              # 确认 daemon 存活（dead 则 RESTART=1）
 make cineforge-verify-post-merge
 \`\`\`
 
 或后台自动等待 merge 并验证：
 
 \`\`\`bash
-make cineforge-merge-watch
+make cineforge-merge-watch-daemon
 \`\`\`
+
+人类行动卡：\`make cineforge-unblock-card\`
 
 追踪 Issue: https://github.com/${UPSTREAM}/issues/17
 
