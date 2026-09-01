@@ -59,15 +59,25 @@ echo "时间: $(date '+%Y-%m-%d %H:%M %z')"
 echo
 
 START_TS=$(date '+%Y-%m-%d %H:%M:%S %z')
-nohup env UPSTREAM="$UPSTREAM" PR="$PR" POLL_SEC="$POLL_SEC" MAX_WAIT="$MAX_WAIT" \
-  bash -c "echo '=== merge-watch daemon start @ ${START_TS} ==='; exec \"${WATCH}\"" \
-  >>"$LOG" 2>&1 &
 
-daemon_pid=$!
-echo "$daemon_pid" >"$PIDFILE"
+# macOS 无 setsid — 双 fork + disown 避免 agent shell 退出时 SIGHUP 杀 daemon
+(
+  nohup env UPSTREAM="$UPSTREAM" PR="$PR" POLL_SEC="$POLL_SEC" MAX_WAIT="$MAX_WAIT" \
+    PIDFILE="$PIDFILE" \
+    bash -c "echo '=== merge-watch daemon start @ ${START_TS} ==='; exec \"${WATCH}\"" \
+    >>"$LOG" 2>&1 </dev/null &
+  daemon_pid=$!
+  echo "$daemon_pid" >"$PIDFILE"
+  disown -h "$daemon_pid" 2>/dev/null || true
+) >/dev/null 2>&1 &
 
-sleep 1
-if kill -0 "$daemon_pid" 2>/dev/null; then
+sleep 2
+daemon_pid=""
+if [[ -f "$PIDFILE" ]]; then
+  daemon_pid=$(cat "$PIDFILE" 2>/dev/null || true)
+fi
+
+if [[ -n "$daemon_pid" ]] && kill -0 "$daemon_pid" 2>/dev/null; then
   echo "OK: merge-watch daemon 已启动 (pid=$daemon_pid)"
   echo "  PR: https://github.com/${UPSTREAM}/pull/${PR}"
   echo "  log: $LOG"

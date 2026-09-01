@@ -56,7 +56,7 @@ echo
 
 # --- 2) PR 状态 ---
 echo "-- 2) PR #$PR 状态"
-PR_JSON=$(gh pr view "$PR" --repo "$UPSTREAM" --json \
+PR_JSON=$("${CF}/scripts/gh-retry.sh" pr view "$PR" --repo "$UPSTREAM" --json \
   state,mergeable,reviewDecision,title,url,headRefName,baseRefName 2>/dev/null) \
   || die "无法读取 PR #$PR"
 
@@ -92,7 +92,7 @@ echo
 # --- 3) Workflow 批准状态 ---
 echo "-- 3) GitHub Actions workflow 批准"
 WORKFLOW="${WORKFLOW:-cineforge-compile-gate}"
-RUNS=$(gh run list --repo "$UPSTREAM" --workflow="$WORKFLOW" --limit=5 \
+RUNS=$("${CF}/scripts/gh-retry.sh" run list --repo "$UPSTREAM" --workflow="$WORKFLOW" --limit=5 \
   --json databaseId,status,conclusion,headBranch,url 2>/dev/null || echo "[]")
 
 ACTION_REQUIRED=0

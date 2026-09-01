@@ -11,6 +11,12 @@ PR="${PR:-19}"
 POLL_SEC="${POLL_SEC:-60}"
 MAX_WAIT="${MAX_WAIT:-86400}"
 DRY_RUN="${DRY_RUN:-0}"
+PIDFILE="${PIDFILE:-/tmp/cineforge-merge-watch.pid}"
+
+cleanup() {
+  rm -f "$PIDFILE"
+}
+trap cleanup EXIT
 
 die() {
   echo "FAIL: $*" >&2
