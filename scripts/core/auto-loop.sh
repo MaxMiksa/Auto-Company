@@ -151,28 +151,23 @@ restore_gitignore_if_changed() {
     fi
 
     local gitignore_file="$PROJECT_DIR/.gitignore"
-    local changed=0
 
-    if [ -f "$gitignore_file" ]; then
-        if [ -z "$snapshot_file" ] || [ ! -f "$snapshot_file" ]; then
-            changed=1
-        elif ! cmp -s "$gitignore_file" "$snapshot_file"; then
-            changed=1
+    # Compare against what's committed at HEAD (post-cycle), not the pre-cycle
+    # file snapshot. A cycle that edits .gitignore and commits the change is
+    # legitimate and auditable via git log, so it must not be reverted - only
+    # an *uncommitted* drift from HEAD is a real guard violation. Comparing
+    # against a raw pre-cycle snapshot instead caused committed, legitimate
+    # .gitignore edits to be silently reverted in the working tree every
+    # cycle after they landed (see memories/consensus.md Cycle 8-9 notes).
+    if git -C "$PROJECT_DIR" rev-parse --verify HEAD:.gitignore >/dev/null 2>&1; then
+        if [ ! -f "$gitignore_file" ] || ! git -C "$PROJECT_DIR" diff --quiet HEAD -- .gitignore; then
+            git -C "$PROJECT_DIR" checkout HEAD -- .gitignore
+            log_cycle "$loop_count" "GUARD" "Blocked uncommitted .gitignore drift and restored tracked version"
         fi
-    else
-        if [ -n "$snapshot_file" ] && [ -f "$snapshot_file" ]; then
-            changed=1
-        fi
-    fi
-
-    if [ "$changed" -eq 1 ]; then
-        if [ -n "$snapshot_file" ] && [ -f "$snapshot_file" ]; then
-            cp "$snapshot_file" "$gitignore_file"
-            log_cycle "$loop_count" "GUARD" "Blocked cycle mutation of .gitignore and restored baseline"
-        else
-            rm -f "$gitignore_file"
-            log_cycle "$loop_count" "GUARD" "Blocked cycle-created .gitignore and removed it"
-        fi
+    elif [ -f "$gitignore_file" ] && { [ -z "$snapshot_file" ] || [ ! -f "$snapshot_file" ]; }; then
+        # .gitignore isn't tracked in git and was created fresh this cycle.
+        rm -f "$gitignore_file"
+        log_cycle "$loop_count" "GUARD" "Blocked cycle-created untracked .gitignore and removed it"
     fi
 
     [ -n "$snapshot_file" ] && rm -f "$snapshot_file"
