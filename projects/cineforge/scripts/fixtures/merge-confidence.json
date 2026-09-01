@@ -1,18 +1,18 @@
 {
   "schema": "jingchang.merge-confidence.v1",
-  "cycle": 27,
-  "generated_at": "2026-09-01T06:07:30Z",
+  "cycle": 28,
+  "generated_at": "2026-09-01T06:21:38Z",
   "pr": {
     "number": 19,
     "url": "https://github.com/MaxMiksa/Auto-Company/pull/19",
     "head_ref": "ship/cineforge-compile-track",
-    "head_oid": "0360623bceaab8e1ca2fa49d2c55e78c18d7c2d0",
-    "fork_head": "0360623bceaab8e1ca2fa49d2c55e78c18d7c2d0"
+    "head_oid": "3b693647b5dc9ff73686f415f14322a69af8de84",
+    "fork_head": "3b693647b5dc9ff73686f415f14322a69af8de84"
   },
   "evidence": {
     "push_ready": "PASS",
     "post_merge_dry_run": "READY",
-    "merge_watch_daemon": "dead"
+    "merge_watch_daemon": "alive"
   },
   "verdict": "SAFE_TO_MERGE",
   "human_blocker": "workflow action_required — Approve and run workflows",

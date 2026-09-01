@@ -1,0 +1,17 @@
+{
+  "schema": "jingchang.fork-compile-proof.v1",
+  "cycle": 29,
+  "generated_at": "2026-09-01T00:00:00Z",
+  "fork": "guofu-ljg/Auto-Company",
+  "branch": "ship/cineforge-compile-track",
+  "workflow": "cineforge-compile-gate",
+  "head_oid": "pending",
+  "run": null,
+  "verdict": "NO_RUN",
+  "human_message": "placeholder — 跑 make cineforge-fork-compile-proof 刷新",
+  "upstream_pr": "https://github.com/MaxMiksa/Auto-Company/pull/19",
+  "maintainer_steps": [
+    "https://github.com/MaxMiksa/Auto-Company/pull/19/checks → Approve and run workflows",
+    "https://github.com/MaxMiksa/Auto-Company/pull/19 → Merge pull request"
+  ]
+}

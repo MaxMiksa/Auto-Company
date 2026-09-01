@@ -26,6 +26,14 @@ if "${CF}/scripts/accept-push-ready.sh" >/dev/null 2>&1; then
   PUSH_READY="PASS"
 fi
 
+FORK_VERDICT="missing"
+FORK_RUN="n/a"
+FORK_PROOF="${CF}/scripts/fixtures/fork-compile-proof.json"
+if [[ -f "$FORK_PROOF" ]]; then
+  FORK_VERDICT=$(python3 -c "import json; print(json.load(open('${FORK_PROOF}'))['verdict'])" 2>/dev/null || echo "unknown")
+  FORK_RUN=$(python3 -c "import json; r=json.load(open('${FORK_PROOF}')).get('run') or {}; print(r.get('url') or 'n/a')" 2>/dev/null || echo "n/a")
+fi
+
 RENDER_BLOCKED=0
 RENDER_SUMMARY="READY"
 if ! "${CF}/scripts/render-track-preflight.sh" >/dev/null 2>&1; then
@@ -57,6 +65,8 @@ cat <<EOF
   状态: ${COMPILE_STATUS}
   PR:   ${PR_URL}
   本地 push-ready: ${PUSH_READY}
+  Fork CI 绿证:    ${FORK_VERDICT}
+  Fork run:        ${FORK_RUN}
 
   MaxMiksa 两步:
     1. PR → Checks → Approve and run workflows
@@ -64,6 +74,7 @@ cat <<EOF
 
   深链直达:            make cineforge-maintainer-deeplink OPEN=1
   一键简报:            make cineforge-maintainer-one-shot OPEN=1 DIALOG=1
+  Fork 绿证:           make cineforge-fork-compile-proof
   证据包:              make cineforge-merge-confidence
   桌面通知:            make cineforge-desktop-nudge DIALOG=1
   Agent nudge:         make cineforge-issue-nudge
