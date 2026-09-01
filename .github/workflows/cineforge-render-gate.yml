@@ -23,16 +23,28 @@ jobs:
     name: Render Track Gate (optional)
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    if: ${{ secrets.SEEDANCE_API_KEY != '' }}
     env:
       CINEFORGE_BASE: http://127.0.0.1:3200
       SEEDANCE_API_KEY: ${{ secrets.SEEDANCE_API_KEY }}
-      MAX_POLLS: ${{ inputs.max_polls }}
+      MAX_POLLS: ${{ inputs.max_polls || '45' }}
     steps:
+      - name: Skip if SEEDANCE_API_KEY missing
+        id: secret_check
+        run: |
+          if [ -z "${SEEDANCE_API_KEY:-}" ]; then
+            echo "SEEDANCE_API_KEY secret 未配置，成片轨 CI 已跳过。"
+            echo "配置后可在 Actions 手动运行 cineforge-render-gate。"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Checkout
+        if: steps.secret_check.outputs.skip != 'true'
         uses: actions/checkout@v4
 
       - name: Setup Node.js
+        if: steps.secret_check.outputs.skip != 'true'
         uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -40,27 +52,19 @@ jobs:
           cache-dependency-path: projects/cineforge/app/package-lock.json
 
       - name: Install app dependencies
+        if: steps.secret_check.outputs.skip != 'true'
         working-directory: projects/cineforge/app
         run: npm ci
 
       - name: Run first-render acceptance
+        if: steps.secret_check.outputs.skip != 'true'
         run: ./projects/cineforge/scripts/accept-first-render.sh
 
       - name: Upload render artifact on success
-        if: success()
+        if: steps.secret_check.outputs.skip != 'true' && success()
         uses: actions/upload-artifact@v4
         with:
           name: cineforge-first-render-${{ github.run_id }}
           path: projects/cineforge/app/.data/uploads/*.mp4
           if-no-files-found: error
           retention-days: 7
-
-  secret-missing:
-    name: Secret not configured
-    runs-on: ubuntu-latest
-    if: ${{ secrets.SEEDANCE_API_KEY == '' }}
-    steps:
-      - name: Skip — add SEEDANCE_API_KEY secret to enable
-        run: |
-          echo "SEEDANCE_API_KEY secret 未配置，成片轨 CI 已跳过。"
-          echo "配置后可在 Actions 手动运行 cineforge-render-gate。"
