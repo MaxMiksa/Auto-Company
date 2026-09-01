@@ -1,4 +1,4 @@
-.PHONY: start start-awake awake stop status last cycles monitor dashboard pause resume install uninstall team engine vllm-check help
+.PHONY: start start-awake awake stop status last cycles monitor dashboard pause resume install uninstall team engine vllm-check cineforge-ci-gate cineforge-health cineforge-waitlist cineforge-push-ready cineforge-stage cineforge-ship-pr cineforge-ship-pr-fork cineforge-handoff help
 
 UNAME_S := $(shell uname -s 2>/dev/null || echo Unknown)
 
@@ -56,7 +56,7 @@ monitor: ## Tail live logs (Ctrl+C to exit)
 	./scripts/core/monitor.sh
 
 dashboard: ## Start local dashboard server (Windows host or macOS host)
-	python3 dashboard/server.py
+	python3 dashboard/server.py --host 0.0.0.0 --port 8787
 
 # === Daemon (macOS launchd / Linux systemd --user) ===
 
@@ -108,6 +108,33 @@ team: ## Start selected engine interactive session (ENGINE=claude|codex|cursor|v
 		vllm|qwen|free) echo "vLLM is headless. Test with: make vllm-check"; exit 0 ;; \
 		*) echo "Unsupported ENGINE='$(ENGINE)'. Use cursor, codex, or vllm."; exit 1 ;; \
 	esac
+
+# === CineForge ===
+
+cineforge-ci-gate: ## Run CineForge compile-track CI gate (no Key/Omni)
+	./projects/cineforge/scripts/accept-ci-gate.sh
+
+cineforge-health: ## Show CineForge /api/health summary
+	./projects/cineforge/scripts/status-health.sh
+
+cineforge-waitlist: ## Run waitlist API smoke + print local stats
+	./projects/cineforge/scripts/accept-waitlist.sh
+	./projects/cineforge/scripts/waitlist-stats.sh
+
+cineforge-push-ready: ## Pre-push validation: secret scan + CI gate + health + waitlist
+	./projects/cineforge/scripts/accept-push-ready.sh
+
+cineforge-stage: ## Push-ready + git add full ship manifest (human still commits)
+	./projects/cineforge/scripts/stage-for-ship.sh
+
+cineforge-ship-pr: ## Push-ready + branch + commit + push + open PR (one command)
+	./projects/cineforge/scripts/open-ship-pr.sh
+
+cineforge-ship-pr-fork: ## Push-ready + fork + push + open PR to upstream (READ-only OK)
+	./projects/cineforge/scripts/open-ship-pr-fork.sh
+
+cineforge-handoff: ## Create/update GitHub handoff issue for human commit/push
+	REQUIRE_PASS=1 ./projects/cineforge/scripts/create-handoff-issue.sh
 
 # === Maintenance ===
 

@@ -145,7 +145,8 @@ memories/consensus.md.bak
 # Projects directory (show folder on GitHub, hide contents)
 projects/*
 !projects/.gitkeep
-!projects/snapog/
+!projects/cineforge/
+!projects/cineforge/**
 
 # Local/private outputs (do not publish)
 AGENTS.md

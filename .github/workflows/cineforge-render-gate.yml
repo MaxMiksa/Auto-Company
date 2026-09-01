@@ -1,0 +1,66 @@
+# 镜场 CineForge — 成片轨可选门禁（需 repository secret: SEEDANCE_API_KEY）
+# 手动触发；无 secret 时 job 跳过。不阻塞编译轨 CI。
+name: cineforge-render-gate
+
+on:
+  workflow_dispatch:
+    inputs:
+      max_polls:
+        description: "轮询次数上限（accept-first-render.sh MAX_POLLS）"
+        required: false
+        default: "45"
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cineforge-render-gate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  render-gate:
+    name: Render Track Gate (optional)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    if: ${{ secrets.SEEDANCE_API_KEY != '' }}
+    env:
+      CINEFORGE_BASE: http://127.0.0.1:3200
+      SEEDANCE_API_KEY: ${{ secrets.SEEDANCE_API_KEY }}
+      MAX_POLLS: ${{ inputs.max_polls }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: projects/cineforge/app/package-lock.json
+
+      - name: Install app dependencies
+        working-directory: projects/cineforge/app
+        run: npm ci
+
+      - name: Run first-render acceptance
+        run: ./projects/cineforge/scripts/accept-first-render.sh
+
+      - name: Upload render artifact on success
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cineforge-first-render-${{ github.run_id }}
+          path: projects/cineforge/app/.data/uploads/*.mp4
+          if-no-files-found: error
+          retention-days: 7
+
+  secret-missing:
+    name: Secret not configured
+    runs-on: ubuntu-latest
+    if: ${{ secrets.SEEDANCE_API_KEY == '' }}
+    steps:
+      - name: Skip — add SEEDANCE_API_KEY secret to enable
+        run: |
+          echo "SEEDANCE_API_KEY secret 未配置，成片轨 CI 已跳过。"
+          echo "配置后可在 Actions 手动运行 cineforge-render-gate。"
