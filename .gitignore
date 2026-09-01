@@ -146,8 +146,7 @@ memories/consensus.md.bak
 projects/*
 !projects/.gitkeep
 !projects/snapog/
-!projects/botwatch/
-!projects/devfocus/
+!projects/llms-txt-generator/
 
 # Local/private outputs (do not publish)
 AGENTS.md

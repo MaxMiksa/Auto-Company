@@ -1,0 +1,20 @@
+{
+  "title": "Config-Driven Repo",
+  "summary": "A repo whose llms.txt is fully controlled by config.",
+  "baseUrl": "https://example.com",
+  "sections": [
+    {
+      "name": "Docs",
+      "pages": [
+        { "path": "docs/page-a.md" },
+        { "path": "docs/page-b.md", "title": "Page B (Overridden Title)" }
+      ]
+    },
+    {
+      "name": "Optional",
+      "pages": [
+        { "url": "https://example.com/changelog", "title": "Changelog", "description": "Release history." }
+      ]
+    }
+  ]
+}
