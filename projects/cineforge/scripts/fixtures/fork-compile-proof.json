@@ -1,14 +1,20 @@
 {
   "schema": "jingchang.fork-compile-proof.v1",
   "cycle": 29,
-  "generated_at": "2026-09-01T00:00:00Z",
+  "generated_at": "2026-09-01T06:32:42Z",
   "fork": "guofu-ljg/Auto-Company",
   "branch": "ship/cineforge-compile-track",
   "workflow": "cineforge-compile-gate",
-  "head_oid": "pending",
-  "run": null,
-  "verdict": "NO_RUN",
-  "human_message": "placeholder — 跑 make cineforge-fork-compile-proof 刷新",
+  "head_oid": "fb08ad4cf221d5a639be6492c0f49a69f0cec79c",
+  "run": {
+    "id": 33477880329,
+    "url": "https://github.com/guofu-ljg/Auto-Company/actions/runs/33477880329",
+    "status": "completed",
+    "conclusion": "success",
+    "head_sha": "fb08ad4cf221d5a639be6492c0f49a69f0cec79c"
+  },
+  "verdict": "FORK_GREEN",
+  "human_message": "fork cineforge-compile-gate 已绿 — Approve workflow 零风险",
   "upstream_pr": "https://github.com/MaxMiksa/Auto-Company/pull/19",
   "maintainer_steps": [
     "https://github.com/MaxMiksa/Auto-Company/pull/19/checks → Approve and run workflows",

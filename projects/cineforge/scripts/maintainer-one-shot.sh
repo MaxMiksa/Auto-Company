@@ -101,7 +101,11 @@ echo
 
 # --- 6) deeplink ---
 echo "━━ 6/6 Maintainer 深链 ━━"
-OPEN="$OPEN" "${CF}/scripts/maintainer-merge-deeplink.sh" | sed 's/^/   /'
+if ! OPEN="$OPEN" "${CF}/scripts/maintainer-merge-deeplink.sh" 2>&1 | sed 's/^/   /'; then
+  echo "   WARN: deeplink 失败（可能 gh 瞬时错误）— 继续发 Issue 简报"
+  echo "   checks: ${CHECKS_URL}"
+  echo "   merge:  ${PR_URL}"
+fi
 echo
 
 # --- Issue 简报 ---

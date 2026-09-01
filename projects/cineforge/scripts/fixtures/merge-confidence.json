@@ -1,13 +1,13 @@
 {
   "schema": "jingchang.merge-confidence.v1",
-  "cycle": 28,
-  "generated_at": "2026-09-01T06:21:38Z",
+  "cycle": 29,
+  "generated_at": "2026-09-01T06:34:54Z",
   "pr": {
     "number": 19,
     "url": "https://github.com/MaxMiksa/Auto-Company/pull/19",
     "head_ref": "ship/cineforge-compile-track",
-    "head_oid": "3b693647b5dc9ff73686f415f14322a69af8de84",
-    "fork_head": "3b693647b5dc9ff73686f415f14322a69af8de84"
+    "head_oid": "fb08ad4cf221d5a639be6492c0f49a69f0cec79c",
+    "fork_head": "fb08ad4cf221d5a639be6492c0f49a69f0cec79c"
   },
   "evidence": {
     "push_ready": "PASS",
