@@ -1,4 +1,4 @@
-.PHONY: start start-awake awake stop status last cycles monitor dashboard pause resume install uninstall team engine vllm-check cineforge-ci-gate cineforge-health cineforge-waitlist cineforge-push-ready cineforge-stage cineforge-ship-pr cineforge-ship-pr-fork cineforge-verify-post-merge cineforge-pr-readiness cineforge-pre-merge-preflight cineforge-merge-escalate cineforge-merge-watch cineforge-merge-watch-daemon cineforge-daemon-health cineforge-unblock-card cineforge-pr-handoff cineforge-merge-nudge cineforge-post-merge-dry-run cineforge-render-preflight cineforge-blockers cineforge-handoff help
+.PHONY: start start-awake awake stop status last cycles monitor dashboard pause resume install uninstall team engine vllm-check cineforge-ci-gate cineforge-health cineforge-waitlist cineforge-push-ready cineforge-stage cineforge-ship-pr cineforge-ship-pr-fork cineforge-verify-post-merge cineforge-pr-readiness cineforge-pre-merge-preflight cineforge-merge-escalate cineforge-merge-watch cineforge-merge-watch-daemon cineforge-daemon-health cineforge-unblock-card cineforge-pr-handoff cineforge-merge-nudge cineforge-maintainer-deeplink cineforge-issue-nudge cineforge-post-merge-dry-run cineforge-render-preflight cineforge-blockers cineforge-handoff help
 
 UNAME_S := $(shell uname -s 2>/dev/null || echo Unknown)
 
@@ -162,6 +162,12 @@ cineforge-pr-handoff: ## Post merge handoff comment directly on PR #19
 
 cineforge-merge-nudge: ## Request review + @mention MaxMiksa (GitHub native notify)
 	./projects/cineforge/scripts/merge-nudge.sh
+
+cineforge-maintainer-deeplink: ## Print/open Checks + Merge URLs for maintainer (OPEN=1)
+	OPEN=$${OPEN:-0} ./projects/cineforge/scripts/maintainer-merge-deeplink.sh
+
+cineforge-issue-nudge: ## Issue #17 assign + label + @mention (alternate notify channel)
+	CYCLE=$${CYCLE:-25} ./projects/cineforge/scripts/issue-assign-nudge.sh
 
 cineforge-post-merge-dry-run: ## Verify post-merge automation ready (no merge required)
 	./projects/cineforge/scripts/post-merge-dry-run.sh

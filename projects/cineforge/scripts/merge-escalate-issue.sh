@@ -10,7 +10,7 @@ UPSTREAM="${UPSTREAM:-MaxMiksa/Auto-Company}"
 PR="${PR:-19}"
 ISSUE="${ISSUE:-17}"
 DRY_RUN="${DRY_RUN:-0}"
-CYCLE="${CYCLE:-24}"
+CYCLE="${CYCLE:-25}"
 
 die() {
   echo "FAIL: $*" >&2
@@ -66,14 +66,14 @@ else
 fi
 
 BODY=$(cat <<EOF
-## Cycle ${CYCLE} — Merge 升级（收敛规则 #5 pivot #8）
+## Cycle ${CYCLE} — Merge 升级（收敛规则 #5 pivot #9）
 
-PR #${PR} 已连续多轮等待 MaxMiksa merge。Agent 本轮 ship **GitHub 原生 merge-nudge**（非重复 handoff）。
+PR #${PR} 已连续多轮等待 MaxMiksa merge。Agent 本轮 ship **Issue 通知 + Maintainer 深链**（非重复 PR handoff）。
 
 ### 本轮新增
-- \`merge-nudge.sh\` + \`make cineforge-merge-nudge\` — @MaxMiksa + review/assign 请求
-- \`post-merge-dry-run.sh\` + \`make cineforge-post-merge-dry-run\` — merge 前自动化就绪检查
-- \`merge-watch.sh\` — merge 时 macOS 桌面通知 + 自动 verify
+- \`maintainer-merge-deeplink.sh\` + \`make cineforge-maintainer-deeplink\` — Checks/Merge 浏览器直达
+- \`issue-assign-nudge.sh\` + \`make cineforge-issue-nudge\` — Issue #17 assign + label + @mention
+- \`.github/CODEOWNERS\` — merge 后自动 review 请求
 
 ### 当前状态
 | 项 | 值 |
@@ -87,7 +87,8 @@ PR #${PR} 已连续多轮等待 MaxMiksa merge。Agent 本轮 ship **GitHub 原�
 ### 人类行动卡（一屏摘要）
 \`\`\`bash
 make cineforge-unblock-card
-make cineforge-merge-nudge          # GitHub @mention nudge
+make cineforge-maintainer-deeplink OPEN=1   # 浏览器直达 Checks
+make cineforge-issue-nudge                  # Issue 通知通道
 \`\`\`
 
 ### MaxMiksa — 2 步合并（约 2 分钟）

@@ -9,6 +9,7 @@ CINEFORGE_SHIP_PATHS=(
   ".github/workflows/cineforge-compile-gate.yml"
   ".github/workflows/cineforge-render-gate.yml"
   ".github/ISSUE_TEMPLATE/cineforge-ship-handoff.yml"
+  ".github/CODEOWNERS"
   "Makefile"
   ".gitignore"
 )

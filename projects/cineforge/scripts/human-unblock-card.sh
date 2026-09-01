@@ -62,7 +62,9 @@ cat <<EOF
     1. PR → Checks → Approve and run workflows
     2. cineforge-compile-gate 绿 → Merge pull request
 
-  Agent nudge:         make cineforge-merge-nudge
+  深链直达:            make cineforge-maintainer-deeplink OPEN=1
+  Agent nudge:         make cineforge-issue-nudge
+                       make cineforge-merge-nudge
 
 ━━ 成片轨（并行，约 5 分钟）━━
   状态: ${RENDER_SUMMARY}
