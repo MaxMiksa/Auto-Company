@@ -147,6 +147,7 @@ projects/*
 !projects/.gitkeep
 !projects/snapog/
 !projects/botwatch/
+!projects/devfocus/
 
 # Local/private outputs (do not publish)
 AGENTS.md
