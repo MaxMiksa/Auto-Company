@@ -66,14 +66,14 @@ else
 fi
 
 BODY=$(cat <<EOF
-## Cycle ${CYCLE} — Merge 升级（收敛规则 #5 pivot #7）
+## Cycle ${CYCLE} — Merge 升级（收敛规则 #5 pivot #8）
 
-PR #${PR} 已连续多轮等待 MaxMiksa merge。Agent 本轮 ship **daemon 容错修复 + PR 直接 handoff**，不再空转。
+PR #${PR} 已连续多轮等待 MaxMiksa merge。Agent 本轮 ship **GitHub 原生 merge-nudge**（非重复 handoff）。
 
-### 本轮修复
-- \`merge-watch.sh\`：\`gh\` 瞬时失败不再杀死 daemon（Cycle 23 根因）
-- \`daemon-health.sh\` + \`make cineforge-daemon-health\`：检测 stale pid + 自动重启
-- PR 直接 handoff 评论（比 Issue 更醒目）
+### 本轮新增
+- \`merge-nudge.sh\` + \`make cineforge-merge-nudge\` — @MaxMiksa + review/assign 请求
+- \`post-merge-dry-run.sh\` + \`make cineforge-post-merge-dry-run\` — merge 前自动化就绪检查
+- \`merge-watch.sh\` — merge 时 macOS 桌面通知 + 自动 verify
 
 ### 当前状态
 | 项 | 值 |
@@ -87,32 +87,19 @@ PR #${PR} 已连续多轮等待 MaxMiksa merge。Agent 本轮 ship **daemon 容�
 ### 人类行动卡（一屏摘要）
 \`\`\`bash
 make cineforge-unblock-card
+make cineforge-merge-nudge          # GitHub @mention nudge
 \`\`\`
 
 ### MaxMiksa — 2 步合并（约 2 分钟）
 1. [PR #${PR}](${PR_URL}) → **Checks** → **Approve and run workflows**（解除 \`action_required\`）
 2. 确认 \`cineforge-compile-gate\` 绿（或信任本地 push-ready PASS）→ **Merge pull request**
 
-### Merge 后自动验证（daemon 已修复 gh 容错）
+### Merge 后自动验证
 \`\`\`bash
-make cineforge-daemon-health              # 检查/重启 daemon
-make cineforge-merge-watch-daemon         # 后台等 merge → 自动 verify
-make cineforge-verify-post-merge          # 或手动一次性
+make cineforge-daemon-health
+make cineforge-post-merge-dry-run     # 就绪检查
+make cineforge-verify-post-merge      # 或 daemon 自动跑
 \`\`\`
-
-### Agent 预检命令
-\`\`\`bash
-make cineforge-pre-merge-preflight   # 合并前全量预检
-make cineforge-pr-readiness          # 合并就绪报告
-make cineforge-merge-escalate        # 本升级评论
-\`\`\`
-
-### 仍 blocked（需人类）
-- 成片轨：Seedance Key / Omni 恢复
-  \`\`\`bash
-  make cineforge-render-preflight   # 成片轨 blocker 明细
-  make cineforge-blockers           # 双轨仪表盘
-  \`\`\`
 
 ---
 _Auto Company Cycle ${CYCLE}_
