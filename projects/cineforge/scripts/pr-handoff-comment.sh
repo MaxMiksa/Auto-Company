@@ -8,7 +8,7 @@ ROOT="$(cd "$(dirname "$0")/../../.." && pwd)"
 CF="${ROOT}/projects/cineforge"
 UPSTREAM="${UPSTREAM:-MaxMiksa/Auto-Company}"
 PR="${PR:-19}"
-CYCLE="${CYCLE:-23}"
+CYCLE="${CYCLE:-24}"
 DRY_RUN="${DRY_RUN:-0}"
 
 die() {

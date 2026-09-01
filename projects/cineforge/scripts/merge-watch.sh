@@ -37,6 +37,11 @@ STATE=$(gh pr view "$PR" --repo "$UPSTREAM" --json state -q .state)
 
 if [[ "$STATE" == "MERGED" ]]; then
   echo "PR 已 merge — 直接跑 post-merge 验证"
+  notify_msg="镜场 PR #${PR} 已 merge — 正在跑 post-merge 验证"
+  echo "NOTIFY: $notify_msg"
+  if command -v osascript >/dev/null 2>&1; then
+    osascript -e "display notification \"${notify_msg}\" with title \"镜场 CineForge\" sound name \"Glass\"" 2>/dev/null || true
+  fi
   if [[ "$DRY_RUN" == "1" ]]; then
     echo "DRY_RUN: 将执行 verify-post-merge.sh"
     exit 0
@@ -71,6 +76,11 @@ while [[ "$elapsed" -le "$MAX_WAIT" ]]; do
   if [[ "$STATE" == "MERGED" ]]; then
     echo
     echo "== PR 已 merge @ $(date '+%H:%M:%S') =="
+    notify_msg="镜场 PR #${PR} 已 merge — 正在跑 post-merge 验证"
+    echo "NOTIFY: $notify_msg"
+    if command -v osascript >/dev/null 2>&1; then
+      osascript -e "display notification \"${notify_msg}\" with title \"镜场 CineForge\" sound name \"Glass\"" 2>/dev/null || true
+    fi
     if [[ "$DRY_RUN" == "1" ]]; then
       echo "DRY_RUN: 将执行 verify-post-merge.sh"
       exit 0

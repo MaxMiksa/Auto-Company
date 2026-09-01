@@ -1,4 +1,4 @@
-.PHONY: start start-awake awake stop status last cycles monitor dashboard pause resume install uninstall team engine vllm-check cineforge-ci-gate cineforge-health cineforge-waitlist cineforge-push-ready cineforge-stage cineforge-ship-pr cineforge-ship-pr-fork cineforge-verify-post-merge cineforge-pr-readiness cineforge-pre-merge-preflight cineforge-merge-escalate cineforge-merge-watch cineforge-merge-watch-daemon cineforge-daemon-health cineforge-unblock-card cineforge-pr-handoff cineforge-render-preflight cineforge-blockers cineforge-handoff help
+.PHONY: start start-awake awake stop status last cycles monitor dashboard pause resume install uninstall team engine vllm-check cineforge-ci-gate cineforge-health cineforge-waitlist cineforge-push-ready cineforge-stage cineforge-ship-pr cineforge-ship-pr-fork cineforge-verify-post-merge cineforge-pr-readiness cineforge-pre-merge-preflight cineforge-merge-escalate cineforge-merge-watch cineforge-merge-watch-daemon cineforge-daemon-health cineforge-unblock-card cineforge-pr-handoff cineforge-merge-nudge cineforge-post-merge-dry-run cineforge-render-preflight cineforge-blockers cineforge-handoff help
 
 UNAME_S := $(shell uname -s 2>/dev/null || echo Unknown)
 
@@ -159,6 +159,12 @@ cineforge-unblock-card: ## One-screen human unblock card (compile + render track
 
 cineforge-pr-handoff: ## Post merge handoff comment directly on PR #19
 	./projects/cineforge/scripts/pr-handoff-comment.sh
+
+cineforge-merge-nudge: ## Request review + @mention MaxMiksa (GitHub native notify)
+	./projects/cineforge/scripts/merge-nudge.sh
+
+cineforge-post-merge-dry-run: ## Verify post-merge automation ready (no merge required)
+	./projects/cineforge/scripts/post-merge-dry-run.sh
 
 cineforge-render-preflight: ## Render track readiness (Key/Omni, no mock)
 	./projects/cineforge/scripts/render-track-preflight.sh

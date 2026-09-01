@@ -10,7 +10,7 @@ UPSTREAM="${UPSTREAM:-MaxMiksa/Auto-Company}"
 PR="${PR:-19}"
 ISSUE="${ISSUE:-17}"
 DRY_RUN="${DRY_RUN:-0}"
-CYCLE="${CYCLE:-23}"
+CYCLE="${CYCLE:-24}"
 
 die() {
   echo "FAIL: $*" >&2
