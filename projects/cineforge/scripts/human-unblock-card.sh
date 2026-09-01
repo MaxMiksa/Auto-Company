@@ -63,6 +63,8 @@ cat <<EOF
     2. cineforge-compile-gate 绿 → Merge pull request
 
   深链直达:            make cineforge-maintainer-deeplink OPEN=1
+  证据包:              make cineforge-merge-confidence
+  桌面通知:            make cineforge-desktop-nudge DIALOG=1
   Agent nudge:         make cineforge-issue-nudge
                        make cineforge-merge-nudge
 

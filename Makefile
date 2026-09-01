@@ -1,4 +1,4 @@
-.PHONY: start start-awake awake stop status last cycles monitor dashboard pause resume install uninstall team engine vllm-check cineforge-ci-gate cineforge-health cineforge-waitlist cineforge-push-ready cineforge-stage cineforge-ship-pr cineforge-ship-pr-fork cineforge-verify-post-merge cineforge-pr-readiness cineforge-pre-merge-preflight cineforge-merge-escalate cineforge-merge-watch cineforge-merge-watch-daemon cineforge-daemon-health cineforge-unblock-card cineforge-pr-handoff cineforge-merge-nudge cineforge-maintainer-deeplink cineforge-issue-nudge cineforge-post-merge-dry-run cineforge-render-preflight cineforge-blockers cineforge-handoff help
+.PHONY: start start-awake awake stop status last cycles monitor dashboard pause resume install uninstall team engine vllm-check cineforge-ci-gate cineforge-health cineforge-waitlist cineforge-push-ready cineforge-stage cineforge-ship-pr cineforge-ship-pr-fork cineforge-verify-post-merge cineforge-pr-readiness cineforge-pre-merge-preflight cineforge-merge-escalate cineforge-merge-watch cineforge-merge-watch-daemon cineforge-daemon-health cineforge-unblock-card cineforge-pr-handoff cineforge-merge-nudge cineforge-maintainer-deeplink cineforge-issue-nudge cineforge-desktop-nudge cineforge-merge-confidence cineforge-post-merge-dry-run cineforge-render-preflight cineforge-blockers cineforge-handoff help
 
 UNAME_S := $(shell uname -s 2>/dev/null || echo Unknown)
 
@@ -167,7 +167,13 @@ cineforge-maintainer-deeplink: ## Print/open Checks + Merge URLs for maintainer 
 	OPEN=$${OPEN:-0} ./projects/cineforge/scripts/maintainer-merge-deeplink.sh
 
 cineforge-issue-nudge: ## Issue #17 assign + label + @mention (alternate notify channel)
-	CYCLE=$${CYCLE:-25} ./projects/cineforge/scripts/issue-assign-nudge.sh
+	CYCLE=$${CYCLE:-26} ./projects/cineforge/scripts/issue-assign-nudge.sh
+
+cineforge-desktop-nudge: ## macOS desktop notification (non-GitHub channel)
+	CYCLE=$${CYCLE:-26} DIALOG=$${DIALOG:-0} SOUND=$${SOUND:-1} ./projects/cineforge/scripts/maintainer-desktop-nudge.sh
+
+cineforge-merge-confidence: ## Generate merge confidence artifact + post to Issue #17
+	CYCLE=$${CYCLE:-26} POST=$${POST:-1} ./projects/cineforge/scripts/merge-confidence-pack.sh
 
 cineforge-post-merge-dry-run: ## Verify post-merge automation ready (no merge required)
 	./projects/cineforge/scripts/post-merge-dry-run.sh
