@@ -1,4 +1,4 @@
-.PHONY: start start-awake awake stop status last cycles monitor dashboard pause resume install uninstall team engine vllm-check cineforge-ci-gate cineforge-health cineforge-waitlist cineforge-push-ready cineforge-stage cineforge-ship-pr cineforge-ship-pr-fork cineforge-verify-post-merge cineforge-pr-readiness cineforge-handoff help
+.PHONY: start start-awake awake stop status last cycles monitor dashboard pause resume install uninstall team engine vllm-check cineforge-ci-gate cineforge-health cineforge-waitlist cineforge-push-ready cineforge-stage cineforge-ship-pr cineforge-ship-pr-fork cineforge-verify-post-merge cineforge-pr-readiness cineforge-pre-merge-preflight cineforge-merge-escalate cineforge-handoff help
 
 UNAME_S := $(shell uname -s 2>/dev/null || echo Unknown)
 
@@ -138,6 +138,12 @@ cineforge-verify-post-merge: ## After PR merge, poll cineforge-compile-gate on m
 
 cineforge-pr-readiness: ## PR merge readiness report (workflow approval + push-ready)
 	./projects/cineforge/scripts/pr-merge-readiness.sh
+
+cineforge-pre-merge-preflight: ## Full pre-merge validation (push-ready + PR + workflow status)
+	./projects/cineforge/scripts/pre-merge-preflight.sh
+
+cineforge-merge-escalate: ## Post merge-blocker escalation to Issue #17
+	./projects/cineforge/scripts/merge-escalate-issue.sh
 
 cineforge-handoff: ## Create/update GitHub handoff issue for human commit/push
 	REQUIRE_PASS=1 ./projects/cineforge/scripts/create-handoff-issue.sh
