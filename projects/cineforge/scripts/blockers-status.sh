@@ -99,7 +99,8 @@ echo "Agent 命令:"
 echo "  make cineforge-blockers          # 本仪表盘"
 echo "  make cineforge-pre-merge-preflight"
 echo "  make cineforge-render-preflight"
-echo "  make cineforge-merge-watch       # 后台等 merge"
+echo "  make cineforge-merge-watch-daemon  # 后台等 merge（macOS 兼容）"
+echo "  make cineforge-unblock-card        # 人类行动卡"
 
 # 编译轨 blocked 时 exit 2；否则跟成片轨
 if [[ "$COMPILE_BLOCKED" == "yes" ]]; then

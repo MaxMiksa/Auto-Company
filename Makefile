@@ -1,4 +1,4 @@
-.PHONY: start start-awake awake stop status last cycles monitor dashboard pause resume install uninstall team engine vllm-check cineforge-ci-gate cineforge-health cineforge-waitlist cineforge-push-ready cineforge-stage cineforge-ship-pr cineforge-ship-pr-fork cineforge-verify-post-merge cineforge-pr-readiness cineforge-pre-merge-preflight cineforge-merge-escalate cineforge-merge-watch cineforge-pr-handoff cineforge-render-preflight cineforge-blockers cineforge-handoff help
+.PHONY: start start-awake awake stop status last cycles monitor dashboard pause resume install uninstall team engine vllm-check cineforge-ci-gate cineforge-health cineforge-waitlist cineforge-push-ready cineforge-stage cineforge-ship-pr cineforge-ship-pr-fork cineforge-verify-post-merge cineforge-pr-readiness cineforge-pre-merge-preflight cineforge-merge-escalate cineforge-merge-watch cineforge-merge-watch-daemon cineforge-unblock-card cineforge-pr-handoff cineforge-render-preflight cineforge-blockers cineforge-handoff help
 
 UNAME_S := $(shell uname -s 2>/dev/null || echo Unknown)
 
@@ -147,6 +147,12 @@ cineforge-merge-escalate: ## Post merge-blocker escalation to Issue #17
 
 cineforge-merge-watch: ## Poll PR until merged, then run verify-post-merge
 	./projects/cineforge/scripts/merge-watch.sh
+
+cineforge-merge-watch-daemon: ## Background merge-watch (macOS/Linux, no setsid)
+	./projects/cineforge/scripts/merge-watch-daemon.sh
+
+cineforge-unblock-card: ## One-screen human unblock card (compile + render tracks)
+	./projects/cineforge/scripts/human-unblock-card.sh
 
 cineforge-pr-handoff: ## Post merge handoff comment directly on PR #19
 	./projects/cineforge/scripts/pr-handoff-comment.sh

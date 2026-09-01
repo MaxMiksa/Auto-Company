@@ -10,7 +10,7 @@ UPSTREAM="${UPSTREAM:-MaxMiksa/Auto-Company}"
 PR="${PR:-19}"
 ISSUE="${ISSUE:-17}"
 DRY_RUN="${DRY_RUN:-0}"
-CYCLE="${CYCLE:-21}"
+CYCLE="${CYCLE:-22}"
 
 die() {
   echo "FAIL: $*" >&2
@@ -58,6 +58,13 @@ else:
 
 FORK_HEAD=$(git -C "$ROOT" rev-parse --short HEAD 2>/dev/null || echo "unknown")
 
+RENDER_STATUS="unknown"
+if "${CF}/scripts/render-track-preflight.sh" >/dev/null 2>&1; then
+  RENDER_STATUS="READY"
+else
+  RENDER_STATUS="BLOCKED (Key/Omni)"
+fi
+
 BODY=$(cat <<EOF
 ## Cycle ${CYCLE} — Merge 升级（收敛规则 #5 pivot）
 
@@ -70,14 +77,21 @@ PR #${PR} 已连续多轮等待 MaxMiksa merge。Agent 本轮 ship **pre-merge p
 | 分支 | \`${PR_HEAD}\` @ \`${FORK_HEAD}\` |
 | 本地 push-ready | **${PUSH_READY}** |
 | compile gate | \`${WF_STATUS}\` |
+| 成片轨 | \`${RENDER_STATUS}\` |
+
+### 人类行动卡（一屏摘要）
+\`\`\`bash
+make cineforge-unblock-card
+\`\`\`
 
 ### MaxMiksa — 2 步合并（约 2 分钟）
 1. [PR #${PR}](${PR_URL}) → **Checks** → **Approve and run workflows**（解除 \`action_required\`）
 2. 确认 \`cineforge-compile-gate\` 绿（或信任本地 push-ready PASS）→ **Merge pull request**
 
-### Merge 后立即跑
+### Merge 后自动验证（daemon 已修复 macOS setsid 问题）
 \`\`\`bash
-make cineforge-verify-post-merge
+make cineforge-merge-watch-daemon      # 后台等 merge → 自动 verify
+make cineforge-verify-post-merge       # 或手动一次性
 \`\`\`
 
 ### Agent 预检命令
