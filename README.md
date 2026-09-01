@@ -353,7 +353,9 @@ Suggested rollout: start with `make start` (foreground), then move to daemon mod
 - [ralph-claude-code](https://github.com/frankbria/ralph-claude-code) - exit signal interception
 - [claude-auto-resume](https://github.com/terryso/claude-auto-resume) - usage-limit resume pattern
 
-## Deploy
+## One-Click Deploy
+
+You can one-click deploy Auto-Company on a VPS and customize with AI agents on RepoCloud
 
 [![Deploy on RepoCloud](https://d16t0pc4846x52.cloudfront.net/deploylobe.svg)](https://repocloud.io/details/auto-company/)
 
