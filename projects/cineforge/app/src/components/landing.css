@@ -1,0 +1,540 @@
+/* 胶片光门剧场 — 落地页氛围层 */
+
+.landing {
+  --paper: #14110d;
+  --gate-glow: rgba(212, 162, 76, 0.18);
+  --gate-core: rgba(255, 220, 160, 0.06);
+  --bokeh: rgba(212, 162, 76, 0.12);
+  --grain: rgba(235, 228, 212, 0.04);
+  --vignette: rgba(0, 0, 0, 0.55);
+  --cta-ink: #0c0b09;
+  --surface-lift: rgba(22, 19, 15, 0.45);
+  --space-1: 8px;
+  --space-2: 16px;
+  --space-3: 24px;
+  --space-4: 40px;
+  --space-5: 64px;
+  --space-6: 96px;
+  --ease-cinema: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur-enter: 900ms;
+  --dur-gate: 6s;
+
+  position: relative;
+  min-height: 100vh;
+  color: var(--ink);
+  background: var(--bg);
+  overflow-x: hidden;
+  font-family: var(--font-body), "Noto Sans SC", "PingFang SC", sans-serif;
+}
+
+.landing-atmosphere {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse 70% 55% at 50% 58%, var(--gate-core) 0%, transparent 62%),
+    radial-gradient(ellipse 90% 70% at 50% 100%, var(--gate-glow) 0%, transparent 55%),
+    var(--bg);
+  animation: landing-gate-breathe var(--dur-enter) var(--ease-cinema) both;
+}
+
+.landing-gate {
+  position: absolute;
+  inset: 12px;
+  border: 1px solid rgba(212, 162, 76, 0.28);
+  box-shadow:
+    inset 0 0 0 1px rgba(212, 162, 76, 0.08),
+    inset 0 0 80px rgba(0, 0, 0, 0.35);
+  animation: landing-gate-frame var(--dur-enter) var(--ease-cinema) both;
+}
+
+.landing-gate::before,
+.landing-gate::after {
+  content: "";
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border-color: rgba(212, 162, 76, 0.45);
+  border-style: solid;
+}
+
+.landing-gate::before {
+  top: -1px;
+  left: -1px;
+  border-width: 2px 0 0 2px;
+}
+
+.landing-gate::after {
+  right: -1px;
+  bottom: -1px;
+  border-width: 0 2px 2px 0;
+}
+
+.landing-bokeh {
+  position: absolute;
+  border-radius: 50%;
+  background: var(--bokeh);
+  filter: blur(56px);
+  will-change: transform;
+  animation: landing-bokeh-drift var(--dur-gate) ease-in-out infinite alternate;
+}
+
+.landing-bokeh-a {
+  width: 280px;
+  height: 280px;
+  top: 12%;
+  left: 8%;
+  filter: blur(70px);
+  animation-duration: 9s;
+}
+
+.landing-bokeh-b {
+  width: 360px;
+  height: 360px;
+  top: 38%;
+  right: 6%;
+  filter: blur(80px);
+  animation-duration: 11s;
+  animation-delay: -2s;
+}
+
+.landing-bokeh-c {
+  width: 200px;
+  height: 200px;
+  bottom: 18%;
+  left: 28%;
+  filter: blur(48px);
+  animation-duration: 8s;
+  animation-delay: -4s;
+}
+
+.landing-bokeh-d {
+  width: 160px;
+  height: 160px;
+  top: 22%;
+  left: 52%;
+  background: rgba(255, 220, 160, 0.08);
+  filter: blur(44px);
+  animation-duration: 10s;
+  animation-delay: -1s;
+}
+
+.landing-bokeh-e {
+  width: 220px;
+  height: 220px;
+  bottom: 8%;
+  right: 22%;
+  filter: blur(60px);
+  animation-duration: 7.5s;
+  animation-delay: -3s;
+}
+
+.landing-grain {
+  position: absolute;
+  inset: 0;
+  opacity: 0.35;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E");
+  background-size: 180px 180px;
+}
+
+.landing-vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 75% 70% at 50% 45%, transparent 35%, var(--vignette) 100%);
+}
+
+.landing-hero,
+.landing-section,
+.landing-footer {
+  position: relative;
+  z-index: 1;
+}
+
+.landing-hero {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-5) var(--space-3) var(--space-4);
+  text-align: center;
+}
+
+.landing-hero-inner {
+  max-width: 720px;
+  width: 100%;
+}
+
+.landing-brand {
+  margin: 0 0 var(--space-4);
+  font-family: var(--font-display), "Noto Serif SC", "Songti SC", serif;
+  font-size: clamp(3.4rem, 12vw, 6.5rem);
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  line-height: 1.05;
+  color: var(--ink);
+}
+
+.landing-brand-en {
+  display: block;
+  margin-top: var(--space-2);
+  font-size: clamp(0.75rem, 2vw, 0.95rem);
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--mute);
+  opacity: 0.55;
+  font-weight: 400;
+}
+
+.landing-headline {
+  margin: 0 0 var(--space-2);
+  font-family: var(--font-body), "Noto Sans SC", sans-serif;
+  font-size: clamp(1.15rem, 2.8vw, 1.55rem);
+  font-weight: 500;
+  line-height: 1.45;
+  letter-spacing: 0.02em;
+  color: var(--ink);
+}
+
+.landing-sub {
+  margin: 0 auto var(--space-4);
+  max-width: 34em;
+  font-size: clamp(0.95rem, 2vw, 1.05rem);
+  line-height: 1.65;
+  color: var(--mute);
+}
+
+.landing-cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  justify-content: center;
+  margin-bottom: var(--space-3);
+}
+
+.landing-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 12px 22px;
+  border-radius: 4px;
+  font-size: 0.95rem;
+  letter-spacing: 0.04em;
+  transition: filter 180ms var(--ease-cinema), background 180ms var(--ease-cinema),
+    border-color 180ms var(--ease-cinema);
+}
+
+.landing-btn-primary {
+  background: var(--gold);
+  color: var(--cta-ink);
+  border: 1px solid var(--gold);
+}
+
+.landing-btn-primary:hover {
+  filter: brightness(1.08);
+}
+
+.landing-btn-primary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  filter: none;
+}
+
+.landing-btn-secondary {
+  background: transparent;
+  color: var(--gold);
+  border: 1px solid var(--gold-dim);
+}
+
+.landing-btn-secondary:hover {
+  border-color: var(--gold);
+  background: rgba(212, 162, 76, 0.06);
+}
+
+.landing-status {
+  margin: 0 auto;
+  max-width: 36em;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  color: var(--mute);
+  opacity: 0.9;
+  transition: color 480ms var(--ease-cinema), opacity 480ms var(--ease-cinema);
+}
+
+.landing-status-live {
+  color: #c9b48a;
+  opacity: 1;
+}
+
+.landing-status-compile {
+  color: #a8c4b8;
+  opacity: 1;
+}
+
+.landing-channel-badge {
+  display: inline-block;
+  margin-left: 0.65em;
+  padding: 0.15em 0.55em;
+  font-size: 0.58em;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  vertical-align: middle;
+  border: 1px solid;
+  border-radius: 2px;
+}
+
+.landing-channel-badge.compile {
+  color: #8fb5a6;
+  border-color: rgba(143, 181, 166, 0.45);
+  background: rgba(143, 181, 166, 0.08);
+}
+
+.landing-channel-badge.live {
+  color: #c9b48a;
+  border-color: rgba(201, 180, 138, 0.5);
+  background: rgba(201, 180, 138, 0.1);
+}
+
+.landing-compile .landing-gate {
+  border-color: rgba(143, 181, 166, 0.32);
+  box-shadow:
+    inset 0 0 0 1px rgba(143, 181, 166, 0.1),
+    inset 0 0 80px rgba(0, 0, 0, 0.35);
+}
+
+.landing-compile .landing-atmosphere {
+  background:
+    radial-gradient(ellipse 70% 55% at 50% 58%, rgba(160, 200, 185, 0.05) 0%, transparent 62%),
+    radial-gradient(ellipse 90% 70% at 50% 100%, rgba(143, 181, 166, 0.14) 0%, transparent 55%),
+    var(--bg);
+}
+
+.landing-live .landing-gate {
+  border-color: rgba(212, 162, 76, 0.42);
+  box-shadow:
+    inset 0 0 0 1px rgba(212, 162, 76, 0.12),
+    inset 0 0 90px rgba(0, 0, 0, 0.32),
+    0 0 48px rgba(212, 162, 76, 0.08);
+  transition: border-color 700ms var(--ease-cinema), box-shadow 700ms var(--ease-cinema);
+}
+
+.landing-live .landing-atmosphere {
+  background:
+    radial-gradient(ellipse 70% 55% at 50% 58%, rgba(255, 220, 160, 0.09) 0%, transparent 62%),
+    radial-gradient(ellipse 90% 70% at 50% 100%, rgba(212, 162, 76, 0.22) 0%, transparent 55%),
+    var(--bg);
+  transition: background 700ms var(--ease-cinema);
+}
+
+.landing-status-short {
+  display: none;
+}
+
+.landing-section {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: var(--space-5) var(--space-3);
+  border-top: 1px solid rgba(212, 162, 76, 0.14);
+}
+
+.landing-section h2 {
+  margin: 0 0 var(--space-2);
+  font-family: var(--font-display), "Noto Serif SC", "Songti SC", serif;
+  font-size: clamp(1.35rem, 3vw, 1.75rem);
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  color: var(--ink);
+}
+
+.landing-section p {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.75;
+  color: var(--mute);
+}
+
+.landing-waitlist {
+  background: var(--surface-lift);
+}
+
+.landing-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+  text-align: left;
+}
+
+.landing-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: var(--mute);
+  letter-spacing: 0.04em;
+}
+
+.landing-form input,
+.landing-form textarea {
+  background: rgba(12, 11, 9, 0.65);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 11px 12px;
+  color: var(--ink);
+  font-size: 0.95rem;
+}
+
+.landing-form input:focus,
+.landing-form textarea:focus {
+  outline: none;
+  border-color: var(--gold-dim);
+}
+
+.landing-form .landing-btn {
+  align-self: flex-start;
+  margin-top: var(--space-1);
+}
+
+.landing-form-msg {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.landing-form-msg.ok {
+  color: var(--ok);
+}
+
+.landing-form-msg.err {
+  color: var(--danger);
+}
+
+.landing-footer {
+  padding: var(--space-4) var(--space-3) var(--space-5);
+  text-align: center;
+  border-top: 1px solid rgba(212, 162, 76, 0.14);
+}
+
+.landing-footer p {
+  margin: 0 auto;
+  max-width: 40em;
+  font-size: 0.8rem;
+  line-height: 1.65;
+  color: var(--mute);
+  opacity: 0.85;
+}
+
+/* 错峰显现 */
+.reveal {
+  opacity: 0;
+  transform: translateY(8px);
+  animation: landing-reveal var(--dur-enter) var(--ease-cinema) forwards;
+}
+
+.reveal-1 {
+  animation-delay: 80ms;
+}
+.reveal-2 {
+  animation-delay: 180ms;
+}
+.reveal-3 {
+  animation-delay: 280ms;
+}
+.reveal-4 {
+  animation-delay: 380ms;
+}
+.reveal-5 {
+  animation-delay: 480ms;
+}
+
+@keyframes landing-gate-breathe {
+  from {
+    filter: brightness(0.72);
+  }
+  to {
+    filter: brightness(1);
+  }
+}
+
+@keyframes landing-gate-frame {
+  from {
+    inset: 28px;
+    opacity: 0.35;
+    box-shadow:
+      inset 0 0 0 1px rgba(212, 162, 76, 0.04),
+      inset 0 0 120px rgba(0, 0, 0, 0.55);
+  }
+  to {
+    inset: 12px;
+    opacity: 1;
+    box-shadow:
+      inset 0 0 0 1px rgba(212, 162, 76, 0.08),
+      inset 0 0 80px rgba(0, 0, 0, 0.35);
+  }
+}
+
+@keyframes landing-reveal {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes landing-bokeh-drift {
+  from {
+    transform: translate(0, 0);
+  }
+  to {
+    transform: translate(18px, -14px);
+  }
+}
+
+@media (max-width: 640px) {
+  .landing-status-full {
+    display: none;
+  }
+  .landing-status-short {
+    display: inline;
+  }
+  .landing-hero {
+    padding-top: var(--space-6);
+    padding-bottom: var(--space-5);
+  }
+  .landing-gate {
+    inset: 8px;
+  }
+  .landing-cta {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .landing-btn {
+    width: 100%;
+  }
+  .landing-form .landing-btn {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-atmosphere,
+  .landing-gate,
+  .reveal,
+  .landing-bokeh {
+    animation: none !important;
+  }
+  .reveal {
+    opacity: 1;
+    transform: none;
+  }
+  .landing-atmosphere {
+    filter: none;
+  }
+  .landing-gate {
+    inset: 12px;
+    opacity: 1;
+  }
+}

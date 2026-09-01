@@ -1,0 +1,23 @@
+{
+  "schema": "jingchang.merge-confidence.v1",
+  "cycle": 29,
+  "generated_at": "2026-09-01T06:34:54Z",
+  "pr": {
+    "number": 19,
+    "url": "https://github.com/MaxMiksa/Auto-Company/pull/19",
+    "head_ref": "ship/cineforge-compile-track",
+    "head_oid": "fb08ad4cf221d5a639be6492c0f49a69f0cec79c",
+    "fork_head": "fb08ad4cf221d5a639be6492c0f49a69f0cec79c"
+  },
+  "evidence": {
+    "push_ready": "PASS",
+    "post_merge_dry_run": "READY",
+    "merge_watch_daemon": "alive"
+  },
+  "verdict": "SAFE_TO_MERGE",
+  "human_blocker": "workflow action_required — Approve and run workflows",
+  "maintainer_steps": [
+    "https://github.com/MaxMiksa/Auto-Company/pull/19/checks → Approve and run workflows",
+    "https://github.com/MaxMiksa/Auto-Company/pull/19 → Merge pull request"
+  ]
+}

@@ -1,0 +1,65 @@
+# 镜场 CineForge — 编译轨 CI 门禁（无需 Seedance Key / Omni）
+# 覆盖：fixture 校验 → compile pipeline → export schema → Playwright round-trip E2E
+name: cineforge-compile-gate
+
+on:
+  pull_request:
+    paths:
+      - "projects/cineforge/**"
+      - ".github/workflows/cineforge-compile-gate.yml"
+  push:
+    branches:
+      - main
+      - "ship/**"
+    paths:
+      - "projects/cineforge/**"
+      - ".github/workflows/cineforge-compile-gate.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cineforge-compile-gate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  compile-gate:
+    name: Compile Track Gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      CINEFORGE_BASE: http://127.0.0.1:3200
+      CI: "true"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: projects/cineforge/app/package-lock.json
+
+      - name: Install app dependencies
+        working-directory: projects/cineforge/app
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        working-directory: projects/cineforge/app
+        run: npx playwright install --with-deps chromium
+
+      - name: Run compile-track CI gate
+        run: ./projects/cineforge/scripts/accept-ci-gate.sh
+
+      - name: Upload Playwright artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cineforge-playwright-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            projects/cineforge/app/test-results/**
+            projects/cineforge/app/playwright-report/**
+          if-no-files-found: ignore
+          retention-days: 7

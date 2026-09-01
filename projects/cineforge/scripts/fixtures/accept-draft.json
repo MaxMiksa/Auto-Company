@@ -1,0 +1,54 @@
+{
+  "intent": "夜班快结束时，林晚把缺口杯推给周叔，只说一句「还开着就好」。不要煽情，不要换场。",
+  "mode": "ref2va",
+  "scene": {
+    "sceneId": "scene-rain-store",
+    "name": "雨夜便利店",
+    "space": "狭长便利店收银台，冷柜在右，收银台靠左窗",
+    "timeOfDay": "夜",
+    "weather": "室内干燥",
+    "light": "冷白灯管为主，窗外霓虹辅光",
+    "props": "缺口搪瓷杯",
+    "immutable": "同一收银台，不换场，不改招牌"
+  },
+  "task": {
+    "goal": "完成一次克制的交杯与一句对白",
+    "success": "看见杯子换手、听见林晚台词",
+    "forbidden": "禁止换场、换主角、改脸、改声线归属",
+    "durationSec": 8,
+    "aspectRatio": "16:9"
+  },
+  "blocking": [
+    {
+      "characterId": "char-lin",
+      "stance": "收银台外侧，靠近玻璃门",
+      "bodyFacing": "朝向柜台",
+      "eyeline": "周叔眼睛",
+      "inOut": "已在画内",
+      "depth": "中",
+      "camera": "过肩中景，从门向柜台缓慢推近",
+      "lensFeel": "35mm，保留货架进深"
+    },
+    {
+      "characterId": "char-zhou",
+      "stance": "柜台内侧，双手撑台沿",
+      "bodyFacing": "朝向门口来人",
+      "eyeline": "林晚眉疤再落到杯子",
+      "inOut": "已在画内",
+      "depth": "中",
+      "camera": "过肩中景",
+      "lensFeel": "35mm"
+    }
+  ],
+  "objectIds": ["obj-kettle"],
+  "lines": [
+    {
+      "id": "l1",
+      "characterId": "char-lin",
+      "voiceId": "voice-lin",
+      "text": "还开着就好。",
+      "emotion": "压着的松一口气",
+      "atSec": 5
+    }
+  ]
+}

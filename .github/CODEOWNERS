@@ -1,0 +1,5 @@
+# 镜场 CineForge — merge 后自动请求 maintainer review
+# Fork PR 在 upstream 合并此文件前无法触发；merge 后生效。
+
+/projects/cineforge/                    @MaxMiksa
+/.github/workflows/cineforge-*.yml      @MaxMiksa

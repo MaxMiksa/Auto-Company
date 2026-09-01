@@ -1,0 +1,43 @@
+name: CineForge Ship Handoff
+description: Trackable checklist for committing CineForge compile-track CI to main
+title: "[CineForge] 人类入库 handoff"
+labels: ["cineforge-handoff"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 镜场 CineForge — 入库 Handoff
+
+        本地验收通过后，按清单 commit/push 以激活 GitHub `cineforge-compile-gate`。
+
+        **一键生成完整清单（推荐）：**
+        ```bash
+        make cineforge-handoff
+        ```
+
+  - type: checkboxes
+    id: validation
+    attributes:
+      label: 入库前验收
+      options:
+        - label: "`make cineforge-push-ready` PASS"
+        - label: "待入库路径不含 `.data` / `node_modules` / `.next` / `.env*`"
+        - label: "无硬编码 API Key 泄漏"
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: post_push
+    attributes:
+      label: Push 后验证
+      options:
+        - label: "GitHub Actions `cineforge-compile-gate` 绿"
+        - label: "（可选）配置 `SEEDANCE_API_KEY` 后手动触发 `cineforge-render-gate`"
+    validations:
+      required: false
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: 备注（Omni / Key 状态、阻塞项）
+      placeholder: compile-only 态 / Omni 503 / Seedance Key 待开通…
