@@ -1,4 +1,4 @@
-.PHONY: start start-awake awake stop status last cycles monitor dashboard pause resume install uninstall team engine vllm-check cineforge-ci-gate cineforge-health cineforge-waitlist cineforge-push-ready cineforge-stage cineforge-ship-pr cineforge-ship-pr-fork cineforge-verify-post-merge cineforge-pr-readiness cineforge-pre-merge-preflight cineforge-merge-escalate cineforge-merge-watch cineforge-pr-handoff cineforge-handoff help
+.PHONY: start start-awake awake stop status last cycles monitor dashboard pause resume install uninstall team engine vllm-check cineforge-ci-gate cineforge-health cineforge-waitlist cineforge-push-ready cineforge-stage cineforge-ship-pr cineforge-ship-pr-fork cineforge-verify-post-merge cineforge-pr-readiness cineforge-pre-merge-preflight cineforge-merge-escalate cineforge-merge-watch cineforge-pr-handoff cineforge-render-preflight cineforge-blockers cineforge-handoff help
 
 UNAME_S := $(shell uname -s 2>/dev/null || echo Unknown)
 
@@ -150,6 +150,12 @@ cineforge-merge-watch: ## Poll PR until merged, then run verify-post-merge
 
 cineforge-pr-handoff: ## Post merge handoff comment directly on PR #19
 	./projects/cineforge/scripts/pr-handoff-comment.sh
+
+cineforge-render-preflight: ## Render track readiness (Key/Omni, no mock)
+	./projects/cineforge/scripts/render-track-preflight.sh
+
+cineforge-blockers: ## Dual-track blocker dashboard (compile PR + render)
+	./projects/cineforge/scripts/blockers-status.sh
 
 cineforge-handoff: ## Create/update GitHub handoff issue for human commit/push
 	REQUIRE_PASS=1 ./projects/cineforge/scripts/create-handoff-issue.sh

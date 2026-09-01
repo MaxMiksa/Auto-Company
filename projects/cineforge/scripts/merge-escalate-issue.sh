@@ -10,7 +10,7 @@ UPSTREAM="${UPSTREAM:-MaxMiksa/Auto-Company}"
 PR="${PR:-19}"
 ISSUE="${ISSUE:-17}"
 DRY_RUN="${DRY_RUN:-0}"
-CYCLE="${CYCLE:-20}"
+CYCLE="${CYCLE:-21}"
 
 die() {
   echo "FAIL: $*" >&2
@@ -89,6 +89,10 @@ make cineforge-merge-escalate        # 本升级评论
 
 ### 仍 blocked（需人类）
 - 成片轨：Seedance Key / Omni 恢复
+  \`\`\`bash
+  make cineforge-render-preflight   # 成片轨 blocker 明细
+  make cineforge-blockers           # 双轨仪表盘
+  \`\`\`
 
 ---
 _Auto Company Cycle ${CYCLE}_
