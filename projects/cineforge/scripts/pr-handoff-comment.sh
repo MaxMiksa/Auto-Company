@@ -1,16 +1,15 @@
 #!/usr/bin/env bash
-# 镜场 CineForge — 向 Issue #17 发布 merge blocker 升级（收敛规则 #5 pivot）
-# 用法：./projects/cineforge/scripts/merge-escalate-issue.sh
-# 可选：UPSTREAM=MaxMiksa/Auto-Company PR=19 ISSUE=17 DRY_RUN=1
+# 镜场 CineForge — 在 PR 上发布 MaxMiksa 合并 handoff（比 Issue 更醒目）
+# 用法：./projects/cineforge/scripts/pr-handoff-comment.sh
+# 可选：UPSTREAM=MaxMiksa/Auto-Company PR=19 CYCLE=20 DRY_RUN=1
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../../.." && pwd)"
 CF="${ROOT}/projects/cineforge"
 UPSTREAM="${UPSTREAM:-MaxMiksa/Auto-Company}"
 PR="${PR:-19}"
-ISSUE="${ISSUE:-17}"
-DRY_RUN="${DRY_RUN:-0}"
 CYCLE="${CYCLE:-20}"
+DRY_RUN="${DRY_RUN:-0}"
 
 die() {
   echo "FAIL: $*" >&2
@@ -27,12 +26,17 @@ need_cmd python3
 cd "$ROOT"
 
 PR_JSON=$(gh pr view "$PR" --repo "$UPSTREAM" --json \
-  state,mergeable,title,url,headRefName,updatedAt 2>/dev/null) \
+  state,mergeable,title,url,headRefName 2>/dev/null) \
   || die "无法读取 PR #$PR"
 
 PR_STATE=$(echo "$PR_JSON" | python3 -c "import json,sys; print(json.load(sys.stdin)['state'])")
 PR_URL=$(echo "$PR_JSON" | python3 -c "import json,sys; print(json.load(sys.stdin)['url'])")
 PR_HEAD=$(echo "$PR_JSON" | python3 -c "import json,sys; print(json.load(sys.stdin)['headRefName'])")
+
+if [[ "$PR_STATE" == "MERGED" ]]; then
+  echo "PR 已 merge — 改跑: make cineforge-verify-post-merge"
+  exit 0
+fi
 
 PUSH_READY="unknown"
 if "${CF}/scripts/accept-push-ready.sh" >/dev/null 2>&1; then
@@ -43,7 +47,7 @@ fi
 
 WORKFLOW="${WORKFLOW:-cineforge-compile-gate}"
 RUNS=$(gh run list --repo "$UPSTREAM" --workflow="$WORKFLOW" --limit=3 \
-  --json conclusion,headBranch,url 2>/dev/null || echo "[]")
+  --json conclusion,headBranch 2>/dev/null || echo "[]")
 
 WF_STATUS=$(echo "$RUNS" | python3 -c "
 import json, sys
@@ -59,43 +63,35 @@ else:
 FORK_HEAD=$(git -C "$ROOT" rev-parse --short HEAD 2>/dev/null || echo "unknown")
 
 BODY=$(cat <<EOF
-## Cycle ${CYCLE} — Merge 升级（收敛规则 #5 pivot）
+## 🤖 Cycle ${CYCLE} — Merge Handoff（Auto Company）
 
-PR #${PR} 已连续多轮等待 MaxMiksa merge。Agent 本轮 ship **pre-merge preflight + 升级通知**，不再空转。
-
-### 当前状态
-| 项 | 值 |
-|---|---|
-| PR | [#${PR}](${PR_URL}) \`${PR_STATE}\` |
-| 分支 | \`${PR_HEAD}\` @ \`${FORK_HEAD}\` |
-| 本地 push-ready | **${PUSH_READY}** |
-| compile gate | \`${WF_STATUS}\` |
+本地 **push-ready: ${PUSH_READY}** · compile gate: \`${WF_STATUS}\` · 分支 \`${PR_HEAD}\` @ \`${FORK_HEAD}\`
 
 ### MaxMiksa — 2 步合并（约 2 分钟）
-1. [PR #${PR}](${PR_URL}) → **Checks** → **Approve and run workflows**（解除 \`action_required\`）
+
+1. 本 PR → **Checks** → **Approve and run workflows**（解除 \`action_required\`）
 2. 确认 \`cineforge-compile-gate\` 绿（或信任本地 push-ready PASS）→ **Merge pull request**
 
 ### Merge 后立即跑
+
 \`\`\`bash
 make cineforge-verify-post-merge
 \`\`\`
 
-### Agent 预检命令
+或后台自动等待 merge 并验证：
+
 \`\`\`bash
-make cineforge-pre-merge-preflight   # 合并前全量预检
-make cineforge-pr-readiness          # 合并就绪报告
-make cineforge-merge-escalate        # 本升级评论
+make cineforge-merge-watch
 \`\`\`
 
-### 仍 blocked（需人类）
-- 成片轨：Seedance Key / Omni 恢复
+追踪 Issue: https://github.com/${UPSTREAM}/issues/17
 
 ---
 _Auto Company Cycle ${CYCLE}_
 EOF
 )
 
-echo "== Merge 升级 Issue #${ISSUE} =="
+echo "== PR Handoff Comment =="
 echo "PR=$PR state=$PR_STATE push-ready=$PUSH_READY workflow=$WF_STATUS"
 echo
 
@@ -105,13 +101,8 @@ if [[ "$DRY_RUN" == "1" ]]; then
   exit 0
 fi
 
-if [[ "$PR_STATE" == "MERGED" ]]; then
-  echo "PR 已 merge — 跳过升级，改跑: make cineforge-verify-post-merge"
-  exit 0
-fi
+gh pr comment "$PR" --repo "$UPSTREAM" --body "$BODY"
 
-gh issue comment "$ISSUE" --repo "$UPSTREAM" --body "$BODY"
-
-echo "OK: 已评论 Issue #${ISSUE}"
-echo "https://github.com/${UPSTREAM}/issues/${ISSUE}"
+echo "OK: 已评论 PR #$PR"
+echo "$PR_URL"
 exit 0
