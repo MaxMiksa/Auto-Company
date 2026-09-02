@@ -1,5 +1,9 @@
 # llms-txt-generator
 
+[![Test](https://github.com/thedarkbeet/llms-txt-generator/actions/workflows/test.yml/badge.svg)](https://github.com/thedarkbeet/llms-txt-generator/actions/workflows/test.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
+[![Node >=18](https://img.shields.io/badge/node-%3E%3D18-brightgreen.svg)](#)
+
 Generate a spec-compliant [`llms.txt`](https://llmstxt.org) manifest from the
 markdown files already in your repo. Works as a CLI or a GitHub Action.
 Zero API keys, zero servers, zero npm dependencies.
@@ -68,6 +72,34 @@ get a reasonable `llms.txt` with no setup. If you want more control, add a
   understands flat `key: value` pairs, which is what the vast majority of
   real-world frontmatter looks like. Nested YAML structures in frontmatter
   are ignored, not crashed on.
+
+## How this differs from crawler-based generators
+
+Most other `llms.txt` generators (Firecrawl's, Apify's actor, and similar)
+work by crawling your *live, deployed* site — fetching rendered HTML pages
+over HTTP and summarizing them. That approach works on any website
+regardless of source, but it means: your site has to be live and public
+first, each run costs a crawl (often through a paid API), and the output
+tracks whatever HTML got rendered, not your actual source of truth.
+
+This tool reads your **markdown source directly from the filesystem** —
+no HTTP, no rendering, no crawl budget. Consequences of that trade-off:
+
+- It only works for repos that keep docs as markdown (which describes most
+  documentation sites, READMEs, and static-site generators). It can't
+  summarize a site with no markdown source, e.g. a CMS-backed blog with no
+  local files.
+- It runs in CI before you've deployed anything — `llms.txt` can be
+  generated and committed in the same PR that adds the docs.
+- It's exact, not summarized: titles/descriptions come from frontmatter or
+  the file's own H1 and first paragraph, not an LLM's guess at what the
+  page is about.
+- It's free and offline: no API key, no per-crawl cost, no network call at
+  all beyond `git clone`.
+
+If your content lives outside markdown (a database-backed CMS, for
+example), a crawler-based tool is the right choice. If your docs are
+already markdown files in your repo, this tool skips the crawl entirely.
 
 ## Install / run as a CLI
 
