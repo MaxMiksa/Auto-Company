@@ -7,10 +7,11 @@
 Powered by **Agentic Workflows**, this project orchestrates 14 **Autonomous AI Agents**, each modeled after world-class experts in their domain.
 They ideate products, make decisions, write code, deploy, and market - without human intervention.
 
-Powered by Claude Code (default) and [Codex CLI](https://www.npmjs.com/package/@openai/codex) on macOS + Windows/WSL, with a local dashboard on both hosts.
+Powered by Claude Code (default) and [Codex CLI](https://www.npmjs.com/package/@openai/codex) on macOS, Linux and Windows/WSL, with a local dashboard on every host.
 
 [![macOS](https://img.shields.io/badge/Platform-macOS-blue?logo=apple&logoColor=white)](#dependencies)
 [![Windows WSL](https://img.shields.io/badge/Platform-Windows%20WSL-blue?logo=windows&logoColor=white)](#windows-wsl-quick-start)
+[![Linux](https://img.shields.io/badge/Platform-Linux-blue?logo=linux&logoColor=white)](#linux-quick-start)
 [![Codex CLI](https://img.shields.io/badge/Engine-Codex%20CLI-orange?logo=data:image/svg%2Bxml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMjQgMjQiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgZmlsbD0id2hpdGUiPjxwYXRoIGQ9Ik0yMi4yODE5IDkuODIxMWE1Ljk4NDcgNS45ODQ3IDAgMCAwLS41MTU3LTQuOTEwOCA2LjA0NjIgNi4wNDYyIDAgMCAwLTYuNTA5OC0yLjlBNi4wNjUxIDYuMDY1MSAwIDAgMCA0Ljk4MDcgNC4xODE4YTUuOTg0NyA1Ljk4NDcgMCAwIDAtMy45OTc3IDIuOSA2LjA0NjIgNi4wNDYyIDAgMCAwIC43NDI3IDcuMDk2NiA1Ljk4IDUuOTggMCAwIDAgLjUxMSA0LjkxMDcgNi4wNTEgNi4wNTEgMCAwIDAgNi41MTQ2IDIuOTAwMUE2LjA2NTEgNi4wNjUxIDAgMCAwIDE5LjAyIDE5LjgxODJhNS45ODQ3IDUuOTg0NyAwIDAgMCAzLjk5NzctMi45MDAxIDYuMDQ2MiA2LjA0NjIgMCAwIDAtLjczNTgtNy4wOTdaTTguNzQ5IDYuNzU3OGE0LjQxMTggNC40MTE4IDAgMCAxIDcuMzY3MyAxLjE0NDQgNC4zOTg2IDQuMzk4NiAwIDAgMS0uMjkyOCA0LjIyODVsLTQuNzA3LTIuNzIxNHYtMi42NTE1Wk02LjUzMzIgMTQuNjU0YTQuNDExOCA0LjQxMTggMCAwIDEtMS4xMjkzLTcuMzcgNC4zOTg2IDQuMzk4NiAwIDAgMSA0LjEzNTItMS4zOWwyLjM2MTUgNC4wOTN2NS4zMDJMNi41MzMyIDE0LjY1NFptLTEuODQ4LTEuNTcyYTQuNDExOCA0LjQxMTggMCAwIDEgNi4yMzgtNi4yMjYgNC4zOTg2IDQuMzk4NiAwIDAgMSAzLjg0MzMgMi44MzhsLTQuNzA3IDIuNzIxdjUuMzAxNUw0LjY4NTIgMTMuMDgyWm0xMC41NjU4IDQuMTZhNC40MTE4IDQuNDExOCAwIDAgMS03LjM2NzMtMS4xNDQzIDQuMzk4NiA0LjM5ODYgMCAwIDEgLjI5MjgtNC4yMjg1bDQuNzA3IDIuNzIxNHYyLjY1MTRabTIuMjE1OC03Ljg5NmE0LjQxMTggNC40MTE4IDAgMCAxIDEuMTI5MyA3LjM3IDQuMzk4NiA0LjM5ODYgMCAwIDEtNC4xMzUyIDEuMzlsLTIuMzYxNS00LjA5M1Y5LjE4Nmw1LjM2NzQgMi4xODZabTEuODQ4IDEuNTcyYTQuNDExOCA0LjQxMTggMCAwIDEtNi4yMzggNi4yMjYgNC4zOTg2IDQuMzk4NiAwIDAgMS0zLjg0MzMtMi44MzhsNC43MDctMi43MjFWOS4xODZsNS4zNzQgMy4wOTZaTTEyIDE2LjUxNmE0LjQxMTggNC40MTE4IDAgMCAxLTQuNDExOC00LjQxMThjMC0yLjQzNDggMS45NzctNC40MTE4IDQuNDExOC00LjQxMThzNC40MTE4IDEuOTc3IDQuNDExOCA0LjQxMTgtMS45NzcgNC40MTE4LTQuNDExOCA0LjQxMThaIi8+PC9zdmc+&logoColor=white)](https://www.npmjs.com/package/@openai/codex)
 [![Claude Code](https://img.shields.io/badge/Engine-Claude%20Code-purple?logo=anthropic&logoColor=white)](#dependencies)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green?logo=opensourceinitiative&logoColor=white)](https://opensource.org/licenses/MIT)
@@ -46,6 +47,7 @@ Each cycle is an independent CLI call. `memories/consensus.md` is the only cross
 ## Where To Start (By Platform)
 
 - Windows users: start from [Windows (WSL) Quick Start](#windows-wsl-quick-start), then read [`docs/windows-setup.md`](docs/windows-setup.md)
+- Linux users: start from [Linux Quick Start](#linux-quick-start), then read [`docs/linux-setup.md`](docs/linux-setup.md)
 - macOS users: start from [macOS Quick Start](#macos-quick-start), then see [Command Quick Reference](#command-quick-reference-by-platform)
 
 ## Team Lineup (14 Agents)
@@ -90,6 +92,38 @@ make start
 make install
 ```
 
+## Linux Quick Start
+
+```bash
+# Prerequisites:
+# - A Linux host with systemd (native, not WSL)
+# - Codex CLI or Claude Code installed and authenticated
+# - jq, make and python3 available
+# - Available model quota
+
+# Clone
+git clone https://github.com/MaxMiksa/Auto-Company.git
+cd auto-company
+
+# Foreground run (live output)
+make start
+
+# Or install the systemd --user daemon (auto-restart on crash)
+make install
+systemctl --user start auto-company.service
+
+# Local dashboard
+make dashboard          # http://127.0.0.1:8787
+```
+
+Pin the engine binary in `.auto-loop.env` before running as a daemon, since `systemd --user` does not inherit your interactive `PATH`:
+
+```bash
+echo 'CLAUDE_BIN=/home/YOUR_USER/.local/bin/claude' >> .auto-loop.env
+```
+
+For daemon persistence after logout, sleep prevention, and troubleshooting, see [`docs/linux-setup.md`](docs/linux-setup.md).
+
 ## Windows (WSL) Quick Start
 
 ```powershell
@@ -120,7 +154,7 @@ For monitoring, dashboard, and autostart commands, see [`docs/windows-setup.md`]
 
 ## Command Quick Reference (By Platform)
 
-| Task | macOS / WSL (Terminal) | Windows (PowerShell) |
+| Task | Linux / macOS / WSL (Terminal) | Windows (PowerShell) |
 |---|---|---|
 | Start | `make start` | `.\scripts\windows\start-win.ps1` |
 | Status | `make status` | `.\scripts\windows\status-win.ps1` |
@@ -134,20 +168,22 @@ For monitoring, dashboard, and autostart commands, see [`docs/windows-setup.md`]
 | Pause daemon | `make pause` | `wsl -d Ubuntu --cd <repo_wsl_path> bash -lc 'make pause'` |
 | Resume daemon | `make resume` | `wsl -d Ubuntu --cd <repo_wsl_path> bash -lc 'make resume'` |
 
-### macOS Sleep Prevention (macOS Only)
+### Sleep Prevention (macOS and Linux)
 
-macOS screen lock usually does not kill processes, but system sleep can pause work. For long runs:
+A screen lock usually does not kill processes, but system sleep can pause work. For long runs:
 
 ```bash
 make start-awake   # Start loop and keep system awake until loop exits
 
 # If loop is already running (after make start):
-make awake         # Attach caffeinate to PID in .auto-loop.pid
+make awake         # Hold a sleep lock against the PID in .auto-loop.pid
 ```
 
 Notes:
-- Both commands depend on built-in `caffeinate`
-- `make awake` exits automatically when target PID exits
+- On macOS both commands use the built-in `caffeinate`
+- On Linux both use `systemd-inhibit`, and the dashboard's Guardian card reports the lock
+- `make awake` exits automatically when the target PID exits
+- Under WSL the Windows host power policy still applies; keep the host from sleeping
 
 ## Architecture & Technology Stack (5-Layer Architecture)
 
@@ -275,15 +311,16 @@ auto-company/
 ├── PROMPT.md              # Per-cycle execution prompt (convergence rules)
 ├── Makefile               # Common command entry
 ├── INDEX.md               # script index + responsibility table
-├── dashboard/             # Local web status dashboard (macOS: make dashboard, Windows: dashboard-win.ps1)
+├── dashboard/             # Local web status dashboard (Linux/macOS: make dashboard, Windows: dashboard-win.ps1)
 ├── scripts/
 │   ├── core/              # Core loop and control scripts (auto-loop/monitor/stop)
 │   ├── windows/           # Windows entry/guardian/autostart scripts
-│   ├── wsl/               # WSL systemd --user daemon scripts
+│   ├── wsl/               # systemd --user daemon scripts (WSL and native Linux)
+│   ├── linux/             # Linux dashboard status and start/stop scripts
 │   └── macos/             # macOS launchd daemon scripts
 ├── memories/
 │   └── consensus.md       # Shared handoff memory across cycles
-├── docs/                  # Agent outputs (14 folders + Windows guide)
+├── docs/                  # Agent outputs (14 folders + Windows and Linux guides)
 ├── projects/              # Workspace for generated projects
 ├── logs/                  # Loop logs
 └── .claude/
@@ -297,7 +334,7 @@ auto-company/
 | Dependency | Notes |
 |------|------|
 | **Claude Code / Codex CLI** | Supported CLI engines (default: Claude) |
-| **macOS or Windows + WSL2 (Ubuntu)** | macOS uses launchd; Windows uses WSL execution core |
+| **macOS, Linux, or Windows + WSL2 (Ubuntu)** | macOS uses launchd; Linux and WSL use `systemd --user`; Windows drives WSL as the execution core |
 | `node` | Runtime for npm-installed CLI tools |
 | `make` | Start/stop/monitor command entry (WSL/macOS) |
 | `jq` | Recommended for log processing |

@@ -183,6 +183,7 @@ docs/*
 docs/*/*
 !docs/*/.gitkeep
 !docs/windows-setup.md
+!docs/linux-setup.md
 # Ignore all memories (keep folder marker only)
 memories/*
 !memories/.gitkeep

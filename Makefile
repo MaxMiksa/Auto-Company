@@ -8,25 +8,28 @@ ENGINE ?= claude
 start: ## Start the auto-loop in foreground
 	./scripts/core/auto-loop.sh
 
-start-awake: ## Start loop and prevent macOS sleep while running
+start-awake: ## Start loop and prevent host sleep while running
 ifeq ($(UNAME_S),Darwin)
 	caffeinate -d -i -s $(MAKE) start
 else
-	@echo "start-awake is macOS-only (requires caffeinate)."
-	@echo "Use 'make start' on Linux/WSL."
-	@exit 1
+	@command -v systemd-inhibit >/dev/null 2>&1 || (echo "systemd-inhibit not found. Use 'make start'."; exit 1)
+	systemd-inhibit --what=sleep:idle --who=auto-company --why="Auto Company loop running" $(MAKE) start
 endif
 
-awake: ## Prevent macOS sleep while current loop PID is running
+awake: ## Prevent host sleep while current loop PID is running
 ifeq ($(UNAME_S),Darwin)
 	@test -f .auto-loop.pid || (echo "No .auto-loop.pid found. Run 'make start' first."; exit 1)
 	@pid=$$(cat .auto-loop.pid); \
 	echo "Keeping Mac awake while PID $$pid is running..."; \
 	caffeinate -d -i -s -w $$pid
 else
-	@echo "awake is macOS-only (requires caffeinate)."
-	@echo "WSL usually inherits Windows power policy; keep your host from sleeping if needed."
-	@exit 1
+	@test -f .auto-loop.pid || (echo "No .auto-loop.pid found. Run 'make start' first."; exit 1)
+	@command -v systemd-inhibit >/dev/null 2>&1 || (echo "systemd-inhibit not found (needs systemd)."; exit 1)
+	@pid=$$(cat .auto-loop.pid); \
+	echo "Holding a sleep inhibitor while PID $$pid is running..."; \
+	systemd-inhibit --what=sleep:idle --who=auto-company --why="Auto Company loop running" \
+		tail --pid=$$pid -f /dev/null
+	@echo "Note: under WSL the Windows host power policy still applies."
 endif
 
 stop: ## Stop the loop gracefully
@@ -46,7 +49,7 @@ cycles: ## Show cycle history summary
 monitor: ## Tail live logs (Ctrl+C to exit)
 	./scripts/core/monitor.sh
 
-dashboard: ## Start local dashboard server (Windows host or macOS host)
+dashboard: ## Start local dashboard server (Linux, macOS, or Windows host)
 	python3 dashboard/server.py
 
 # === Daemon (macOS launchd / Linux systemd --user) ===
