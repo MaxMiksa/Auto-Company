@@ -181,14 +181,125 @@ Raw=Loop not running
             dashboard_server.MACOS_STATUS_SCRIPT, timeout=90
         )
 
+    def test_linux_active_enabled_running_maps_correctly(self) -> None:
+        raw = """=== Guardian ===
+State=running
+Pid=111
+Raw=systemd-inhibit holding sleep lock for PID 456
+
+=== Daemon ===
+State=active
+MainPID=222
+ActiveState=active
+SubState=running
+Raw=systemd --user unit active
+
+=== Autostart ===
+State=configured
+Raw=unit enabled at login (linger=yes)
+
+=== Loop ===
+State=running
+Pid=456
+DaemonSummary=ACTIVE (systemd --user auto-company.service)
+Raw=Loop running
+
+=== State File ===
+ENGINE=claude
+MODEL=sonnet
+LOOP_COUNT=9
+ERROR_COUNT=0
+LAST_RUN=2026-03-14 12:00:00
+"""
+        parsed = dashboard_server.parse_status_output(raw, system_name="Linux")
+        self.assertEqual(parsed["guardian"]["state"], "running")
+        self.assertEqual(parsed["guardian"]["pid"], 111)
+        self.assertEqual(parsed["daemon"]["state"], "active")
+        self.assertEqual(parsed["daemon"]["mainPid"], 222)
+        self.assertEqual(parsed["daemon"]["subState"], "running")
+        self.assertEqual(parsed["autostart"]["state"], "configured")
+        self.assertEqual(parsed["loop"]["state"], "running")
+        self.assertEqual(parsed["loop"]["pid"], 456)
+        self.assertEqual(
+            parsed["loop"]["daemonSummary"],
+            "ACTIVE (systemd --user auto-company.service)",
+        )
+        self.assertEqual(parsed["loop"]["engine"], "claude")
+        self.assertEqual(parsed["loop"]["loopCount"], "9")
+
+    def test_linux_not_installed_and_unsupported_guardian_map_correctly(self) -> None:
+        raw = """=== Guardian ===
+State=unsupported
+Raw=Sleep guard: not applicable (no caffeinate on Linux)
+
+=== Daemon ===
+State=not_installed
+Raw=systemd user unit not installed
+
+=== Autostart ===
+State=not_configured
+Raw=unit not enabled (absent)
+
+=== Loop ===
+State=stopped
+DaemonSummary=NOT INSTALLED (systemd --user auto-company.service)
+Raw=Loop not running
+"""
+        parsed = dashboard_server.parse_status_output(raw, system_name="Linux")
+        self.assertEqual(parsed["guardian"]["state"], "unsupported")
+        self.assertEqual(parsed["daemon"]["state"], "not_installed")
+        self.assertEqual(parsed["autostart"]["state"], "not_configured")
+        self.assertEqual(parsed["loop"]["state"], "stopped")
+        self.assertIsNone(parsed["loop"]["pid"])
+
+    def test_linux_start_uses_shell_runner(self) -> None:
+        with mock.patch.object(
+            dashboard_server,
+            "run_shell_script",
+            return_value={"ok": True, "exitCode": 0, "elapsedMs": 1, "output": ""},
+        ) as runner:
+            result = dashboard_server.run_dashboard_action("start", system_name="Linux")
+        self.assertTrue(result["ok"])
+        runner.assert_called_once_with(
+            dashboard_server.LINUX_START_SCRIPT, args=None, timeout=120
+        )
+
+    def test_linux_stop_uses_shell_runner_without_pause_daemon(self) -> None:
+        with mock.patch.object(
+            dashboard_server,
+            "run_shell_script",
+            return_value={"ok": True, "exitCode": 0, "elapsedMs": 1, "output": ""},
+        ) as runner:
+            result = dashboard_server.run_dashboard_action("stop", system_name="Linux")
+        self.assertTrue(result["ok"])
+        runner.assert_called_once_with(
+            dashboard_server.LINUX_STOP_SCRIPT, args=None, timeout=120
+        )
+
+    def test_linux_refresh_uses_linux_status_script(self) -> None:
+        with mock.patch.object(
+            dashboard_server,
+            "run_shell_script",
+            return_value={"ok": True, "exitCode": 0, "elapsedMs": 1, "output": ""},
+        ) as runner:
+            dashboard_server.run_dashboard_action("refresh", system_name="Linux")
+        runner.assert_called_once_with(
+            dashboard_server.LINUX_STATUS_SCRIPT, timeout=90
+        )
+
     def test_invalid_log_tail_lines_fall_back_to_default(self) -> None:
         self.assertEqual(dashboard_server.parse_positive_int("abc", default=180), 180)
         self.assertEqual(dashboard_server.parse_positive_int("-5", default=180), 180)
         self.assertEqual(dashboard_server.parse_positive_int("12", default=180), 12)
 
     def test_unsupported_host_raises(self) -> None:
-        with self.assertRaisesRegex(RuntimeError, "only supports Windows hosts"):
-            dashboard_server.detect_host_kind("Linux")
+        with self.assertRaisesRegex(RuntimeError, "Unsupported platform: FreeBSD"):
+            dashboard_server.detect_host_kind("FreeBSD")
+
+    def test_linux_host_is_detected(self) -> None:
+        self.assertEqual(
+            dashboard_server.detect_host_kind("Linux"), dashboard_server.LINUX_HOST
+        )
 
 
 if __name__ == "__main__":

@@ -1,68 +1,68 @@
 ---
 name: team
-description: "根据任务快速组建临时 AI Agent 团队协作。自动从 .claude/agents/ 中选择最合适的成员组队。"
-argument-hint: "[任务描述]"
+description: "Quickly assemble a temporary AI agent team for a task. Automatically selects the best-fitting members from .claude/agents/."
+argument-hint: "[task description]"
 disable-model-invocation: true
 ---
 
-# 组建临时团队
+# Assemble a Temporary Team
 
-你需要根据下面的任务，从公司现有的 AI Agent 中挑选最合适的成员，组建一支临时团队来协作完成。
+Based on the task below, pick the best-fitting members from the company's existing AI agents and assemble a temporary team to complete it collaboratively.
 
-## 任务
+## Task
 
 $ARGUMENTS
 
-## 可用 Agent
+## Available Agents
 
-以下是公司所有 Agent，定义在 `.claude/agents/` 目录下：
+These are all of the company's agents, defined under `.claude/agents/`:
 
-| Agent | 文件 | 职能 |
-|-------|------|------|
-| CEO | `ceo-bezos` | 战略决策、商业模式、PR/FAQ、优先级 |
-| CTO | `cto-vogels` | 技术架构、技术选型、系统设计 |
-| 逆向思考 | `critic-munger` | 质疑决策、识别致命缺陷、Pre-Mortem、防止集体幻觉 |
-| 产品设计 | `product-norman` | 产品定义、用户体验、可用性 |
-| UI 设计 | `ui-duarte` | 视觉设计、设计系统、配色排版 |
-| 交互设计 | `interaction-cooper` | 用户流程、Persona、交互模式 |
-| 全栈开发 | `fullstack-dhh` | 代码实现、技术方案、开发 |
-| QA | `qa-bach` | 测试策略、质量把控、Bug 分析 |
-| DevOps/SRE | `devops-hightower` | 部署流水线、CI/CD、基础设施、监控运维 |
-| 营销 | `marketing-godin` | 定位、品牌、获客、内容 |
-| 运营 | `operations-pg` | 用户运营、增长、社区、PMF |
-| 销售 | `sales-ross` | 销售漏斗、转化策略 |
-| CFO | `cfo-campbell` | 定价策略、财务模型、成本控制、单位经济 |
-| 调研分析 | `research-thompson` | 市场调研、竞品分析、行业趋势、机会发现 |
+| Agent | File | Function |
+|-------|------|----------|
+| CEO | `ceo-bezos` | Strategic decisions, business model, PR/FAQ, prioritization |
+| CTO | `cto-vogels` | Technical architecture, technology selection, system design |
+| Inversion | `critic-munger` | Challenge decisions, find fatal flaws, pre-mortems, prevent groupthink |
+| Product Design | `product-norman` | Product definition, user experience, usability |
+| UI Design | `ui-duarte` | Visual design, design systems, color and typography |
+| Interaction Design | `interaction-cooper` | User flows, personas, interaction patterns |
+| Full-Stack | `fullstack-dhh` | Implementation, technical approach, development |
+| QA | `qa-bach` | Test strategy, quality control, bug analysis |
+| DevOps/SRE | `devops-hightower` | Deployment pipelines, CI/CD, infrastructure, monitoring and operations |
+| Marketing | `marketing-godin` | Positioning, brand, acquisition, content |
+| Operations | `operations-pg` | User operations, growth, community, PMF |
+| Sales | `sales-ross` | Sales funnel, conversion strategy |
+| CFO | `cfo-campbell` | Pricing strategy, financial models, cost control, unit economics |
+| Research Analyst | `research-thompson` | Market research, competitive analysis, industry trends, opportunity discovery |
 
-## 执行步骤
+## Execution Steps
 
-### 1. 分析任务，选择成员
+### 1. Analyze the task and select members
 
-根据任务性质，选择 2-5 个最相关的 Agent 作为团队成员。选人原则：
-- **只选必要的**：不是人越多越好，精准匹配任务需求
-- **考虑协作链**：如果任务涉及从设计到开发，确保链路上的关键角色都在
-- **避免冗余**：职能重叠的不要同时选
+Based on the nature of the task, select the 2-5 most relevant agents as team members. Selection principles:
+- **Only pick who is necessary**: more people is not better; match the task's actual needs
+- **Consider the collaboration chain**: if the task spans design through development, make sure the key roles along that chain are present
+- **Avoid redundancy**: do not select agents whose functions overlap
 
-向创始人简要说明你选了谁、为什么选他们，然后立即开始组建。
+Briefly tell the founder who you picked and why, then start assembling immediately.
 
-### 2. 组建 Agent Team
+### 2. Assemble the Agent Team
 
-使用 Agent Teams 功能组建临时团队：
-- 创建团队，team_name 基于任务简短命名（英文、kebab-case）
-- 为每个成员创建具体的任务（TaskCreate），任务描述要包含足够上下文
-- 用 Task 工具 spawn 每个 teammate，`subagent_type` 选 `general-purpose`，在 prompt 中注入对应 agent 文件的完整内容作为角色设定
-- spawn teammate 时通过 prompt 告知：你的角色设定、要完成的任务、产出文档存放在 `docs/<role>/` 目录下
+Use the Agent Teams feature to assemble a temporary team:
+- Create the team, naming `team_name` after the task (English, kebab-case)
+- Create a concrete task for each member (TaskCreate), with enough context in the task description
+- Spawn each teammate with the Task tool, `subagent_type` set to `general-purpose`, injecting the full content of the corresponding agent file into the prompt as the role definition
+- When spawning a teammate, tell it in the prompt: your role definition, the task to complete, and that output documents go under `docs/<role>/`
 
-### 3. 协调与汇总
+### 3. Coordinate and consolidate
 
-- 作为 team lead 协调各成员工作
-- 收集各成员产出，汇总为统一的结论或方案
-- 如有分歧，列出各方观点供创始人决策
-- 完成后清理团队资源
+- As team lead, coordinate the members' work
+- Collect each member's output and consolidate it into a single conclusion or proposal
+- If there is disagreement, list each side's position for the founder to decide
+- Clean up team resources when finished
 
-## 注意事项
+## Notes
 
-- 所有沟通使用中文，技术术语保留英文
-- 每个成员产出的文档按约定存放在 `docs/<role>/` 下
-- 团队是临时的，任务完成后即解散
-- 创始人是最终决策者，Agent 提供建议但不替代决策
+- All communication is in English; keep technical terms in their standard English form
+- Each member's documents go under `docs/<role>/` as agreed
+- The team is temporary and disbands as soon as the task is complete
+- The founder is the final decision maker; agents advise but do not decide
