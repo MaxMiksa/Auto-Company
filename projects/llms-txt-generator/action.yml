@@ -1,0 +1,61 @@
+name: 'llms.txt Generator'
+description: 'Generate a spec-compliant llms.txt manifest from your markdown docs. No API keys, no server.'
+author: 'Auto Company'
+branding:
+  icon: 'file-text'
+  color: 'gray-dark'
+
+inputs:
+  dir:
+    description: 'Directory to scan for markdown files (relative to the repo root).'
+    required: false
+    default: '.'
+  output:
+    description: 'Path (relative to "dir") to write llms.txt to.'
+    required: false
+    default: 'llms.txt'
+  config:
+    description: 'Path to a .llms-txt.config.json file. Defaults to <dir>/.llms-txt.config.json if it exists.'
+    required: false
+    default: ''
+  base-url:
+    description: 'Base URL to prefix generated links with, e.g. https://example.com. Without it, links are relative file paths.'
+    required: false
+    default: ''
+  title:
+    description: 'Override the top-level "# Title" heading.'
+    required: false
+    default: ''
+  summary:
+    description: 'Override the one-line "> summary" blockquote.'
+    required: false
+    default: ''
+  check:
+    description: 'If "true", fail the step when llms.txt would change instead of writing it. Useful as a CI drift check.'
+    required: false
+    default: 'false'
+
+outputs:
+  path:
+    description: 'Absolute path to the generated (or checked) llms.txt file.'
+    value: ${{ steps.generate.outputs.path }}
+
+runs:
+  using: 'composite'
+  steps:
+    - id: generate
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        ARGS=(--dir "${{ inputs.dir }}" --output "${{ inputs.output }}")
+        [ -n "${{ inputs.config }}" ] && ARGS+=(--config "${{ inputs.config }}")
+        [ -n "${{ inputs.base-url }}" ] && ARGS+=(--base-url "${{ inputs.base-url }}")
+        [ -n "${{ inputs.title }}" ] && ARGS+=(--title "${{ inputs.title }}")
+        [ -n "${{ inputs.summary }}" ] && ARGS+=(--summary "${{ inputs.summary }}")
+        [ "${{ inputs.check }}" = "true" ] && ARGS+=(--check)
+
+        node "${{ github.action_path }}/bin/llms-txt-gen.js" "${ARGS[@]}"
+
+        RESOLVED_DIR="$(cd "${{ inputs.dir }}" && pwd)"
+        echo "path=${RESOLVED_DIR}/${{ inputs.output }}" >> "$GITHUB_OUTPUT"

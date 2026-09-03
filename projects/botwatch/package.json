@@ -1,0 +1,27 @@
+{
+  "name": "botwatch",
+  "version": "0.1.0",
+  "private": true,
+  "description": "AI-crawler analytics and allow/block control for Cloudflare Free/Pro sites.",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "db:create": "wrangler d1 create botwatch",
+    "db:migrate:local": "wrangler d1 execute botwatch --local --file=./migrations/0001_init.sql",
+    "db:migrate:remote": "wrangler d1 execute botwatch --remote --file=./migrations/0001_init.sql",
+    "secret:dashboard-token": "wrangler secret put DASHBOARD_TOKEN"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260901.1",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.11",
+    "wrangler": "^4.127.1"
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "name": "llms-txt-generator",
+  "version": "0.1.0",
+  "description": "Generate a spec-compliant llms.txt manifest from your markdown docs — as a CLI or a GitHub Action. Zero dependencies, zero API keys.",
+  "license": "MIT",
+  "bin": {
+    "llms-txt-gen": "bin/llms-txt-gen.js"
+  },
+  "main": "src/generate.js",
+  "files": [
+    "bin",
+    "src",
+    "action.yml",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "test": "node --test",
+    "start": "node bin/llms-txt-gen.js"
+  },
+  "keywords": [
+    "llms.txt",
+    "llm",
+    "ai",
+    "markdown",
+    "github-action",
+    "cli"
+  ],
+  "private": false
+}

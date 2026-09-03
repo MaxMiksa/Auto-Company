@@ -1,0 +1,30 @@
+name = "botwatch"
+main = "src/worker.ts"
+compatibility_date = "2026-08-31"
+compatibility_flags = ["nodejs_compat"]
+
+# Worker Routes — fill in after `wrangler login`, once you know the customer's
+# zone. Worker Routes (not Custom Domains) are used deliberately: they work on
+# Cloudflare Free/Pro, which is the whole point of this product (see
+# docs/cto/adr-botwatch-v1-architecture.md). Example:
+#
+# routes = [
+#   { pattern = "example.com/*", zone_name = "example.com" }
+# ]
+routes = []
+
+[[d1_databases]]
+binding = "DB"
+database_name = "botwatch"
+# Fill in after `npm run db:create` (wrangler d1 create botwatch) prints the
+# generated database_id — see README.md "Deploy runbook".
+database_id = "REPLACE_WITH_D1_DATABASE_ID"
+
+[vars]
+# Identifier for the zone this deployment protects. v1 is single-tenant
+# (one Worker + one D1 database per customer) — this is a plain var, not a
+# tenant lookup. Used to tag rows in requests_log / bot_rules.
+SITE_ID = "REPLACE_WITH_SITE_ID"
+
+# DASHBOARD_TOKEN is a secret, not a var — never commit it here.
+# Set it with: npm run secret:dashboard-token  (wraps `wrangler secret put DASHBOARD_TOKEN`)

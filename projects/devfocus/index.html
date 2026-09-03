@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>devfocus — a focus workspace for developers</title>
+<meta name="description" content="Pomodoro timer, Spotify, and YouTube in one terminal-styled focus workspace. No sign-up, no tracking, runs entirely in your browser." />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>&#9646;</text></svg>" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body data-bg="terminal">
+
+<canvas id="bg-canvas"></canvas>
+<div class="scanlines" aria-hidden="true"></div>
+<div class="vignette" aria-hidden="true"></div>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-cursor">▍</span>devfocus
+    <span class="brand-path">~/workspace</span>
+  </div>
+  <nav class="topbar-actions">
+    <button id="btn-settings" class="icon-btn" title="settings" aria-label="Open settings">
+      <span class="prompt">$</span> settings --open
+    </button>
+  </nav>
+</header>
+
+<main class="grid">
+
+  <!-- Pomodoro widget -->
+  <section class="win" id="win-timer">
+    <div class="win-titlebar">
+      <span class="dots"><i class="d-red"></i><i class="d-yellow"></i><i class="d-green"></i></span>
+      <span class="win-title">pomodoro.sh</span>
+      <span class="win-badge" id="timer-mode-badge">FOCUS</span>
+    </div>
+    <div class="win-body timer-body">
+      <div class="timer-display" id="timer-display">25:00</div>
+      <div class="timer-session" id="timer-session"># session 1 &middot; <span id="session-goal">4</span> planned</div>
+      <div class="timer-controls">
+        <button class="btn btn-primary" id="btn-start">run</button>
+        <button class="btn" id="btn-pause" disabled>pause</button>
+        <button class="btn" id="btn-reset">reset</button>
+      </div>
+      <div class="timer-progress-track"><div class="timer-progress-fill" id="timer-progress"></div></div>
+    </div>
+  </section>
+
+  <!-- Spotify widget -->
+  <section class="win" id="win-spotify">
+    <div class="win-titlebar">
+      <span class="dots"><i class="d-red"></i><i class="d-yellow"></i><i class="d-green"></i></span>
+      <span class="win-title">spotify.now-playing</span>
+    </div>
+    <div class="win-body">
+      <form class="url-form" id="form-spotify">
+        <span class="prompt">&gt;</span>
+        <input type="text" id="input-spotify" placeholder="paste a spotify playlist / album / track URL" autocomplete="off" spellcheck="false" />
+        <button type="submit" class="btn btn-sm">load</button>
+      </form>
+      <div class="embed-wrap" id="embed-spotify">
+        <div class="embed-placeholder">no playlist loaded — paste a public Spotify link above</div>
+      </div>
+      <p class="fineprint">Embed uses Spotify's public player. Full tracks require a Spotify account; without one, expect shuffle-only playback and occasional ads, per Spotify's embed policy.</p>
+    </div>
+  </section>
+
+  <!-- YouTube widget -->
+  <section class="win" id="win-youtube">
+    <div class="win-titlebar">
+      <span class="dots"><i class="d-red"></i><i class="d-yellow"></i><i class="d-green"></i></span>
+      <span class="win-title">youtube.stream</span>
+    </div>
+    <div class="win-body">
+      <form class="url-form" id="form-youtube">
+        <span class="prompt">&gt;</span>
+        <input type="text" id="input-youtube" placeholder="paste a youtube video URL" autocomplete="off" spellcheck="false" />
+        <button type="submit" class="btn btn-sm">load</button>
+      </form>
+      <div class="embed-wrap" id="embed-youtube">
+        <div class="embed-placeholder">no video loaded — paste a YouTube link above</div>
+      </div>
+      <p class="fineprint">Starts muted — browsers block unmuted autoplay. Tap the video to unmute.</p>
+    </div>
+  </section>
+
+</main>
+
+<!-- Settings drawer -->
+<div class="drawer-overlay" id="drawer-overlay"></div>
+<aside class="drawer" id="drawer-settings">
+  <div class="win-titlebar">
+    <span class="dots"><i class="d-red"></i><i class="d-yellow"></i><i class="d-green"></i></span>
+    <span class="win-title">settings.conf</span>
+    <button class="icon-btn drawer-close" id="btn-close-settings" aria-label="Close settings">esc</button>
+  </div>
+  <div class="drawer-body">
+
+    <section class="settings-group">
+      <h3># background</h3>
+      <div class="bg-grid" id="bg-grid">
+        <button class="bg-swatch" data-bg="terminal"><span class="sw sw-terminal"></span>terminal</button>
+        <button class="bg-swatch" data-bg="matrix"><span class="sw sw-matrix"></span>matrix_rain</button>
+        <button class="bg-swatch" data-bg="circuit"><span class="sw sw-circuit"></span>circuit</button>
+        <button class="bg-swatch" data-bg="synthwave"><span class="sw sw-synthwave"></span>synthwave</button>
+        <button class="bg-swatch" data-bg="deepspace"><span class="sw sw-deepspace"></span>deep_space</button>
+        <button class="bg-swatch" data-bg="editor"><span class="sw sw-editor"></span>code_editor</button>
+        <button class="bg-swatch" data-bg="amber"><span class="sw sw-amber"></span>amber_crt</button>
+        <button class="bg-swatch" data-bg="nord"><span class="sw sw-nord"></span>nord</button>
+      </div>
+    </section>
+
+    <section class="settings-group">
+      <h3># pomodoro.conf</h3>
+      <label class="field">
+        <span>FOCUS_MIN</span>
+        <input type="number" id="cfg-focus" min="1" max="120" value="25" />
+      </label>
+      <label class="field">
+        <span>SHORT_BREAK_MIN</span>
+        <input type="number" id="cfg-short-break" min="1" max="60" value="5" />
+      </label>
+      <label class="field">
+        <span>LONG_BREAK_MIN</span>
+        <input type="number" id="cfg-long-break" min="1" max="60" value="15" />
+      </label>
+      <label class="field">
+        <span>SESSIONS_UNTIL_LONG_BREAK</span>
+        <input type="number" id="cfg-sessions" min="1" max="12" value="4" />
+      </label>
+      <label class="field field-checkbox">
+        <input type="checkbox" id="cfg-sound" checked />
+        <span>SOUND_ON_COMPLETE</span>
+      </label>
+      <button class="btn btn-sm" id="btn-apply-timer">apply</button>
+    </section>
+
+    <section class="settings-group">
+      <h3># about</h3>
+      <p class="fineprint">devfocus runs 100% client-side. Nothing you type is sent anywhere — settings and URLs live in your browser's localStorage only.</p>
+    </section>
+
+  </div>
+</aside>
+
+<audio id="chime" preload="auto"></audio>
+
+<script src="js/backgrounds.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

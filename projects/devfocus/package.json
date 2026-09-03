@@ -1,0 +1,13 @@
+{
+  "name": "devfocus",
+  "version": "0.1.0",
+  "description": "A terminal-styled focus workspace for developers — Pomodoro timer, Spotify, and YouTube in one static page",
+  "private": true,
+  "scripts": {
+    "dev": "npx serve .",
+    "deploy": "wrangler pages deploy . --project-name=devfocus"
+  },
+  "devDependencies": {
+    "wrangler": "^4.129.0"
+  }
+}
