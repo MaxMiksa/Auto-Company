@@ -8,6 +8,6 @@
     "deploy": "wrangler pages deploy . --project-name=devfocus"
   },
   "devDependencies": {
-    "wrangler": "^3.99.0"
+    "wrangler": "^4.129.0"
   }
 }
