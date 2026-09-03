@@ -2,7 +2,7 @@
 
 A terminal-styled focus workspace for developers — Pomodoro timer, a Spotify player, and a YouTube player, all on one page, styled like a code editor instead of a cozy lo-fi study room.
 
-Live demo (after deploy): https://devfocus.pages.dev
+Live demo: https://thedarkbeet.github.io/devfocus/
 
 ## Why this exists
 
@@ -30,7 +30,11 @@ This is deliberate: the CEO/critic review scoped this as a zero-cost, disposable
 npm run dev   # serves the static files on localhost
 ```
 
-## Deploy (Cloudflare Pages)
+## Deploy
+
+Currently served via GitHub Pages (`main` branch, root) — no build step, no credentials needed.
+
+A Cloudflare Pages deploy is also wired up for whenever Cloudflare credentials are available:
 
 ```bash
 npm run deploy   # wrangler pages deploy . --project-name=devfocus
