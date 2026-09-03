@@ -16,7 +16,7 @@
     "workers-og": "^0.0.14"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20241127.0",
+    "@cloudflare/workers-types": "^5.20260903.1",
     "typescript": "^5.7.3",
     "wrangler": "^4.128.0"
   },
