@@ -1,0 +1,134 @@
+name: Auto Company Runtime CI
+
+"on":
+  pull_request:
+    paths:
+      - ".github/workflows/auto-company-runtime-ci.yml"
+      - ".claude/**"
+      - ".gitattributes"
+      - ".gitignore"
+      - "CLAUDE.md"
+      - "ENGINE_ADAPTERS.md"
+      - "INDEX.md"
+      - "Makefile"
+      - "PROMPT.md"
+      - "README.md"
+      - "README-ZH.md"
+      - "dashboard/**"
+      - "docs/**"
+      - "memories/**"
+      - "package.json"
+      - "projects/README.md"
+      - "projects/registry.tsv"
+      - "scripts/**"
+      - "tests/**"
+      - "**/*.sh"
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/auto-company-runtime-ci.yml"
+      - ".claude/**"
+      - ".gitattributes"
+      - ".gitignore"
+      - "CLAUDE.md"
+      - "ENGINE_ADAPTERS.md"
+      - "INDEX.md"
+      - "Makefile"
+      - "PROMPT.md"
+      - "README.md"
+      - "README-ZH.md"
+      - "dashboard/**"
+      - "docs/**"
+      - "memories/**"
+      - "package.json"
+      - "projects/README.md"
+      - "projects/registry.tsv"
+      - "scripts/**"
+      - "tests/**"
+      - "**/*.sh"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: auto-company-runtime-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  windows-config:
+    name: Windows configuration contracts
+    runs-on: windows-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Verify configuration preservation and first-install ordering
+        shell: pwsh
+        run: ./tests/test_windows_start_config.ps1
+
+  python-tests:
+    name: Python unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Run standard-library test suite
+        run: python3 -m unittest discover -s tests -v
+
+  shell-syntax:
+    name: Shell syntax
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Check every tracked Shell file
+        run: |
+          mapfile -d '' shell_files < <(git ls-files -z -- '*.sh')
+          if (( ${#shell_files[@]} == 0 )); then
+            echo "No tracked Shell files found." >&2
+            exit 1
+          fi
+          for shell_file in "${shell_files[@]}"; do
+            printf 'Checking %s\n' "$shell_file"
+            bash -n -- "$shell_file"
+          done
+
+  shell-contracts:
+    name: Shell runtime contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Verify executable entrypoints and safe startup failure
+        run: bash tests/test-shell-entrypoints.sh
+
+      - name: Verify project and consensus governance
+        run: bash tests/test_project_governance.sh
+
+      - name: Verify process-tree supervision
+        run: bash tests/test_process_supervisor.sh
+
+      - name: Run fake-engine end-to-end cycle
+        env:
+          TEST_TIMEOUT_SECONDS: "45"
+        run: bash tests/test_auto_loop_integration.sh
+
+      - name: Verify real frontend script against deterministic API fixtures
+        run: node tests/test_dashboard_frontend.js
