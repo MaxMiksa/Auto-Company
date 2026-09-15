@@ -91,7 +91,12 @@ function Write-AutoLoopEnv {
     $lines = @()
     if (Test-Path $envFile) {
         foreach ($line in [System.IO.File]::ReadAllLines($envFile)) {
-            if ($line -match '^\s*([A-Za-z_][A-Za-z0-9_]*)=') {
+            # -cmatch, not -match: -match is case-insensitive using the current
+            # culture, and under tr-TR "I" lower-cases to U+0131, which is
+            # outside [A-Za-z]. Every key holding an "I" would then fail to
+            # match and be appended again on each run. Env keys are
+            # case-sensitive anyway.
+            if ($line -cmatch '^\s*([A-Za-z_][A-Za-z0-9_]*)=') {
                 $key = $Matches[1]
                 if ($updates.ContainsKey($key)) { continue }
             }
