@@ -24,7 +24,7 @@ function Resolve-RepoWslPath {
     }
 
     $repoWinForWsl = $repoWin -replace "\\", "/"
-    $repoWslRaw = & wsl.exe wslpath -a "$repoWinForWsl"
+    $repoWslRaw = & wsl.exe -d $Distro wslpath -a "$repoWinForWsl"
     if (-not $repoWslRaw) {
         throw "Failed to convert repository path to WSL path."
     }
