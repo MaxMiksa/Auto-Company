@@ -47,3 +47,5 @@ command results, and the final gate decision.
 Actions are pinned to full commit SHAs with release-version comments. Dependabot
 opens weekly update PRs for Actions and the browser test dependency. Updates must
 pass the same CI gate; they are not automatically merged.
+
+Temporary CI acceptance probe: documentation-only change; do not merge.
