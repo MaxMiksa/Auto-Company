@@ -68,6 +68,11 @@ function Assert-BootstrapValue {
     if ($Value -match '[\r\n\t]') { throw (Get-BootstrapMessage 'path_invalid') }
 }
 
+function ConvertTo-BootstrapPowerShellLiteral {
+    param([string]$Value)
+    return "'" + $Value.Replace("'", "''") + "'"
+}
+
 function Get-BootstrapState {
     param([string]$Path)
     if (-not (Test-Path -LiteralPath $Path)) { return $null }
@@ -318,7 +323,9 @@ function Invoke-BootstrapMain {
             & $python.File @pythonArgs | Out-Host
             return $LASTEXITCODE
         }
-        Write-BootstrapMessage 'dashboard_later' @(Join-Path $Options.Target 'scripts/windows/dashboard-win.ps1')
+        $dashboardScript = Join-Path $Options.Target 'scripts/windows/dashboard-win.ps1'
+        $dashboardCommand = 'powershell.exe -NoProfile -File ' + (ConvertTo-BootstrapPowerShellLiteral $dashboardScript)
+        Write-BootstrapMessage 'dashboard_later' @($dashboardCommand)
         return 0
     } catch {
         Write-BootstrapMessage 'failed' @($stage)

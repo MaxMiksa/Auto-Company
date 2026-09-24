@@ -91,6 +91,24 @@ bash setup.sh
 
 所有会修改安装的维护命令都要求明确的 `--yes`，包括恢复。程序目录损坏时，从安装目录外的事务备份执行恢复器，例如 `python3 <transaction>/executor/manager.py recover --root <安装目录> --transaction <事务目录> --yes`；不要依赖正在恢复的程序副本。`doctor` 只检查完整性、Git 基线和本地状态，不调用模型，登录状态会如实显示为未验证。
 
+在 macOS/Linux 终端执行下面的命令。Windows 请先进入安装时选择的 WSL 发行版（例如 `wsl -d Ubuntu`），并使用 WSL 路径，例如 `/mnt/c/Users/你的用户名/Auto-Company`。把路径替换为实际安装目录与已校验的新包目录，保留引号：
+
+```bash
+install_root='/实际安装目录/Auto-Company'
+new_package='/已解压的新包/Auto-Company-vX.Y.Z'
+python3 "$install_root/scripts/install/manager.py" doctor --root "$install_root"
+python3 "$new_package/scripts/install/manager.py" update --root "$install_root" --source "$new_package"
+```
+
+最后一条命令先检查并显示待确认操作，不会更新文件；确认后，在同一条命令末尾加 `--yes` 执行升级。需要回退或卸载时，分别执行：
+
+```bash
+python3 "$install_root/scripts/install/manager.py" rollback --root "$install_root" --yes
+python3 "$install_root/scripts/install/manager.py" uninstall --root "$install_root" --yes
+```
+
+这两条是不同操作，请只执行需要的一条；卸载前必须先停止服务并关闭自启。
+
 回退会拒绝覆盖更新后发生变化的配置和 `.auto-company/` 状态。用户产品仓库与注册表用户行不会被当作发行数据回退。需要卸载时，先把本安装的后台服务停用并关闭自启；卸载器验证归属后移除登记，把受管 Git 基线归档到外部事务目录，并保留用户数据。
 
 卸载默认只移除本安装负责的程序、服务登记和启动入口，保留产品、日志与配置。删除用户数据必须单独明确选择；安装器不会卸载用户原有的 Python、Git、Node、模型 CLI、Homebrew、WSL 或整个 Linux 发行版。

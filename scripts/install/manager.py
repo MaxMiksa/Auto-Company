@@ -357,10 +357,11 @@ def install(args):
     manifest = verify_payload(source, strict=False)
     language = language_for(args.language, root)
     if (root / MARKER).exists():
-        marker = read_json(root / MARKER, "transaction_invalid")
-        if marker.get("operation") == "install":
-            return resume_install(args, root, source, manifest, marker)
-        raise InstallError("maintenance", marker.get("transaction"))
+        with project_operation_lock(root):
+            marker = read_json(root / MARKER, "transaction_invalid")
+            if marker.get("operation") == "install":
+                return resume_install(args, root, source, manifest, marker)
+            raise InstallError("maintenance", marker.get("transaction"))
     if (root / META).exists():
         meta = metadata(root)
         if (root / MARKER).exists():
@@ -373,6 +374,10 @@ def install(args):
         with maintenance_locks(root):
             if (root / MARKER).exists():
                 raise InstallError("maintenance", recovery_command(root, meta))
+            meta = metadata(root)
+            if (meta.get("source_commit") != manifest["source_commit"] or meta.get("engine") != args.engine
+                    or meta.get("distro") != args.distro):
+                raise InstallError("existing_target")
             check_git(root, meta, read_manifest(root))
             file_conflicts(root, read_manifest(root))
             registrations(root, meta)
@@ -408,6 +413,17 @@ def install(args):
     write_json(state_dir / "install-intent.json", intent)
     if root != source:
         root.mkdir()
+    at(root, ".auto-company").mkdir(exist_ok=True)
+    with project_operation_lock(root):
+        if any((root / name).exists() for name in (MARKER, META, ".git")):
+            raise InstallError("existing_target")
+        return finish_install(root, cache, manifest, intent, executor)
+
+
+def finish_install(root, cache, manifest, intent, executor):
+    install_id, home = intent["install_id"], Path(intent["manager_home"])
+    state_dir = home / install_id
+    language = intent["language"]
     write_json(root / MARKER, {"schema": 1, "install_id": install_id, "manager_home": str(home),
                               "operation": "install", "transaction": str(state_dir)})
     try:
@@ -426,7 +442,7 @@ def install(args):
             atomic_bytes(root / ".auto-company.local", ("AUTO_COMPANY_LANGUAGE=" + language + "\n").encode())
         meta = {"schema": 1, "install_id": install_id, "root": str(root), "source_commit": manifest["source_commit"],
                 "version": manifest["version"], "managed_baseline": commit, "language": language,
-                "engine": args.engine, "distro": args.distro, "manager_home": str(home),
+                "engine": intent["engine"], "distro": intent["distro"], "manager_home": str(home),
                 "registry_baseline": manifest["registry_baseline"], "registrations": [], "status": "ready"}
         write_json(root / META, meta)
         file_conflicts(root, manifest)
@@ -459,6 +475,8 @@ def resume_install(args, root, source, manifest, marker):
         no_links(path)
         relative = path.relative_to(root).as_posix()
         if path.is_dir() or relative.startswith(".git/") or relative in ("release-files.json", MARKER, META):
+            continue
+        if relative == ".auto-company/project-registry.lock" and path.read_bytes() == b"":
             continue
         if relative == ".auto-company.local":
             expected = ("AUTO_COMPANY_LANGUAGE=" + intent["language"] + "\n").encode()
@@ -581,7 +599,7 @@ def check_writers(root):
 
 
 @contextmanager
-def maintenance_locks(root, recovering=False):
+def project_operation_lock(root):
     # Project helpers inherit this flock even if their parent shell exits.
     # Match the runtime's project -> configuration lock order and retain the
     # persistent inode so waiting helpers cannot enter through a replaced lock.
@@ -593,6 +611,12 @@ def maintenance_locks(root, recovering=False):
             fcntl.flock(project, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError as error:
             raise InstallError("busy", str(project_lock)) from error
+        yield
+
+
+@contextmanager
+def maintenance_locks(root, recovering=False):
+    with project_operation_lock(root):
         with maintenance_config_locks(root, recovering=recovering):
             yield
 
@@ -726,9 +750,12 @@ def register(args):
     meta = metadata(root)
     if (root / MARKER).exists():
         raise InstallError("maintenance", recovery_command(root, meta))
+    if not args.yes:
+        raise InstallError("confirmation", {"operation": "register", "path": str(args.path)})
     with maintenance_locks(root):
         if (root / MARKER).exists():
             raise InstallError("maintenance", recovery_command(root, meta))
+        meta = metadata(root)
         path = no_links(Path(args.path))
         service_owned(path, args.kind, root)
         service_stopped(path, args.kind)
@@ -937,6 +964,11 @@ def stage_operation(args):
 
 def execute_transaction(args):
     posix_required()
+    with project_operation_lock(no_links(Path(args.root))):
+        return execute_locked_transaction(args)
+
+
+def execute_locked_transaction(args):
     root, transaction = no_links(Path(args.root)), no_links(Path(args.transaction))
     state = load_transaction(root, transaction)
     if state["phase"] != "prepared":
@@ -950,7 +982,7 @@ def execute_transaction(args):
     # runtime-start race before acquiring the runtime's own locks.
     publish_marker(root, marker)
     try:
-        with maintenance_locks(root):
+        with maintenance_config_locks(root):
             old, new = state["old_manifest"], state["new_manifest"]
             check_git(root, meta, old)
             file_conflicts(root, old, new)
@@ -1033,6 +1065,14 @@ def execute_transaction(args):
 def recover(args):
     posix_required()
     root = no_links(Path(args.root))
+    # Hold the same operation lock from the first state read until our marker
+    # is cleared, including configuration-lock cleanup. Otherwise a completed
+    # update or another recovery could invalidate a stale recovery snapshot.
+    with project_operation_lock(root):
+        return recover_locked(args, root)
+
+
+def recover_locked(args, root):
     marker = read_json(at(root, MARKER), "transaction_invalid")
     transaction = no_links(Path(args.transaction or marker.get("transaction", "")))
     if marker.get("operation") == "install":
@@ -1048,7 +1088,7 @@ def recover(args):
         raise InstallError("transaction_invalid")
     if not args.yes:
         raise InstallError("confirmation", recovery_command(root, state["metadata"], transaction))
-    with maintenance_locks(root, recovering=True):
+    with maintenance_config_locks(root, recovering=True):
         if state["phase"] in ("prepared", "aborted"):
             pass  # No program bytes changed; release locks before the marker.
         elif state["phase"] == "complete":

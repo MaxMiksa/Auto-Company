@@ -63,7 +63,7 @@ class InstallManagerTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(prefix="installer space 中文 % ")
         self.addCleanup(self.temp.cleanup)
-        self.base = Path(self.temp.name)
+        self.base = Path(self.temp.name).resolve()
         self.target = self.base / "installed"
         self.home = self.base / "manager"
         self.source = self.payload("source", "1.0.0", "first\r\n", HEADER + EXAMPLE)
@@ -181,7 +181,11 @@ class InstallManagerTests(unittest.TestCase):
         self.install()
         launcher = self.base / "launcher"
         launcher.write_text("installation=" + str(self.target))
-        self.run_cli("register", "--root", self.target, "--path", launcher, "--kind", "launcher")
+        metadata_before = (self.target / M.META).read_bytes()
+        refused = self.run_cli("register", "--root", self.target, "--path", launcher, "--kind", "launcher", success=False)
+        self.assertEqual(refused["code"], "confirmation")
+        self.assertEqual((self.target / M.META).read_bytes(), metadata_before)
+        self.run_cli("register", "--root", self.target, "--path", launcher, "--kind", "launcher", "--yes")
         original = launcher.read_bytes()
         launcher.write_text("another installation")
         self.assertEqual(self.run_cli("uninstall", "--root", self.target, "--yes", success=False)["code"], "service_conflict")
@@ -191,6 +195,27 @@ class InstallManagerTests(unittest.TestCase):
         self.assertFalse(launcher.exists())
         self.assertEqual((Path(result["transaction"]) / "external/0").read_bytes(), original)
         self.assertFalse((self.target / ".git").exists())
+
+    def test_registration_uses_metadata_current_at_lock_acquisition(self):
+        from contextlib import contextmanager
+        self.install()
+        source = self.payload("new", "1.1.0", "second\n", HEADER + EXAMPLE)
+        launcher = self.base / "launcher.sh"
+        launcher.write_text("#!/bin/sh\n# " + str(self.target) + "\n")
+        original_locks = M.maintenance_locks
+
+        @contextmanager
+        def complete_update_before_lock(root, **kwargs):
+            self.assertEqual(self.update(source)["code"], "updated")
+            with original_locks(root, **kwargs):
+                yield
+
+        args = M.parser().parse_args(["register", "--root", str(self.target), "--path", str(launcher),
+                                     "--kind", "launcher", "--yes"])
+        with mock.patch.object(M, "maintenance_locks", side_effect=complete_update_before_lock):
+            self.assertEqual(M.register(args)["code"], "registered")
+        self.assertEqual(M.metadata(self.target)["version"], "1.1.0")
+        self.assertEqual(self.run_cli("doctor", "--root", self.target)["code"], "healthy")
 
     def test_same_working_directory_different_service_command_is_not_owned(self):
         unit = self.base / "auto-company.service"
@@ -274,6 +299,81 @@ class InstallManagerTests(unittest.TestCase):
         finally:
             child.communicate(timeout=10)
         self.assertEqual(self.update(source)["code"], "updated")
+
+    def assert_project_operation_locked(self):
+        probe = subprocess.run(
+            [sys.executable, "-c",
+             "import fcntl,sys\n"
+             "with open(sys.argv[1], 'a+') as stream:\n"
+             " try: fcntl.flock(stream, fcntl.LOCK_EX | fcntl.LOCK_NB)\n"
+             " except BlockingIOError: sys.exit(73)\n",
+             str(self.target / ".auto-company/project-registry.lock")],
+            capture_output=True, text=True, timeout=10)
+        self.assertEqual(probe.returncode, 73, probe.stdout + probe.stderr)
+
+    def test_update_holds_operation_lock_from_state_read_through_marker_cleanup(self):
+        self.install()
+        source = self.payload("new", "1.1.0", "second\n", HEADER + EXAMPLE)
+        original_run = M.subprocess.run
+        original_load = M.load_transaction
+        original_clear = M.clear_marker
+        observed = []
+
+        def load(root, transaction):
+            self.assert_project_operation_locked()
+            observed.append("load")
+            return original_load(root, transaction)
+
+        def clear(root):
+            self.assertFalse((root / ".auto-company.local.lock").exists())
+            self.assert_project_operation_locked()
+            observed.append("clear")
+            return original_clear(root)
+
+        def execute(command, *values, **keywords):
+            if "_execute" in command:
+                args = M.parser().parse_args(command[command.index("_execute"):])
+                output = M.execute_transaction(args)
+                return subprocess.CompletedProcess(command, 0, json.dumps(output), "")
+            return original_run(command, *values, **keywords)
+
+        args = M.parser().parse_args(["update", "--root", str(self.target), "--source", str(source), "--yes"])
+        with mock.patch.object(M.subprocess, "run", side_effect=execute), \
+                mock.patch.object(M, "load_transaction", side_effect=load), \
+                mock.patch.object(M, "clear_marker", side_effect=clear):
+            result = M.stage_operation(args)
+        self.assertEqual(observed, ["load", "clear"])
+        (self.target / M.REGISTRY).write_text(HEADER + EXAMPLE + USER)
+        output = self.run_cli("recover", "--root", self.target, "--transaction", result["transaction"],
+                              "--yes", success=False)
+        self.assertEqual(output["code"], "transaction_invalid")
+        self.assertEqual(M.metadata(self.target)["version"], "1.1.0")
+        self.assertIn(USER, (self.target / M.REGISTRY).read_text())
+
+    def test_recovery_holds_operation_lock_from_state_read_through_marker_cleanup(self):
+        transaction, _ = self.interrupted_transaction()
+        original_load = M.load_transaction
+        original_clear = M.clear_marker
+        observed = []
+
+        def load(root, directory):
+            self.assert_project_operation_locked()
+            observed.append("load")
+            return original_load(root, directory)
+
+        def clear(root):
+            self.assertFalse((root / ".auto-company.local.lock").exists())
+            self.assert_project_operation_locked()
+            observed.append("clear")
+            return original_clear(root)
+
+        args = M.parser().parse_args(["recover", "--root", str(self.target), "--transaction", str(transaction), "--yes"])
+        with mock.patch.object(M, "load_transaction", side_effect=load), \
+                mock.patch.object(M, "clear_marker", side_effect=clear):
+            self.assertEqual(M.recover(args)["code"], "recovered")
+        self.assertEqual(observed, ["load", "clear"])
+        self.assertEqual(M.metadata(self.target)["version"], "1.0.0")
+        self.assertFalse((self.target / M.MARKER).exists())
 
     def test_symlink_rejected_before_update_or_copy(self):
         self.install()
@@ -461,6 +561,40 @@ class InstallManagerTests(unittest.TestCase):
         self.assertTrue(result["resumed"])
         self.assertFalse((self.target / M.MARKER).exists())
         self.assertTrue(list(self.home.rglob("partial-git-*")))
+
+    def test_initial_install_and_external_recovery_share_operation_lock(self):
+        import fcntl
+        args = M.parser().parse_args(["install", "--source", str(self.source), "--target", str(self.target),
+                                     "--manager-home", str(self.home), "--engine", "codex", "--language", "zh-CN", "--yes"])
+        original_write = M.write_json
+        marker_publications = []
+
+        def write(path, value):
+            if path == self.target / M.MARKER:
+                self.assert_project_operation_locked()
+                marker_publications.append(value["operation"])
+            return original_write(path, value)
+
+        with mock.patch.object(M, "baseline", side_effect=OSError("interrupted")), \
+                mock.patch.object(M, "write_json", side_effect=write):
+            with self.assertRaises(OSError):
+                M.install(args)
+        self.assertTrue(marker_publications)
+        marker = M.read_json(self.target / M.MARKER)
+        executor = Path(marker["transaction"]) / "executor/manager.py"
+        with (self.target / ".auto-company/project-registry.lock").open("a+") as stream:
+            fcntl.flock(stream, fcntl.LOCK_EX)
+            retry = self.run_cli("install", "--source", self.source, "--target", self.target,
+                                 "--manager-home", self.home, "--engine", "codex", "--language", "zh-CN",
+                                 "--yes", success=False)
+            self.assertEqual(retry["code"], "busy")
+            recover = self.run_cli("recover", "--root", self.target, "--yes", success=False, executor=executor)
+            self.assertEqual(recover["code"], "busy")
+            self.assertTrue((self.target / M.MARKER).exists())
+        result = self.run_cli("recover", "--root", self.target, "--yes", executor=executor)
+        self.assertEqual(result["code"], "installed")
+        self.assertEqual(M.metadata(self.target)["version"], "1.0.0")
+        self.assertFalse((self.target / M.MARKER).exists())
 
     @unittest.skipUnless(sys.platform == "linux" and Path("/dev/shm").is_dir(), "cross-filesystem fixture requires Linux tmpfs")
     def test_cross_filesystem_resume_and_uninstall_keep_verified_git_archive(self):

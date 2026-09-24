@@ -19,6 +19,12 @@ try {
     Assert-Setup ((Get-BootstrapMessage 'cancelled') -match ([char]0x5df2)) 'Cancellation must be localized.'
     $literal = 'C:\path $() {1} & '' quote'
     Assert-Setup ((Get-BootstrapMessage 'target' @($literal)).EndsWith($literal)) 'Message replacement must preserve literal content.'
+    $dashboardCommand = 'powershell.exe -NoProfile -File ' + (ConvertTo-BootstrapPowerShellLiteral $literal)
+    $parseTokens = $null
+    $parseErrors = $null
+    $commandAst = [Management.Automation.Language.Parser]::ParseInput($dashboardCommand, [ref]$parseTokens, [ref]$parseErrors)
+    $nativeCommand = $commandAst.Find({ param($node) $node -is [Management.Automation.Language.CommandAst] }, $true)
+    Assert-Setup ($parseErrors.Count -eq 0 -and $nativeCommand.CommandElements[-1].Value -eq $literal) 'Dashboard command must preserve a path containing spaces and apostrophes.'
     $env:LOCALAPPDATA = Join-Path $fixture 'local'
     $env:USERPROFILE = Join-Path $fixture 'profile'
     $source = Join-Path $fixture ('payload ' + [char]0x4e2d + ' $ apostrophe''')

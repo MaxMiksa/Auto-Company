@@ -91,6 +91,24 @@ If program files, prompts, skills, or bundled examples were modified, the upgrad
 
 Every maintenance command that changes an installation requires explicit `--yes`, including recovery. If the program directory is damaged, run the recovery copy from the transaction outside the installation, for example `python3 <transaction>/executor/manager.py recover --root <install-root> --transaction <transaction> --yes`. Do not depend on the copy being repaired. `doctor` checks integrity, the Git baseline, and local state without invoking a model; it reports authentication as unverified.
 
+Run these commands in a macOS/Linux terminal. On Windows, first enter the WSL distribution selected during installation (for example, `wsl -d Ubuntu`) and use WSL paths such as `/mnt/c/Users/YourName/Auto-Company`. Replace the paths with the actual installation and verified extracted package directories, keeping the quotes:
+
+```bash
+install_root='/actual/installation/Auto-Company'
+new_package='/extracted/new-package/Auto-Company-vX.Y.Z'
+python3 "$install_root/scripts/install/manager.py" doctor --root "$install_root"
+python3 "$new_package/scripts/install/manager.py" update --root "$install_root" --source "$new_package"
+```
+
+The last command checks and displays the operation for confirmation without updating files. Append `--yes` to that same command when ready to apply it. To roll back or uninstall, respectively:
+
+```bash
+python3 "$install_root/scripts/install/manager.py" rollback --root "$install_root" --yes
+python3 "$install_root/scripts/install/manager.py" uninstall --root "$install_root" --yes
+```
+
+These are separate operations; run only the one you need. Stop the service and disable autostart before uninstalling.
+
 A rollback refuses to overwrite configuration or `.auto-company/` state that changed after the update. User product repositories and user-owned registry rows are not treated as release data to roll back. Before uninstalling, stop this installation's background service and disable autostart. After checking ownership, uninstall removes the registration, archives the managed Git baseline in the external transaction directory, and preserves user data.
 
 Uninstall removes only program files, service registration, and launch entries owned by this installation by default. Products, logs, and configuration remain. Deleting user data requires a separate explicit choice. The installer does not remove an existing Python, Git, Node, model CLI, Homebrew, WSL installation, or Linux distribution.

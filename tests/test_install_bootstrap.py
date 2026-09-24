@@ -190,6 +190,7 @@ bootstrap_install_node
         # Real paths/config/state, mock only OS/dependency/manager boundaries.
         body = """
 bootstrap_inspect() { BOOTSTRAP_NEED_ENGINE=no; BOOTSTRAP_NEED_NODE=no; BOOTSTRAP_PACKAGES=''; }
+uname() { echo Darwin; }
 id() { echo 1000; }
 systemctl() { return 0; }
 codex() { printf 'ENGINE %s\\n' "$*" >> "$TRACE"; return 0; }
@@ -202,7 +203,7 @@ python3() {
     command python3 "$@"
 }
 bash() {
-    case "$1" in */install-wsl-daemon.sh) printf 'SERVICE %s\\n' "$2" >> "$TRACE"; return 0;; esac
+    case "$1" in */install-wsl-daemon.sh|*/macos/install-daemon.sh) printf 'SERVICE %s\\n' "$2" >> "$TRACE"; return 0;; esac
     command bash "$@"
 }
 export TRACE="$3"
@@ -219,6 +220,17 @@ bootstrap_main --source "$1" --target "$2" --engine codex --distro 'Different Ub
         self.assertNotIn("ENGINE exec", calls)
         self.assertNotIn("SERVICE start", calls)
         self.assertIn("Core installation ready", result.stdout)
+        later = next(line.split(": ", 1)[1] for line in result.stdout.splitlines()
+                     if line.startswith("Open Dashboard later with: "))
+        copied = subprocess.run(
+            ["bash", "-c", "python3() { printf '%s\\n' \"$@\"; }\n" + later],
+            capture_output=True, text=True, timeout=10,
+        )
+        self.assertEqual(copied.returncode, 0, copied.stderr)
+        self.assertEqual(copied.stdout.splitlines(), [
+            str(self.target / "dashboard/server.py"), "--host", "127.0.0.1",
+            "--port", "8787", "--open-browser",
+        ])
         self.assertIn('ENGINE="codex"', (self.target / ".auto-loop.env").read_text())
 
     def test_optional_node_failure_keeps_core_and_prepares_service(self):

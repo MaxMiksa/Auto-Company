@@ -41,6 +41,12 @@ bootstrap_clean_value() {
     case "$1" in *$'\n'*|*$'\r'*|*$'\t'*) bootstrap_message path_invalid >&2; return 2;; esac
 }
 
+bootstrap_shell_quote() {
+    local value="$1"
+    value="${value//\'/\'\\\'\'}"
+    printf "'%s'" "$value"
+}
+
 bootstrap_read_state() {
     local key value seen='|'
     [ ! -e "$BOOTSTRAP_STATE" ] || [ -f "$BOOTSTRAP_STATE" ] || return 1
@@ -391,7 +397,9 @@ bootstrap_main() {
         # The server opens the browser only after binding its own listener.
         python3 "$BOOTSTRAP_TARGET/dashboard/server.py" --host 127.0.0.1 --port 8787 --open-browser
     else
-        bootstrap_message dashboard_later "$BOOTSTRAP_TARGET/dashboard/server.py"
+        local dashboard_command
+        dashboard_command="python3 $(bootstrap_shell_quote "$BOOTSTRAP_TARGET/dashboard/server.py") --host 127.0.0.1 --port 8787 --open-browser"
+        bootstrap_message dashboard_later "$dashboard_command"
     fi
 }
 
