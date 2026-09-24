@@ -264,6 +264,8 @@ class InstallManagerTests(unittest.TestCase):
         self.assertFalse((self.target / M.MARKER).exists())
         M.write_json(self.target / ".auto-company/writers/dashboard.json", {"schema": 1, "pid": os.getpid(), "host": sys.platform, "kind": "dashboard"})
         self.assertEqual(self.update(source, success=False)["code"], "busy")
+        self.assertEqual(self.run_cli("update", "--root", self.target, "--source", self.base / "not-downloaded",
+                                      "--yes", success=False)["code"], "busy")
         self.assertFalse((self.target / M.MARKER).exists())
 
     def test_cross_host_writer_and_unknown_config_lock_refuse(self):

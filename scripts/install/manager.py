@@ -898,6 +898,9 @@ def stage_operation(args):
     meta = metadata(root)
     if (root / MARKER).exists():
         raise InstallError("maintenance", recovery_command(root, meta))
+    # Reject known writers before costly archive/hash scans on Windows shares.
+    # The locked execution phase repeats this check to close startup races.
+    check_writers(root)
     old = read_manifest(root)
     check_git(root, meta, old)
     file_conflicts(root, old)
