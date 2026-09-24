@@ -15,6 +15,7 @@ import subprocess
 import sys
 import time
 import threading
+import webbrowser
 from datetime import datetime, timezone
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -33,6 +34,7 @@ if str(DASHBOARD_DIR) not in sys.path:
 
 from usage_lib import UsageError, read_pause_state, summarize_usage  # noqa: E402
 import localization  # noqa: E402
+from installation_state import check_maintenance, writer_lease  # noqa: E402
 from journal_data import JournalSource  # noqa: E402
 
 WINDOWS_STATUS_SCRIPT = REPO_ROOT / "scripts" / "windows" / "status-win.ps1"
@@ -816,6 +818,12 @@ class DashboardHandler(BaseHTTPRequestHandler):
             return
         parsed = urlparse(self.path)
         path = parsed.path
+        if path not in {"/api/action/stop", "/api/action/refresh"}:
+            try:
+                check_maintenance(REPO_ROOT)
+            except ValueError as error:
+                self._json({"ok": False, "errorCode": "installation_maintenance", "error": str(error)}, code=409)
+                return
         if path == "/api/product-media/capture":
             if not CONTROL_LOCK.acquire(blocking=False):
                 self._json({"ok": False, "error": "A runtime action is already in progress."}, code=409)
@@ -909,6 +917,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Auto Company web dashboard server")
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8787)
+    parser.add_argument("--open-browser", action="store_true")
     args = parser.parse_args()
 
     bind_host = "127.0.0.1" if args.host == "localhost" else args.host
@@ -928,17 +937,23 @@ def main() -> None:
     class DashboardServer(ThreadingHTTPServer):
         address_family = socket.AF_INET6 if address.version == 6 else socket.AF_INET
 
-    server = DashboardServer((bind_host, args.port), DashboardHandler)
-    print(f"[dashboard] serving on http://{args.host}:{args.port}")
-    print(f"[dashboard] repo: {REPO_ROOT}")
-    print(f"[dashboard] host: {host_kind}")
     try:
-        server.serve_forever()
-    except KeyboardInterrupt:
-        pass
-    finally:
-        server.server_close()
-        print("[dashboard] stopped")
+        with writer_lease(REPO_ROOT):
+            server = DashboardServer((bind_host, args.port), DashboardHandler)
+            print(f"[dashboard] serving on http://{args.host}:{args.port}")
+            print(f"[dashboard] repo: {REPO_ROOT}")
+            print(f"[dashboard] host: {host_kind}")
+            if args.open_browser:
+                webbrowser.open(f"http://{args.host}:{args.port}")
+            try:
+                server.serve_forever()
+            except KeyboardInterrupt:
+                pass
+            finally:
+                server.server_close()
+                print("[dashboard] stopped")
+    except ValueError as error:
+        parser.exit(78, str(error) + "\n")
 
 
 if __name__ == "__main__":

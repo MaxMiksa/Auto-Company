@@ -120,6 +120,7 @@ cp "$SOURCE_ROOT/scripts/core/openai-compatible-agent.py" "$FRAMEWORK/scripts/co
 cp "$SOURCE_ROOT/scripts/core/process-supervisor.sh" "$FRAMEWORK/scripts/core/"
 cp "$SOURCE_ROOT/scripts/core/process-supervisor-linux.py" "$FRAMEWORK/scripts/core/"
 cp "$SOURCE_ROOT/scripts/core/loop-lock.py" "$FRAMEWORK/scripts/core/"
+cp "$SOURCE_ROOT/scripts/core/installation_state.py" "$FRAMEWORK/scripts/core/"
 cp "$SOURCE_ROOT/scripts/core/usage.py" "$FRAMEWORK/scripts/core/"
 cp "$SOURCE_ROOT/scripts/core/usage_lib.py" "$FRAMEWORK/scripts/core/"
 cp "$SOURCE_ROOT/memories/consensus.template.md" "$FRAMEWORK/memories/"

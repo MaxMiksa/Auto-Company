@@ -19,6 +19,12 @@ LABEL="com.autocompany.loop"
 PLIST_PATH="$HOME/Library/LaunchAgents/${LABEL}.plist"
 PAUSE_FLAG="${PROJECT_DIR}/.auto-loop-paused"
 OS_NAME="$(uname -s)"
+PREPARE_ONLY=0
+[ "${1:-}" != "--prepare" ] || PREPARE_ONLY=1
+if [ "$#" -gt 1 ] || { [ "$#" -eq 1 ] && [ "$1" != "--prepare" ] && [ "$1" != "--uninstall" ]; }; then
+    ui_message install.invalid_argument >&2
+    exit 2
+fi
 ENGINE="${ENGINE:-claude}"
 ENGINE="$(echo "$ENGINE" | tr '[:upper:]' '[:lower:]')"
 MODEL="${MODEL:-}"
@@ -50,6 +56,27 @@ if [ "${1:-}" = "--uninstall" ]; then
 fi
 
 # --- Install ---
+
+if [ -e "$PROJECT_DIR/.auto-company/maintenance.json" ] || [ -L "$PROJECT_DIR/.auto-company/maintenance.json" ]; then
+    python3 "$SCRIPT_DIR/../core/installation_state.py" check --root "$PROJECT_DIR"
+fi
+
+if [ "$PREPARE_ONLY" -eq 1 ]; then
+    if launchctl list "$LABEL" >/dev/null 2>&1; then
+        ui_message install.service_busy >&2
+        exit 1
+    fi
+    if [ -e "$PLIST_PATH" ] || [ -L "$PLIST_PATH" ]; then
+        [ ! -L "$PLIST_PATH" ] || { ui_message install.service_conflict >&2; exit 1; }
+        python3 "$SCRIPT_DIR/../core/launchd-config.py" --project "$PROJECT_DIR" --validate "$PLIST_PATH"
+        if ! python3 "$SCRIPT_DIR/../core/launchd-config.py" --project "$PROJECT_DIR" --is-prepared "$PLIST_PATH"; then
+            ui_message install.service_busy >&2
+            exit 1
+        fi
+        ui_message install.service_prepared
+        exit 0
+    fi
+fi
 
 if ! engine_adapter_validate; then
     ui_message engine.invalid >&2
@@ -98,10 +125,10 @@ fi
 
 mkdir -p "$HOME/Library/LaunchAgents" "$PROJECT_DIR/logs"
 # Install implies active running state
-rm -f "$PAUSE_FLAG"
+if [ "$PREPARE_ONLY" -eq 0 ]; then rm -f "$PAUSE_FLAG"; fi
 
 # Unload existing if running
-if launchctl list 2>/dev/null | grep -q "$LABEL"; then
+if [ "$PREPARE_ONLY" -eq 0 ] && launchctl list 2>/dev/null | grep -q "$LABEL"; then
     launchctl unload "$PLIST_PATH" 2>/dev/null || true
 fi
 
@@ -111,12 +138,17 @@ export ENGINE MODEL CLAUDE_BIN CLAUDE_PERMISSION_MODE CODEX_BIN CODEX_SANDBOX_MO
 export CURSOR_BIN CURSOR_ADAPTER_ENABLED CURSOR_SANDBOX_MODE CURSOR_FORCE CURSOR_ALLOW_UNSANDBOXED
 export OPENAI_COMPATIBLE_ADAPTER_ENABLED OPENAI_COMPATIBLE_ENDPOINT OPENAI_COMPATIBLE_MODEL
 export OPENAI_COMPATIBLE_ALLOW_SHELL OPENAI_COMPATIBLE_ALLOW_INSECURE_HTTP
-python3 "$SCRIPT_DIR/../core/launchd-config.py" \
-    --project "$PROJECT_DIR" --path "$DAEMON_PATH" --output "$PLIST_PATH"
+render_args=(--project "$PROJECT_DIR" --path "$DAEMON_PATH" --output "$PLIST_PATH")
+if [ "$PREPARE_ONLY" -eq 1 ]; then render_args+=(--prepare); fi
+python3 "$SCRIPT_DIR/../core/launchd-config.py" "${render_args[@]}"
 
 ui_message mac.written "$PLIST_PATH"
 
 # Load
+if [ "$PREPARE_ONLY" -eq 1 ]; then
+    ui_message install.service_prepared
+    exit 0
+fi
 launchctl load "$PLIST_PATH"
 echo ""
 ui_message mac.installed

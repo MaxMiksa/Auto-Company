@@ -39,7 +39,7 @@ class SystemdFixture(unittest.TestCase):
         self.env = dict(os.environ, HOME=str(self.home),
                         PATH=f"{self.bin}:{os.environ['PATH']}")
 
-    def generate_unit(self, name, with_env=True):
+    def generate_unit(self, name, with_env=True, prepare=False):
         project = self.root / name
         (project / "scripts/wsl").mkdir(parents=True)
         (project / "scripts/core").mkdir()
@@ -56,7 +56,9 @@ class SystemdFixture(unittest.TestCase):
             (project / ".auto-loop.env").write_text(
                 'AUTO_COMPANY_SYSTEMD_SENTINEL="loaded from env % with spaces"\n',
                 encoding="utf-8")
-        result = subprocess.run(["bash", str(installer)], env=self.env,
+        if prepare:
+            (self.bin / "systemctl").write_text('#!/bin/sh\ncase "$*" in *" cat "*) exit 1;; esac\nexit 0\n')
+        result = subprocess.run(["bash", str(installer), *(["--prepare"] if prepare else [])], env=self.env,
                                 capture_output=True, text=True, timeout=15)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         unit = (self.home / ".config/systemd/user/auto-company.service").read_text()
@@ -156,6 +158,23 @@ class SystemdRuntimeTests(SystemdFixture):
 
     def test_missing_optional_env_still_runs(self):
         self.run_probe(PATHS[0], with_env=False)
+
+    def test_prepared_service_stays_disabled_until_manual_start(self):
+        project, unit = self.generate_unit("prepared repo", prepare=True)
+        unit_name = "auto-company-probe-" + uuid.uuid4().hex + ".service"
+        unit_dir = Path(os.environ["XDG_RUNTIME_DIR"]) / "systemd/user"
+        created_dirs = [p for p in (unit_dir.parent, unit_dir) if not p.exists()]
+        unit_dir.mkdir(parents=True, exist_ok=True)
+        unit_path = unit_dir / unit_name
+        self.addCleanup(self.cleanup_unit, unit_name, unit_path, created_dirs)
+        unit_path.write_text(unit.replace("Type=simple", "Type=oneshot").replace("Restart=always", "Restart=no"))
+        self.assertEqual(self.control("daemon-reload").returncode, 0)
+        self.assertEqual(self.control("is-enabled", unit_name).stdout.strip(), "disabled")
+        self.assertEqual(self.control("is-active", unit_name).stdout.strip(), "inactive")
+        self.assertFalse((project / "probe-result").exists())
+        started = self.control("start", unit_name)
+        self.assertEqual(started.returncode, 0, started.stdout + started.stderr)
+        self.assertTrue((project / "probe-result").exists())
 
 
 if __name__ == "__main__":

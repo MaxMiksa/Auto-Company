@@ -50,7 +50,7 @@ def main():
         shutil.copytree(REPO_ROOT / "dashboard", root / "dashboard")
         core = root / "scripts/core"
         core.mkdir(parents=True)
-        for name in ("localization.py", "usage_lib.py", "cycle_reports.py", "project_metadata.py", "product_identity.py", "product_media.py", "product_media_process.py", "product_icon_html.py"):
+        for name in ("localization.py", "installation_state.py", "usage_lib.py", "cycle_reports.py", "project_metadata.py", "product_identity.py", "product_media.py", "product_media_process.py", "product_icon_html.py"):
             shutil.copy2(REPO_ROOT / "scripts/core" / name, core / name)
         (root / "memories").mkdir()
         (root / "memories/consensus.md").write_text(

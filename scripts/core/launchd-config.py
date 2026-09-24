@@ -25,15 +25,15 @@ RUNTIME_SETTINGS = (
 )
 
 
-def render(project: str, path: str, environ: dict[str, str]) -> bytes:
+def render(project: str, path: str, environ: dict[str, str], prepare: bool = False) -> bytes:
     settings = {key: environ[key] for key in RUNTIME_SETTINGS if key in environ}
     settings.update({"PATH": path, "HOME": environ["HOME"]})
     return plistlib.dumps({
         "Label": "com.autocompany.loop",
         "ProgramArguments": ["/bin/bash", f"{project}/scripts/core/auto-loop.sh", "--daemon"],
         "WorkingDirectory": project,
-        "KeepAlive": {"PathState": {f"{project}/.auto-loop-paused": False}},
-        "RunAtLoad": True,
+        "KeepAlive": False if prepare else {"PathState": {f"{project}/.auto-loop-paused": False}},
+        "RunAtLoad": not prepare,
         "StandardOutPath": f"{project}/logs/launchd-stdout.log",
         "StandardErrorPath": f"{project}/logs/launchd-stderr.log",
         "EnvironmentVariables": settings,
@@ -86,7 +86,16 @@ def main() -> None:
     mode.add_argument("--output", type=Path)
     mode.add_argument("--validate", type=Path)
     mode.add_argument("--validate-loaded", action="store_true")
+    mode.add_argument("--is-prepared", type=Path)
+    parser.add_argument("--prepare", action="store_true")
     args = parser.parse_args()
+    if args.is_prepared:
+        try:
+            config = plistlib.loads(args.is_prepared.read_bytes())
+            validate(args.project, config)
+        except (OSError, ValueError, TypeError, ExpatError, plistlib.InvalidFileException) as exc:
+            parser.exit(2, str(exc) + "\n")
+        raise SystemExit(0 if config.get("RunAtLoad") is False and config.get("KeepAlive") is False else 1)
     if args.validate or args.validate_loaded:
         try:
             raw = args.validate.read_bytes() if args.validate else sys.stdin.buffer.read()
@@ -96,7 +105,7 @@ def main() -> None:
         return
     if args.path is None:
         parser.error("--path is required with --output")
-    encoded = render(args.project, args.path, dict(os.environ))
+    encoded = render(args.project, args.path, dict(os.environ), args.prepare)
     temporary = args.output.with_suffix(".plist.tmp")
     try:
         temporary.write_bytes(encoded)

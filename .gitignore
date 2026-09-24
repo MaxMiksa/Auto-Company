@@ -218,6 +218,7 @@ docs/*/*
 !docs/runtime-observability.md
 !docs/product-media.md
 !docs/product-cycles.md
+!docs/install.md
 # Ignore all memories (keep folder marker only)
 memories/*
 !memories/.gitkeep

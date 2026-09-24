@@ -75,6 +75,13 @@ def main() -> int:
     except BlockingIOError:
         print("Auto loop already running for this checkout. Stop it first.", file=sys.stderr)
         return 1
+    from installation_state import check_maintenance
+    try:
+        check_maintenance(Path(script).resolve().parents[2])
+    except ValueError as error:
+        os.close(descriptor)
+        print(str(error), file=sys.stderr)
+        return 78
     os.set_inheritable(descriptor, True)
     os.environ["AUTO_COMPANY_LOCK_PID"] = str(os.getpid())
     os.execv("/bin/bash", ["/bin/bash", str(Path(script).resolve()), *args])

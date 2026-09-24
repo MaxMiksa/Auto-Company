@@ -8,6 +8,7 @@ import sys
 JOBS = {
     "runtime": ("windows-config", "python-tests", "macos-runtime", "shell-syntax", "shell-contracts"),
     "browser": ("dashboard-browser",),
+    "distribution": ("release-packages",),
     "tabledelta": ("tabledelta",),
     "cuecheck": ("cuecheck",),
     "snapog": ("snapog",),

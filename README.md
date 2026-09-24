@@ -84,6 +84,12 @@ These three local products come from actual runs and appear in both README langu
   </tr>
 </table>
 
+## Download and Guided Setup
+
+Releases that include maintained platform archives can be installed without cloning Git. Download the Windows, macOS, or Linux asset and `SHA256SUMS.txt` from the same [GitHub Release](https://github.com/MaxMiksa/Auto-Company/releases), verify the checksum before extraction, then run the included `setup.ps1` or `setup.sh`. The guide shows dependencies and proposed changes before confirmation, detects Chinese or English from the operating-system UI, and skips the optional screenshot environment unless requested. It does not call a model during installation, and services remain stopped with autostart disabled until you choose to start them. See the [English installation guide](i18n/en/docs/install.md) or [中文安装说明](docs/install.md).
+
+The Git clone instructions below remain supported, including for older Releases that do not contain the maintained platform assets.
+
 ## Where To Start (By Platform)
 
 - Windows users: start from [Windows (WSL) Quick Start](#windows-wsl-quick-start), then read the [Windows + WSL Setup Guide](i18n/en/docs/windows-setup.md)

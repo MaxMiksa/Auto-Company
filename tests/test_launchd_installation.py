@@ -129,6 +129,21 @@ class LaunchdRuntimeTests(unittest.TestCase):
     def test_first_start_installs_and_runs_saved_environment(self):
         self.install()
 
+    def test_prepared_install_is_unloaded_until_explicit_start(self):
+        result = subprocess.run(["/bin/bash", str(self.project / "scripts/macos/install-daemon.sh"), "--prepare"],
+                                env=dict(self.env, **SETTINGS, CODEX_BIN=str(self.cli)),
+                                capture_output=True, text=True, timeout=20)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertNotEqual(self.control("list", self.label).returncode, 0)
+        self.assertFalse((self.project / "probe-result").exists())
+        before = self.plist.read_bytes()
+        config = plistlib.loads(before)
+        self.assertIs(config["RunAtLoad"], False)
+        self.assertIs(config["KeepAlive"], False)
+        self.start()
+        self.wait_probe()
+        self.assertEqual(self.plist.read_bytes(), before)
+
     def test_loaded_start_preserves_configuration_and_process(self):
         before_pid = self.install()
         self.assertEqual(self.loaded_pid(), before_pid)

@@ -358,5 +358,21 @@
   "help.help": {
     "en": "Show this help",
     "zh-CN": "显示此帮助"
+  },
+  "install.invalid_argument": {
+    "en": "Unsupported service installer argument. Use --prepare to prepare a stopped service.",
+    "zh-CN": "不支持此服务安装参数。使用 --prepare 可准备未启动的服务。"
+  },
+  "install.service_prepared": {
+    "en": "Service prepared. It is stopped and autostart is disabled.",
+    "zh-CN": "后台服务已准备完成，当前未启动，开机运行未启用。"
+  },
+  "install.service_conflict": {
+    "en": "An existing service belongs to another installation. Resolve its ownership before continuing.",
+    "zh-CN": "已有服务属于其他安装目录。请先处理服务归属，再继续安装。"
+  },
+  "install.service_busy": {
+    "en": "The existing service is active or configured to start automatically. Stop it and disable autostart before continuing.",
+    "zh-CN": "已有服务正在运行或已启用开机运行。请先停止并关闭开机运行，再继续安装。"
   }
 }

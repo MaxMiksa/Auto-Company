@@ -9,7 +9,9 @@ param(
 
 $ErrorActionPreference = "Stop"
 . (Join-Path $PSScriptRoot "messages-win.ps1")
+if (-not $PSBoundParameters.ContainsKey("Distro")) { $Distro = Resolve-AutoCompanyDistro }
 if ($PSBoundParameters.ContainsKey("Language")) { Initialize-AutoCompanyMessages -Language $Language }
+if ($Action -in @('start', 'run')) { Assert-AutoCompanyMaintenance }
 
 if (-not (Get-Command wsl.exe -ErrorAction SilentlyContinue)) {
     throw (Get-AutoCompanyMessage -Key 'wsl.exe not found. Enable WSL first.')

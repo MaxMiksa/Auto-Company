@@ -97,6 +97,10 @@ def configuration_lock(root, timeout=5):
                 raise ValueError("local configuration is busy; after stopping every loop, team, Dashboard and configuration writer, run localization.py recover-lock --confirm RECOVER")
             time.sleep(0.025)
     try:
+        marker = root / ".auto-company/maintenance.json"
+        if marker.exists() or marker.is_symlink():
+            from installation_state import check_maintenance
+            check_maintenance(root)
         yield
     finally:
         path.rmdir()

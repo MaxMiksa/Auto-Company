@@ -9,18 +9,25 @@ import subprocess
 import sys
 
 
-ROUTES = ("runtime", "browser", "tabledelta", "cuecheck", "snapog")
+ROUTES = ("runtime", "browser", "distribution", "tabledelta", "cuecheck", "snapog")
+PRODUCTS = ("tabledelta", "cuecheck", "snapog")
 ROOT = Path(__file__).resolve().parents[2]
 SHA = re.compile(r"[0-9a-fA-F]{40}(?:[0-9a-fA-F]{24})?\Z")
 RUNTIME_FILES = {
     ".gitattributes", ".gitignore", "CLAUDE.md", "ENGINE_ADAPTERS.md",
     "INDEX.md", "Makefile", "PROMPT.md", "package.json", "projects/registry.tsv",
+    "setup.ps1", "setup.sh",
 }
 RUNTIME_PREFIXES = (".claude/", "dashboard/", "i18n/", "memories/", "scripts/", "tests/")
 BROWSER_PREFIXES = (
     "dashboard/", "i18n/", "scripts/core/", "scripts/windows/", "scripts/macos/",
     "scripts/wsl/", "scripts/media/", "tests/browser/", "tests/fixtures/",
 )
+DISTRIBUTION_FILES = {
+    "package.json", "setup.ps1", "setup.sh", "docs/install.md",
+    "i18n/en/docs/install.md", "tests/test_release_packages.py",
+}
+DISTRIBUTION_PREFIXES = ("scripts/install/",)
 
 
 def all_routes():
@@ -32,7 +39,7 @@ def route_paths(paths):
     for path in paths:
         if path.startswith((".github/workflows/", ".github/actions/", "scripts/ci/")) or path == "tests/test_ci_policy.py":
             return all_routes()
-        product = next((name for name in ROUTES[2:] if path.startswith(f"projects/{name}/")), None)
+        product = next((name for name in PRODUCTS if path.startswith(f"projects/{name}/")), None)
         if product:
             selected[product] = True
         runtime = path in RUNTIME_FILES or path.startswith(RUNTIME_PREFIXES) or path.endswith(".sh")
@@ -40,6 +47,8 @@ def route_paths(paths):
             selected["runtime"] = True
         if path.startswith(BROWSER_PREFIXES) or path.startswith("tests/test_dashboard") or path == "tests/test_product_media.py":
             selected["browser"] = True
+        if path in DISTRIBUTION_FILES or path.startswith(DISTRIBUTION_PREFIXES):
+            selected["distribution"] = True
         if product or runtime:
             continue
         # Ordinary prose and presentation assets explicitly need no test jobs.

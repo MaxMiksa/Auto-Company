@@ -1,0 +1,63 @@
+title	Auto Company guided setup	Auto Company 引导安装
+plan	System: {0} | Language: {1} | Engine: {2}	系统：{0} | 语言：{1} | 引擎：{2}
+target	Install location: {0}	安装位置：{0}
+source	Release source: {0}	发行文件：{0}
+reuse	Reuse compatible component: {0}	复用兼容组件：{0}
+missing	Prepare missing component: {0}	准备缺少的组件：{0}
+confirm	Continue with these changes? [y/N]	确认执行以上改动？[y/N]
+cancelled	Cancelled. No dependency or runtime changes were made.	已取消。未改动依赖或运行环境。
+failed	Setup stopped at: {0}. Review the diagnostics and run setup again.	安装停在：{0}。请查看诊断后重新运行安装入口。
+diagnostics	Diagnostics from the dependency or operating system:	依赖或操作系统返回的诊断：
+resume	Progress saved. Run the same setup entry again to continue: {0}	已保存进度。再次运行同一安装入口继续：{0}
+invalid	Invalid option or value: {0}	选项或参数值无效：{0}
+state_invalid	Saved setup state is invalid. Inspect or move this file before retrying: {0}	保存的安装状态无效。检查或移走此文件后重试：{0}
+help	Options: --target PATH --language zh-CN|en --engine claude|codex --media|--skip-media --login --yes --plan --no-dashboard. --plan makes no changes; --yes explicitly accepts the displayed plan.	选项：--target 路径 --language zh-CN|en --engine claude|codex --media|--skip-media --login --yes --plan --no-dashboard。--plan 仅查看；--yes 明确接受显示的安装清单。
+help_windows	Options: -Target PATH -Language zh-CN|en -Engine claude|codex -Distro NAME -Media|-SkipMedia -Login -Yes -Plan -NoDashboard. -Plan makes no changes; -Yes explicitly accepts the displayed plan.	选项：-Target 路径 -Language zh-CN|en -Engine claude|codex -Distro 名称 -Media|-SkipMedia -Login -Yes -Plan -NoDashboard。-Plan 仅查看；-Yes 明确接受显示的安装清单。
+engine_choice	Choose engine [1 Claude, 2 Codex; default 1]:	选择引擎 [1 Claude，2 Codex；默认 1]：
+service_plan	Prepare a stopped service with autostart disabled; open Dashboard only. Models run only after you select Start.	登记已停止且不开机运行的服务；仅打开看板。选择开始后才运行模型。
+tools_plan	Missing Node/engine tools use a private user directory: {0}; shell profiles and global npm settings are unchanged.	缺少的 Node/引擎工具使用用户专用目录：{0}；不修改 shell 配置或全局 npm 设置。
+apt_plan	Missing system tools use Ubuntu 24.04 apt (sudo permission may be requested): {0}	缺少的系统工具通过 Ubuntu 24.04 apt 安装（可能请求 sudo 授权）：{0}
+brew_plan	Missing system tools use the existing Homebrew: {0}	缺少的系统工具通过已有 Homebrew 安装：{0}
+brew_missing	Homebrew is missing. Prepare Command Line Tools and Homebrew using https://brew.sh, then rerun; no downloaded shell installer will run automatically.	未找到 Homebrew。请按 https://brew.sh 准备 Command Line Tools 和 Homebrew 后重试；不会自动执行下载的 shell 安装器。
+manual_deps	Automatic system dependency installation is limited to Ubuntu 24.04 or existing macOS Homebrew. Install these components manually, then rerun: {0}	自动安装系统依赖限于 Ubuntu 24.04 或已有 Homebrew 的 macOS。请手动准备后重试：{0}
+python_old	Python 3.10 or newer is required.	需要 Python 3.10 或更新版本。
+node_plan	Install official Node.js 22.22.0 for this user, validating the pinned SHA-256 before extraction.	为当前用户安装官方 Node.js 22.22.0，解压前验证固定 SHA-256。
+node_integrity	Node.js download does not match the pinned SHA-256. It was not extracted or executed; check the network/download source before retrying.	Node.js 下载文件与固定 SHA-256 不一致。未解压或执行；请检查网络和下载来源后重试。
+download_tool	Node download also needs curl; install it through Ubuntu 24.04 apt or existing macOS Homebrew. Other systems require manual preparation.	Node 下载还需要 curl；通过 Ubuntu 24.04 apt 或已有 macOS Homebrew 安装。其他系统需要手动准备。
+engine_plan	Install the official npm package for {0} into the private tools directory.	将 {0} 的官方 npm 包安装到专用工具目录。
+unsupported_arch	Automatic Node installation does not support this platform/architecture: {0}. Install Node 22+ manually and rerun.	自动 Node 安装暂不支持此平台/架构：{0}。请手动安装 Node 22+ 后重试。
+media_plan	Optional screenshots: npm ci from the shipped lockfile, Chromium only; Ubuntu may request sudo for browser libraries. Failure will keep the core installation.	可选截图：按随包锁文件执行 npm ci，仅安装 Chromium；Ubuntu 的浏览器系统库可能请求 sudo。失败仍保留核心安装。
+media_skipped	Screenshots: skipped. Rerun setup with --media (Windows: -Media) to add them later.	截图：已跳过。以后可用 --media（Windows：-Media）重新运行安装入口补装。
+media_failed	Core installation is retained. Optional screenshots are not ready; review diagnostics and retry with the media option.	核心安装已保留。可选截图尚未就绪；请查看诊断并使用截图选项重试。
+media_ready	Screenshots: Chromium launch verified.	截图：已验证 Chromium 可启动。
+login_plan	Account login remains interactive. Setup never sends a model prompt.	账户登录由你交互完成。安装过程不会发送模型提示词。
+login_ready	Engine login status: authenticated.	引擎登录状态：已登录。
+login_needed	Engine login status: not confirmed. Run {0}, or rerun setup with --login (Windows: -Login). Core setup can still finish.	引擎登录状态：未确认。请运行 {0}，或使用 --login（Windows：-Login）重新安装。核心安装仍可完成。
+login_now	Opening the official account login flow; finish it yourself.	即将打开官方账户登录流程，请自行完成。
+login_failed	Account login was not confirmed. Setup will not change accounts or send a model prompt.	未确认账户登录。安装程序不会更换账号或发送模型提示词。
+core_ready	Core installation ready: {0}. Service stopped; autostart disabled.	核心安装就绪：{0}。服务已停止；开机运行已关闭。
+dashboard	Dashboard: {0}. Keep this terminal open; Ctrl+C closes the Dashboard only.	看板：{0}。请保持终端打开；Ctrl+C 仅关闭看板。
+dashboard_later	Open Dashboard later with: {0}	稍后可用以下入口打开看板：{0}
+systemd_missing	A working systemd user session is required. Enable systemd/login for this user and rerun. Setup does not restart WSL or other distributions.	需要可用的 systemd 用户会话。请启用 systemd/当前用户会话后重试。安装程序不会重启 WSL 或其他发行版。
+root_user	Use a regular user account, not root; create/select the WSL user first if applicable.	请使用普通用户账户，不能使用 root；如使用 WSL，请先创建或选择普通用户。
+payload_missing	This is not a packaged release: release-files.json is missing. Existing Git checkouts keep using their normal setup path.	当前目录不是正式发行包：缺少 release-files.json。已有 Git 工作区请继续使用原安装方式。
+env_conflict	Existing runtime configuration differs from this installer choice. Keep it unchanged and review it before retrying: {0}	现有运行配置与本次安装选择不同，已保留原配置。请检查后重试：{0}
+windows_only	This entry requires Windows. Use bash setup.sh on macOS or Linux.	此入口仅用于 Windows。macOS 或 Linux 请运行 bash setup.sh。
+windows_baseline	Automatic Windows preparation targets Windows 11. Other versions need manual preparation before this installer can continue.	Windows 自动环境准备以 Windows 11 为基线；其他版本需手动准备后继续。
+windows_python	Windows Dashboard requires Python 3.10+. Missing Python uses WinGet Python.Python.3.12 for this user.	Windows 看板需要 Python 3.10+。缺失时使用 WinGet 为当前用户安装 Python.Python.3.12。
+winget_missing	WinGet is unavailable. Install Python 3.10+ from https://www.python.org/downloads/windows/ and rerun setup in a new terminal.	未找到 WinGet。请从 https://www.python.org/downloads/windows/ 安装 Python 3.10+，再在新终端中重新运行安装入口。
+wsl_plan	Install WSL 2 and distribution {0}; Windows may request administrator permission and a restart. Progress will be saved first.	安装 WSL 2 和发行版 {0}；Windows 可能请求管理员授权和重启。操作前会保存进度。
+wsl_deferred	WSL dependency inspection will continue after Windows restart and Linux user creation. Expect Python 3.10+, Git, make, curl and the chosen engine; those changes will be shown and confirmed on resume.	WSL 依赖检查将在 Windows 重启和 Linux 用户创建后继续；预计需要 Python 3.10+、Git、make、curl 和所选引擎，恢复时会展示并确认具体改动。
+reboot	WSL preparation was requested. Restart Windows if prompted, open the selected distribution once to create a regular Linux user, then run setup again. Installation is not complete.	已请求准备 WSL。如系统提示，请重启 Windows；首次打开发行版并创建普通 Linux 用户，再重新运行安装入口。安装尚未完成。
+wsl_user	Open {0} once and finish creating its Linux user, then rerun setup. Installation is not complete.	请先打开 {0} 并完成 Linux 用户创建，再重新运行安装入口。安装尚未完成。
+wsl2_needed	Selected distribution must use WSL 2. Review `wsl --set-version` for {0}, then rerun setup; no existing distribution is converted automatically.	所选发行版必须使用 WSL 2。请查看 {0} 的 wsl --set-version 操作后重试；不会自动转换已有发行版。
+distro_choice	Multiple WSL distributions exist. Select one by its displayed number, or rerun with -Distro NAME:	存在多个 WSL 发行版。请选择显示的编号，或使用 -Distro 名称重新运行：
+distro_required	Specify -Distro NAME when multiple distributions exist in a noninteractive session.	非交互环境存在多个发行版时，请通过 -Distro 名称指定。
+distro	Selected WSL distribution: {0}	所选 WSL 发行版：{0}
+shared_path	Windows installs require a local Windows drive path shared with WSL; UNC, network and WSL filesystem paths are not supported.	Windows 安装需要可与 WSL 共享的本地 Windows 盘符路径；不支持 UNC、网络盘或 WSL 文件系统路径。
+path_invalid	Paths and option values cannot contain line breaks or tab characters.	路径及参数值不能包含换行或制表符。
+stage_inspect	dependency inspection	依赖检查
+stage_dependencies	dependency preparation	依赖准备
+stage_install	verified release installation	发行文件验证与安装
+stage_service	service preparation	服务准备
+stage_dashboard	Dashboard startup	看板启动

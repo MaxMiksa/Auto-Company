@@ -196,6 +196,9 @@ case "${1:-status}" in
         require_installed_service
         ;;
     start)
+        if [ -e "$PROJECT_DIR/.auto-company/maintenance.json" ] || [ -L "$PROJECT_DIR/.auto-company/maintenance.json" ]; then
+            python3 "$SCRIPT_DIR/../core/installation_state.py" check --root "$PROJECT_DIR" || exit $?
+        fi
         require_installed_service || exit $?
         if ! systemctl --user start "$SERVICE_NAME"; then
             ui_message systemd.start_failed "$SERVICE_NAME" >&2

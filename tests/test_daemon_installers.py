@@ -77,6 +77,54 @@ class DaemonInstallerTests(unittest.TestCase):
         self.assertIn(f'EnvironmentFile=-{literal_path}/.auto-loop.env\n', unit)
         self.assertIn("RestartPreventExitStatus=78", unit)
 
+    def test_mac_prepare_writes_inert_service_without_loading(self):
+        self.fake("uname", 'printf "Darwin\\n"')
+        trace = Path(self.temp.name) / "trace"
+        self.env["TRACE"] = str(trace)
+        self.fake("launchctl", 'printf "%s\\n" "$*" >> "$TRACE"; test "$1" != list')
+        self.run_installer("scripts/macos/install-daemon.sh", "--prepare")
+        config = plistlib.loads((self.home_dir / "Library/LaunchAgents/com.autocompany.loop.plist").read_bytes())
+        self.assertIs(config["RunAtLoad"], False)
+        self.assertIs(config["KeepAlive"], False)
+        self.assertEqual(trace.read_text().splitlines(), ["list com.autocompany.loop"])
+
+    def test_mac_prepare_refuses_loaded_service_before_writes(self):
+        self.fake("uname", 'printf "Darwin\\n"')
+        result = subprocess.run(["bash", str(self.project / "scripts/macos/install-daemon.sh"), "--prepare"],
+                                env=self.env, capture_output=True, text=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertFalse((self.home_dir / "Library/LaunchAgents/com.autocompany.loop.plist").exists())
+
+    def test_systemd_prepare_never_enables_or_starts(self):
+        trace = Path(self.temp.name) / "trace"
+        self.env["TRACE"] = str(trace)
+        self.fake("systemctl", 'printf "%s\\n" "$*" >> "$TRACE"\ncase "$*" in *" cat "*) exit 1;; esac\nexit 0')
+        self.run_installer("scripts/wsl/install-wsl-daemon.sh", "--prepare")
+        calls = trace.read_text().splitlines()
+        self.assertIn("--user daemon-reload", calls)
+        self.assertFalse(any(" enable " in row or " start " in row for row in calls), calls)
+        self.assertTrue((self.home_dir / ".config/systemd/user/auto-company.service").exists())
+
+    def test_prepare_typo_never_installs_service(self):
+        self.fake("uname", 'printf "Darwin\\n"')
+        for script in ("scripts/macos/install-daemon.sh", "scripts/wsl/install-wsl-daemon.sh"):
+            with self.subTest(script=script):
+                result = subprocess.run(["bash", str(self.project / script), "--preparee"],
+                                        env=self.env, capture_output=True, text=True)
+                self.assertEqual(result.returncode, 2, result.stderr)
+        self.assertFalse((self.home_dir / "Library").exists())
+        self.assertFalse((self.home_dir / ".config").exists())
+
+    def test_systemd_prepare_rejects_foreign_command_in_same_directory(self):
+        self.run_installer("scripts/wsl/install-wsl-daemon.sh")
+        path = self.home_dir / ".config/systemd/user/auto-company.service"
+        changed = path.read_text().replace('/scripts/core/auto-loop.sh', '/scripts/foreign.sh')
+        path.write_text(changed)
+        result = subprocess.run(["bash", str(self.project / "scripts/wsl/install-wsl-daemon.sh"), "--prepare"],
+                                env=self.env, capture_output=True, text=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(path.read_text(), changed)
+
 
 if __name__ == "__main__":
     unittest.main()

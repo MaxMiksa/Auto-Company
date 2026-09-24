@@ -5,7 +5,9 @@ param(
 
 $ErrorActionPreference = "Stop"
 . (Join-Path $PSScriptRoot "messages-win.ps1")
+if (-not $PSBoundParameters.ContainsKey("Distro")) { $Distro = Resolve-AutoCompanyDistro }
 
+Assert-AutoCompanyMaintenance
 if (-not (Get-Command schtasks.exe -ErrorAction SilentlyContinue)) {
     throw (Get-AutoCompanyMessage -Key 'schtasks.exe not found.')
 }

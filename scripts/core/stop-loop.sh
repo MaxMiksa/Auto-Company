@@ -74,6 +74,9 @@ pause_daemon() {
 }
 
 resume_daemon() {
+    if [ -e "$PROJECT_DIR/.auto-company/maintenance.json" ] || [ -L "$PROJECT_DIR/.auto-company/maintenance.json" ]; then
+        python3 "$SCRIPT_DIR/installation_state.py" check --root "$PROJECT_DIR" || return $?
+    fi
     if ! is_launchd_supported; then
         ui_message mac.only "$OS_NAME"
         exit 1
@@ -93,6 +96,9 @@ resume_daemon() {
         launchctl start "$LABEL"
     else
         launchctl load "$PLIST_PATH"
+        if python3 "$SCRIPT_DIR/launchd-config.py" --project "$PROJECT_DIR" --is-prepared "$PLIST_PATH"; then
+            launchctl start "$LABEL"
+        fi
     fi
 
     # A failed load/start must leave the existing pause marker intact.

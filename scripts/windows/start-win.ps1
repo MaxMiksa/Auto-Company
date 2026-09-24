@@ -28,6 +28,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 . (Join-Path $PSScriptRoot "messages-win.ps1")
+if (-not $PSBoundParameters.ContainsKey("Distro")) { $Distro = Resolve-AutoCompanyDistro }
 
 function ConvertTo-RuntimeLanguage {
     param([ValidateSet("zh-CN", "en")][string]$Value)
@@ -155,6 +156,7 @@ if (Test-Path (Join-Path $PSScriptRoot '../../.auto-loop-stop-pending')) {
     throw "The previous stop is unconfirmed. Retry Stop before starting again."
 }
 
+Assert-AutoCompanyMaintenance
 Assert-WslAvailable
 $paths = Get-RepoPaths
 $repoWin = $paths.RepoWin

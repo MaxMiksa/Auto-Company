@@ -194,5 +194,13 @@
   "WSL anchor stopped.": {
     "en": "WSL anchor stopped.",
     "zh-CN": "WSL 保活进程已停止。"
+  },
+  "Managed installation metadata is invalid.": {
+    "en": "Managed installation metadata is invalid.",
+    "zh-CN": "安装管理信息无效，请运行安装诊断。"
+  },
+  "Installation maintenance is unfinished. Recover or finish the update first.": {
+    "en": "Installation maintenance is unfinished. Recover or finish the update first.",
+    "zh-CN": "安装维护尚未完成。请先恢复或完成更新。"
   }
 }

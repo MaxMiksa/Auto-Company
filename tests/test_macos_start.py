@@ -203,6 +203,19 @@ esac''')
         self.assertEqual(self.pause.read_text(), "operator pause\n")
         self.assertFalse(self.trace.exists())
 
+    def test_prepared_service_requires_explicit_start_after_load(self):
+        self.install_config()
+        config = plistlib.loads(self.plist.read_bytes())
+        config.update(RunAtLoad=False, KeepAlive=False)
+        self.plist.write_bytes(plistlib.dumps(config))
+        before = self.plist.read_bytes()
+        result = self.start()
+        self.assertTrue(result["ok"], result["output"])
+        calls = self.trace.read_text().splitlines()
+        self.assertIn(f"load {self.plist}", calls)
+        self.assertIn(f"start {LABEL}", calls)
+        self.assertEqual(before, self.plist.read_bytes())
+
     def test_malformed_plist_is_rejected_before_mutation(self):
         for raw in (b"not a plist", b'<?xml version="1.0"?><plist><dict>', plistlib.dumps(["invalid"]),
                     plistlib.dumps({"Label": LABEL, "WorkingDirectory": str(self.project)})):

@@ -84,6 +84,12 @@ daemon (launchd / systemd --user, 崩溃自重启)
   </tr>
 </table>
 
+## 下载与引导安装
+
+带有正式平台附件的 Release 可以不经 Git clone 安装。从同一个 [GitHub Release](https://github.com/MaxMiksa/Auto-Company/releases) 下载 Windows、macOS 或 Linux 附件及 `SHA256SUMS.txt`，在解压前核对校验值，再运行包内 `setup.ps1` 或 `setup.sh`。引导会在确认前显示依赖和改动，按照操作系统界面判断中文或英文，并默认跳过可选截图环境，除非你明确选择安装。安装期间不会调用模型，服务默认保持停止且不启用开机运行，直到你主动开始。详见[中文安装说明](docs/install.md)或 [English installation guide](i18n/en/docs/install.md)。
+
+下方 Git clone 方式继续受支持，也适用于尚未包含正式平台附件的旧 Release。
+
 ## 你该看哪一节（按平台）
 
 - Windows 用户：从 [Windows (WSL) 快速开始](#windows-wsl-快速开始) 开始，再看 [`docs/windows-setup.md`](docs/windows-setup.md)

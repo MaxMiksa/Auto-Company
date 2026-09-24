@@ -19,6 +19,7 @@ jobs:
     outputs:
       runtime: ${{ steps.select.outputs.runtime }}
       browser: ${{ steps.select.outputs.browser }}
+      distribution: ${{ steps.select.outputs.distribution }}
       tabledelta: ${{ steps.select.outputs.tabledelta }}
       cuecheck: ${{ steps.select.outputs.cuecheck }}
       snapog: ${{ steps.select.outputs.snapog }}
@@ -42,17 +43,21 @@ jobs:
       - name: Verify Windows PowerShell 5.1 configuration and paths
         shell: powershell
         run: |
-          foreach ($test in @('start_config', 'wsl_paths', 'env_culture', 'messages')) {
+          foreach ($test in @('start_config', 'wsl_paths', 'env_culture', 'messages', 'installation')) {
             python scripts/ci/run.py "powershell-$test" powershell -NoProfile -File "tests/test_windows_$test.ps1"
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           }
+          python scripts/ci/run.py powershell-install-bootstrap powershell -NoProfile -File tests/test_install_bootstrap_windows.ps1
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Verify PowerShell 7 configuration and paths
         shell: pwsh
         run: |
-          foreach ($test in @('start_config', 'wsl_paths', 'env_culture', 'messages')) {
+          foreach ($test in @('start_config', 'wsl_paths', 'env_culture', 'messages', 'installation')) {
             python scripts/ci/run.py "pwsh-$test" pwsh -NoProfile -File "tests/test_windows_$test.ps1"
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           }
+          python scripts/ci/run.py pwsh-install-bootstrap pwsh -NoProfile -File tests/test_install_bootstrap_windows.ps1
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Save failure evidence
         if: failure()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -106,6 +111,13 @@ jobs:
           python3 -m unittest discover -s tests -p test_log_rotation.py -v
           python3 -m unittest discover -s tests -p test_ui_messages.py -v
           CI_SCRIPT
+      - name: Verify installer lifecycle, bootstrap, maintenance state and writer probes
+        run: |
+          python3 scripts/ci/run.py macos-installer python3 -m unittest -v \
+            tests.test_install_manager \
+            tests.test_install_bootstrap \
+            tests.test_installation_state \
+            tests.test_install_writer_probe
       - name: Verify Dashboard Start with a real isolated LaunchAgent
         env:
           AUTO_COMPANY_TEST_LAUNCHD: '1'
@@ -306,6 +318,42 @@ jobs:
           name: snapog-failure
           path: ci-results/
           retention-days: 14
+  release-packages:
+    name: Deterministic release packages
+    needs: changes
+    if: needs.changes.outputs.distribution == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12'
+      - name: Verify release package contracts
+        run: python3 scripts/ci/run.py release-package-tests python3 -m unittest tests.test_release_packages -v
+      - name: Build the checked-out commit twice
+        run: |
+          python3 scripts/install/build_release.py --repo . --ref HEAD --output distribution-candidate
+          python3 scripts/install/build_release.py --repo . --ref HEAD --output distribution-repeat
+          diff -rq distribution-candidate distribution-repeat
+      - name: Save candidate packages
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: distribution-candidate-${{ github.sha }}
+          path: distribution-candidate/
+          if-no-files-found: error
+          retention-days: 14
+      - name: Save failure evidence
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-packages-failure
+          path: ci-results/
+          if-no-files-found: ignore
+          retention-days: 14
   ci-gate:
     name: CI gate
     if: always()
@@ -320,6 +368,7 @@ jobs:
       - tabledelta
       - cuecheck
       - snapog
+      - release-packages
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:

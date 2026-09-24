@@ -1,0 +1,89 @@
+name: Upload verified distribution assets
+
+'on':
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing version tag (for example, v1.6.1)
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: distribution-${{ inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  upload-existing-draft:
+    name: Verify tag and upload to existing draft Release
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      actions: read
+      contents: write
+    environment: distribution-release
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RELEASE_TAG: ${{ inputs.tag }}
+    steps:
+      - name: Validate tag input before checkout
+        shell: bash
+        run: '[[ "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]'
+      - name: Check out the exact tag
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: refs/tags/${{ inputs.tag }}
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12'
+      - name: Verify version tag, commit and existing Draft Release
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]
+          git show-ref --verify --quiet "refs/tags/$RELEASE_TAG"
+          tag_commit="$(git rev-list -n 1 "$RELEASE_TAG")"
+          export TAG_COMMIT="$tag_commit"
+          test "$tag_commit" = "$(git rev-parse HEAD)"
+          package_version="$(python3 -c 'import json; print(json.load(open("package.json", encoding="utf-8"))["version"])')"
+          test "$RELEASE_TAG" = "v$package_version"
+          gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG" > release.json
+          gh api -H 'Accept: application/vnd.github+json' "repos/$GITHUB_REPOSITORY/actions/workflows/auto-company-runtime-ci.yml/runs?head_sha=$tag_commit&status=completed&per_page=20" > workflow-runs.json
+          python3 - <<'PY'
+          import json, os
+          release = json.load(open("release.json", encoding="utf-8"))
+          if release.get("tag_name") != os.environ["RELEASE_TAG"] or release.get("draft") is not True:
+              raise SystemExit("The target must be the matching existing Draft Release")
+          expected = {
+              f"Auto-Company-{os.environ['RELEASE_TAG']}-windows.zip",
+              f"Auto-Company-{os.environ['RELEASE_TAG']}-macos.tar.gz",
+              f"Auto-Company-{os.environ['RELEASE_TAG']}-linux.tar.gz",
+              "release-manifest.json",
+              "SHA256SUMS.txt",
+          }
+          existing = {asset["name"] for asset in release.get("assets", [])}
+          conflict = expected & existing
+          if conflict:
+              raise SystemExit(f"Refusing to overwrite existing release assets: {sorted(conflict)}")
+          runs = json.load(open("workflow-runs.json", encoding="utf-8")).get("workflow_runs", [])
+          eligible = [run for run in runs if run.get("head_sha") == os.environ["TAG_COMMIT"]]
+          latest = max(eligible, key=lambda run: run.get("id", 0), default=None)
+          main_pushes = [run for run in eligible if run.get("event") == "push" and run.get("head_branch") == "main"]
+          latest_main_push = max(main_pushes, key=lambda run: run.get("id", 0), default=None)
+          if (not latest or latest.get("conclusion") != "success" or not latest_main_push
+                  or latest_main_push.get("conclusion") != "success"):
+              raise SystemExit("The tagged main commit's latest completed runtime CI workflow did not succeed")
+          PY
+      - name: Test and reproducibly build the tagged source
+        run: |
+          python3 -m unittest tests.test_release_packages -v
+          python3 scripts/install/build_release.py --repo . --ref "$RELEASE_TAG" --output distribution-assets
+          python3 scripts/install/build_release.py --repo . --ref "$RELEASE_TAG" --output distribution-repeat
+          diff -rq distribution-assets distribution-repeat
+      - name: Upload the verified bytes without replacing assets
+        run: gh release upload "$RELEASE_TAG" distribution-assets/* --repo "$GITHUB_REPOSITORY"

@@ -13,7 +13,9 @@ if (-not (Test-Path $serverScript)) {
     throw (Get-AutoCompanyMessage -Key 'Dashboard server script not found: {0}' -Values @($serverScript))
 }
 
-if (-not (Get-Command python -ErrorAction SilentlyContinue)) {
+. (Join-Path $repoWin 'scripts/install/bootstrap.ps1')
+$dashboardPython = Find-BootstrapPython
+if (-not $dashboardPython) {
     throw (Get-AutoCompanyMessage -Key 'python not found in PATH.')
 }
 
@@ -21,9 +23,7 @@ $url = "http://$BindHost`:$Port"
 Write-Host (Get-AutoCompanyMessage -Key 'Starting dashboard server: {0}' -Values @($url))
 Write-Host (Get-AutoCompanyMessage -Key 'Press Ctrl+C in this window to stop.')
 
-if (-not $NoBrowser) {
-    Start-Process $url | Out-Null
-}
-
-& python $serverScript --host $BindHost --port $Port
+$serverArgs = @($dashboardPython.Prefix) + @($serverScript, '--host', $BindHost, '--port', $Port)
+if (-not $NoBrowser) { $serverArgs += '--open-browser' }
+& $dashboardPython.File @serverArgs
 exit $LASTEXITCODE

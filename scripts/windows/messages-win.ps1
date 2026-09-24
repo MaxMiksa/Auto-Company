@@ -1,6 +1,34 @@
 # Keep this script ASCII so Windows PowerShell 5.1 reads it without a BOM.
 # User-visible text lives in the UTF-8 catalog; native tool output is untouched.
 
+function Resolve-AutoCompanyDistro {
+    param([string]$RepoRoot = (Join-Path $PSScriptRoot '../..'), [string]$Fallback = 'Ubuntu')
+    $path = Join-Path $RepoRoot '.auto-company/install.json'
+    if (-not (Test-Path -LiteralPath $path)) { return $Fallback }
+    $item = Get-Item -LiteralPath $path -Force
+    if ($item.Attributes -band [System.IO.FileAttributes]::ReparsePoint) {
+        throw (Get-AutoCompanyMessage -Key 'Managed installation metadata is invalid.')
+    }
+    try {
+        $metadata = [System.IO.File]::ReadAllText($path, [System.Text.Encoding]::UTF8) | ConvertFrom-Json
+        $saved = $metadata.distro
+        if ($metadata.schema -ne 1 -or ($saved -and $saved -cnotmatch '^[A-Za-z0-9][A-Za-z0-9_. -]{0,127}$')) {
+            throw 'Invalid installation metadata.'
+        }
+        if ($saved) { return [string]$saved }
+    } catch {
+        throw (Get-AutoCompanyMessage -Key 'Managed installation metadata is invalid.')
+    }
+    return $Fallback
+}
+
+function Assert-AutoCompanyMaintenance {
+    param([string]$RepoRoot = (Join-Path $PSScriptRoot '../..'))
+    if (Test-Path -LiteralPath (Join-Path $RepoRoot '.auto-company/maintenance.json')) {
+        throw (Get-AutoCompanyMessage -Key 'Installation maintenance is unfinished. Recover or finish the update first.')
+    }
+}
+
 function Get-AutoCompanySystemLanguage {
     try {
         # CurrentUICulture can inherit a hosting shell's language instead of the

@@ -62,10 +62,41 @@ class RoutePolicyTests(unittest.TestCase):
             with self.subTest(path=path):
                 self.assertEqual(self.selected(path), {"runtime", "browser"})
 
+    def test_distribution_sources_and_contracts_select_release_packages(self):
+        for path in ("scripts/install/build_release.py", "scripts/install/manager.py", "setup.sh", "setup.ps1", "tests/test_release_packages.py"):
+            with self.subTest(path=path):
+                self.assertEqual(self.selected(path), {"runtime", "distribution"})
+        self.assertEqual(self.selected("docs/install.md"), {"distribution"})
+        self.assertEqual(self.selected("i18n/en/docs/install.md"), {"runtime", "browser", "distribution"})
+        self.assertEqual(self.selected("package.json"), {"runtime", "distribution"})
+
     def test_unknown_code_defaults_to_all_and_product_prefix_is_exact(self):
         for path in ("new-build/config.toml", "projects/snapog-copy/code.js", "pyproject.toml"):
             with self.subTest(path=path):
                 self.assertEqual(self.selected(path), set(CHANGES.ROUTES))
+
+    def test_release_upload_is_manual_tag_and_existing_draft_only(self):
+        workflow = (ROOT / ".github/workflows/distribution.yml").read_text(encoding="utf-8")
+        self.assertIn("workflow_dispatch:", workflow)
+        self.assertNotIn("pull_request:", workflow)
+        self.assertNotIn("push:", workflow)
+        self.assertIn("refs/tags/${{ inputs.tag }}", workflow)
+        self.assertIn('release.get("draft") is not True', workflow)
+        self.assertIn('gh release upload "$RELEASE_TAG"', workflow)
+        self.assertIn("actions/workflows/auto-company-runtime-ci.yml/runs", workflow)
+        self.assertIn("latest_main_push", workflow)
+        self.assertIn("actions: read", workflow)
+        self.assertNotIn("--clobber", workflow)
+        self.assertNotIn("check-runs", workflow)
+
+    def test_required_gate_runs_new_installer_checks_on_host_platforms(self):
+        workflow = (ROOT / ".github/workflows/auto-company-runtime-ci.yml").read_text(encoding="utf-8")
+        self.assertGreaterEqual(workflow.count("test_windows_$test.ps1"), 2)
+        self.assertIn("'installation'", workflow)
+        self.assertEqual(workflow.count("tests/test_install_bootstrap_windows.ps1"), 2)
+        for suite in ("tests.test_install_manager", "tests.test_install_bootstrap", "tests.test_installation_state", "tests.test_install_writer_probe"):
+            self.assertIn(suite, workflow)
+        self.assertIn('"distribution": ("release-packages",)', (ROOT / "scripts/ci/gate.py").read_text(encoding="utf-8"))
 
     def test_nul_delimited_git_paths_keep_tabs_and_newlines(self):
         paths = [b"docs/spaces and\ttabs.md", b"dashboard/line\nbreak.js", b"projects/snapog/$(touch unsafe).js"]

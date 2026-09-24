@@ -9,6 +9,12 @@ PROJECTS_DIR="$FRAMEWORK_DIR/projects"
 REGISTRY_FILE="$PROJECTS_DIR/registry.tsv"
 CONTEXT_TOOL="$SCRIPT_DIR/project-context.py"
 
+# Keep a managed project's registry writer visible for the complete command.
+# exec preserves the PID and the lease's process identity through Bash startup.
+if [ -f "$FRAMEWORK_DIR/.auto-company/install.json" ] && [ "${AUTO_COMPANY_PROJECT_WRITER:-}" != "$$" ]; then
+    exec python3 "$SCRIPT_DIR/installation_state.py" project --root "$FRAMEWORK_DIR" -- "$@"
+fi
+
 die() {
     echo "Error: $*" >&2
     exit 1
