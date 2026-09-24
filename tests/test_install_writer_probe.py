@@ -36,6 +36,22 @@ class WriterProbeTests(unittest.TestCase):
              mock.patch("writer_probe.subprocess.run", side_effect=OSError("unavailable")):
             self.assertIsNone(writer_is_alive({"pid": 123, "host": "windows"}))
 
+    @unittest.skipIf(os.name == "nt", "cross-host query is only used from WSL")
+    def test_localized_powershell_stderr_does_not_hide_valid_identity(self):
+        real_run = subprocess.run
+
+        def powershell_output(command, **kwargs):
+            # Windows PowerShell can write localized GBK CLIXML progress on
+            # stderr while stdout contains the requested ASCII JSON record.
+            return real_run([sys.executable, "-c",
+                             "import sys;sys.stderr.buffer.write(bytes([0xd5,0xfd]));"
+                             "print('{\"alive\":true,\"start\":\"42\"}')"], **kwargs)
+
+        with mock.patch("writer_probe.shutil.which", return_value="powershell.exe"), \
+                mock.patch("writer_probe.subprocess.run", side_effect=powershell_output):
+            self.assertIs(writer_is_alive({"pid": 123, "host": "windows", "process_start": "42"}), True)
+            self.assertIs(writer_is_alive({"pid": 123, "host": "windows", "process_start": "41"}), False)
+
 
 if __name__ == "__main__":
     unittest.main()

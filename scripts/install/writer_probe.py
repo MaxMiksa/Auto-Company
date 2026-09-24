@@ -41,7 +41,7 @@ def _windows_process(pid):
     # PID is validated as an integer before interpolation. No path/lease string
     # enters PowerShell source; the fixed command performs a read-only query.
     command = (
-        "$ErrorActionPreference='Stop'; try {"
+        "$ErrorActionPreference='Stop'; $ProgressPreference='SilentlyContinue'; try {"
         f"$process=Get-Process -Id {pid}; "
         "if ($process.HasExited) { '{\"alive\":false}' } else {"
         "@{alive=$true;start=[string]$process.StartTime.ToFileTimeUtc()} | ConvertTo-Json -Compress }"
@@ -51,7 +51,7 @@ def _windows_process(pid):
     encoded = base64.b64encode(command.encode("utf-16le")).decode("ascii")
     try:
         result = subprocess.run([executable, "-NoLogo", "-NoProfile", "-NonInteractive", "-EncodedCommand", encoded],
-                                capture_output=True, text=True, timeout=10)
+                                capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=10)
         if result.returncode:
             return None, None
         value = json.loads(result.stdout.lstrip("\ufeff").strip())
