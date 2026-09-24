@@ -52,6 +52,19 @@ class WriterProbeTests(unittest.TestCase):
             self.assertIs(writer_is_alive({"pid": 123, "host": "windows", "process_start": "42"}), True)
             self.assertIs(writer_is_alive({"pid": 123, "host": "windows", "process_start": "41"}), False)
 
+    @unittest.skipIf(os.name == "nt", "cross-host query is only used from WSL")
+    def test_corrupt_windows_identity_output_remains_unknown(self):
+        real_run = subprocess.run
+
+        def powershell_output(command, **kwargs):
+            return real_run([sys.executable, "-c",
+                             "import sys;sys.stdout.buffer.write(b'{\"alive\":true,\"start\":\"4'+"
+                             "bytes([0xff])+b'2\"}')"], **kwargs)
+
+        with mock.patch("writer_probe.shutil.which", return_value="powershell.exe"), \
+                mock.patch("writer_probe.subprocess.run", side_effect=powershell_output):
+            self.assertIsNone(writer_is_alive({"pid": 123, "host": "windows", "process_start": "42"}))
+
 
 if __name__ == "__main__":
     unittest.main()

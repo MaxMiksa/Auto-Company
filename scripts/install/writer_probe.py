@@ -51,10 +51,12 @@ def _windows_process(pid):
     encoded = base64.b64encode(command.encode("utf-16le")).decode("ascii")
     try:
         result = subprocess.run([executable, "-NoLogo", "-NoProfile", "-NonInteractive", "-EncodedCommand", encoded],
-                                capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=10)
+                                capture_output=True, timeout=10)
         if result.returncode:
             return None, None
-        value = json.loads(result.stdout.lstrip("\ufeff").strip())
+        # Localized stderr may use the Windows code page. Only stdout carries
+        # identity data, and corruption there must remain unknown, never stale.
+        value = json.loads(result.stdout.decode("utf-8-sig").strip())
         if value.get("alive") not in (True, False, None):
             return None, None
         return value.get("alive"), value.get("start")
