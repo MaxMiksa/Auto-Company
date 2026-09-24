@@ -43,8 +43,14 @@ bootstrap_clean_value() {
 
 bootstrap_shell_quote() {
     local value="$1"
-    value="${value//\'/\'\\\'\'}"
-    printf "'%s'" "$value"
+    printf "'"
+    # Bash 3.2 and newer Bash releases differ in replacement backslash rules.
+    # Emit each literal segment as data instead of using pattern replacement.
+    while [[ "$value" == *"'"* ]]; do
+        printf '%s%s' "${value%%\'*}" "'\\''"
+        value="${value#*\'}"
+    done
+    printf "%s'" "$value"
 }
 
 bootstrap_read_state() {
