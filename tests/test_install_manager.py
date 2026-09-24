@@ -251,6 +251,30 @@ class InstallManagerTests(unittest.TestCase):
         self.assertEqual(self.update(source, success=False)["code"], "busy")
         self.assertTrue((self.target / ".auto-company.local.lock").is_dir())
 
+    def test_project_helper_retains_lock_after_parent_releases_it(self):
+        import fcntl
+        self.install()
+        source = self.payload("new", "1.1.0", "second\n", HEADER + EXAMPLE)
+        lock_path = self.target / ".auto-company/project-registry.lock"
+        with lock_path.open("a+") as stream:
+            fcntl.flock(stream, fcntl.LOCK_EX)
+            child = subprocess.Popen([sys.executable, "-c", "import sys; sys.stdin.read()"],
+                                     stdin=subprocess.PIPE, pass_fds=(stream.fileno(),))
+        try:
+            inode = lock_path.stat().st_ino
+            for operation in ("update", "uninstall"):
+                arguments = [operation, "--root", self.target, "--yes"]
+                if operation == "update":
+                    arguments += ["--source", source]
+                self.assertEqual(self.run_cli(*arguments, success=False)["code"], "busy")
+                self.assertFalse((self.target / M.MARKER).exists())
+                self.assertFalse((self.target / ".auto-company.local.lock").exists())
+                self.assertEqual(lock_path.stat().st_ino, inode)
+                self.assertEqual((self.target / "program.py").read_bytes(), b"first\r\n")
+        finally:
+            child.communicate(timeout=10)
+        self.assertEqual(self.update(source)["code"], "updated")
+
     def test_symlink_rejected_before_update_or_copy(self):
         self.install()
         (self.target / "program.py").unlink()

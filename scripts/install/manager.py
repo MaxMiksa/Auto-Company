@@ -582,6 +582,23 @@ def check_writers(root):
 
 @contextmanager
 def maintenance_locks(root, recovering=False):
+    # Project helpers inherit this flock even if their parent shell exits.
+    # Match the runtime's project -> configuration lock order and retain the
+    # persistent inode so waiting helpers cannot enter through a replaced lock.
+    import fcntl
+    project_lock = at(root, ".auto-company/project-registry.lock")
+    descriptor = os.open(project_lock, os.O_RDWR | os.O_CREAT | os.O_NOFOLLOW, 0o600)
+    with os.fdopen(descriptor, "r+") as project:
+        try:
+            fcntl.flock(project, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError as error:
+            raise InstallError("busy", str(project_lock)) from error
+        with maintenance_config_locks(root, recovering=recovering):
+            yield
+
+
+@contextmanager
+def maintenance_config_locks(root, recovering=False):
     import fcntl
     config = at(root, ".auto-company.local.lock")
     git_lock = at(root, ".git/index.lock") if (root / ".git").is_dir() else None
