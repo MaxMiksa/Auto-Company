@@ -33,7 +33,7 @@ function journalHelpers() {
   vm.runInContext(fs.readFileSync(path.join(dashboard, "i18n.js"), "utf8"), context);
   const binding = journalApp.indexOf("\n  document.querySelectorAll('[data-tab]')");
   assert.ok(binding > 0, "Journal event wiring must follow helper declarations");
-  vm.runInContext(journalApp.slice(0, binding) + "\n globalThis.journal = { state, scope, freshCenterRequest, scopedCenterRuntimeState, runtimeStateValue, runtimeLabel, requestContextLabel, centerRuntimeContextValue };\n})();", context);
+  vm.runInContext(journalApp.slice(0, binding) + "\n globalThis.journal = { state, scope, freshCenterRequest, scopedCenterRuntimeState, scopedRecordedRuntimeState, runtimeStateValue, runtimeStatusLabel, runtimeLabel, requestContextLabel, centerRuntimeContextValue };\n})();", context);
   context.journal.state.language = "en";
   return context.journal;
 }
@@ -132,6 +132,22 @@ test("product detail drops stale or disconnected running evidence", () => {
   assert.equal(runtimeStateValue(), "unknown");
   assert.equal(runtimeLabel(), "Unknown");
   assert.equal(centerRuntimeContextValue(state.centerSummary, now), "");
+});
+
+test("product detail labels recorded request states without claiming product completion", () => {
+  const { state, scopedRecordedRuntimeState, runtimeStateValue, runtimeStatusLabel } = journalHelpers();
+  state.statusFailed = false; state.centerSummary = { currentRequest: null };
+  const labels = { ended: "Last work ended", canceled: "Work canceled", failed: "Work failed", queued: "Work queued", attention: "Work needs review" };
+  for (const [value, label] of Object.entries(labels)) {
+    state.data = { entry: { entryId: "entry-a", executionSummary: { requestId: `request-${value}`, state: value } } };
+    assert.equal(scopedRecordedRuntimeState(), value);
+    assert.equal(runtimeStateValue(), value);
+    assert.equal(runtimeStatusLabel(value), label);
+    assert.doesNotMatch(label, /product|complete/i);
+  }
+  state.data = { entry: { entryId: "entry-a", executionSummary: { state: "ended" } } };
+  assert.equal(scopedRecordedRuntimeState(), null);
+  assert.equal(runtimeStateValue(), "unknown");
 });
 
 test("cross-product running context includes the queued-plan identity", () => {

@@ -70,11 +70,21 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
     if (!execution?.requestId || execution.requestId !== request.requestId || execution.state !== request.state) return null;
     return request.state;
   }
+  function scopedRecordedRuntimeState(data = state.data) {
+    if (!scope.center) return null;
+    const execution = data?.entry?.executionSummary;
+    if (!execution?.requestId) return null;
+    return ['ended', 'canceled', 'failed', 'queued', 'attention'].includes(execution.state) ? execution.state : null;
+  }
   function runtimeStateValue() {
     const centerState = scopedCenterRuntimeState();
-    return centerState || (scope.center ? 'unknown' : state.action === 'stop' ? 'stopping' : state.data?.control?.stopUnconfirmed ? (state.data?.control?.action === 'stop' ? 'stopping' : 'stop_failed') : state.statusFailed ? 'unavailable' : state.data?.runtime?.state);
+    return centerState || scopedRecordedRuntimeState() || (scope.center ? 'unknown' : state.action === 'stop' ? 'stopping' : state.data?.control?.stopUnconfirmed ? (state.data?.control?.action === 'stop' ? 'stopping' : 'stop_failed') : state.statusFailed ? 'unavailable' : state.data?.runtime?.state);
   }
-  function runtimeLabel() { return statusLabel(runtimeStateValue()); }
+  function runtimeStatusLabel(value) {
+    const keys = { ended: 'lastWorkEnded', canceled: 'workCanceled', failed: 'workFailed', queued: 'workQueued', attention: 'workAttention' };
+    return keys[value] ? message(keys[value]) : statusLabel(value);
+  }
+  function runtimeLabel() { return runtimeStatusLabel(runtimeStateValue()); }
   function requestContextLabel(request) {
     const name = request?.displayName || message('unknown');
     const plan = [request?.config?.model, request?.config?.effort].filter(Boolean).join(' · ');
@@ -550,7 +560,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
     const displayedState = runtimeStateValue();
     const unavailable = !scope.center && (state.statusFailed || runtime.available === false);
     const node = $('runtimeState');
-    node.textContent = statusLabel(displayedState);
+    node.textContent = runtimeStatusLabel(displayedState);
     if (node.dataset) node.dataset.state = unavailable ? 'unavailable' : displayedState;
   }
   function renderCenterLiveState() {

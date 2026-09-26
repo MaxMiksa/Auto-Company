@@ -1580,7 +1580,7 @@ dialog .runtime-details {
   color: #356448;
 }
 
-.runtime-state[data-state=unavailable], .runtime-state[data-state=failed], .runtime-state[data-state=circuit_break] {
+.runtime-state[data-state=unavailable], .runtime-state[data-state=failed], .runtime-state[data-state=attention], .runtime-state[data-state=circuit_break] {
   color: var(--danger);
 }
 
