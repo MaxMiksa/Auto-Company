@@ -20,7 +20,7 @@ function helpers() {
   vm.runInContext(i18n, context);
   const binding = app.lastIndexOf("\n  applyLanguage(); wire(); renderPage(); refresh();");
   assert.ok(binding > 0, "Center event wiring must follow helper declarations");
-  vm.runInContext(app.slice(0, binding) + "\n globalThis.center = { state, message, entryState, capability, capabilityReason, errorText, requestReason, requestIsFresh, executionBlockReason, requestDisplayState, normalizeCounts, filteredEntries, emptyListState, requestState, statusLabel, write };\n})();", context);
+  vm.runInContext(app.slice(0, binding) + "\n globalThis.center = { state, message, entryState, capability, capabilityReason, errorText, requestReason, requestIsFresh, executionBlockReason, requestDisplayState, normalizeCounts, renderCounts, filteredEntries, emptyListState, requestState, statusLabel, write };\n})();", context);
   context.center.state.language = "en";
   return { ...context.center, messages: context.window.CENTER_MESSAGES, context };
 }
@@ -37,6 +37,23 @@ function journalHelpers() {
   context.journal.state.language = "en";
   return context.journal;
 }
+
+test("queue badge counts requests without treating read-only unknown products as queued work", () => {
+  const { state, context, renderCounts } = helpers();
+  const elements = {};
+  context.document.getElementById = id => elements[id] ||= {};
+  state.entries = [1, 2, 3].map(id => ({ entryId: `archive-${id}`, kind: "product", executionSummary: { state: "unknown" } }));
+  state.summary = { currentRequest: { requestId: "active", state: "running" }, queuedCount: 0, attentionCount: 0 };
+  renderCounts();
+  assert.equal(elements.countAttention.textContent, "3");
+  assert.equal(elements.queueNavCount.textContent, "1");
+  state.summary = { currentRequest: { requestId: "active", state: "attention" }, queuedCount: 0, attentionCount: 1 };
+  renderCounts();
+  assert.equal(elements.queueNavCount.textContent, "1");
+  state.summary = { currentRequest: null, queuedCount: 0, attentionCount: 0 };
+  renderCounts();
+  assert.equal(elements.queueNavCount.hidden, true);
+});
 
 test("center fixed labels are complete and bilingual", () => {
   const { messages } = helpers();

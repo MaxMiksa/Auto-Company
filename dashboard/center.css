@@ -81,7 +81,7 @@ a { color: var(--blue); }
 .filter-button span:last-child:not(:first-child) { margin-left: 5px; font-variant-numeric: tabular-nums; }
 
 .product-table { border-top: 1px solid var(--line); }
-.product-head, .product-row { display: grid; grid-template-columns: minmax(260px, 1.3fr) minmax(210px, 1fr) minmax(150px, .62fr) minmax(120px, .55fr) 120px; gap: 24px; align-items: center; }
+.product-head, .product-row { display: grid; grid-template-columns: minmax(260px, 1.3fr) minmax(210px, 1fr) minmax(150px, .62fr) minmax(120px, .55fr) 200px; gap: 24px; align-items: center; }
 .product-head { min-height: 48px; padding: 0 20px; background: var(--wash); color: #52617a; font-size: 12px; font-weight: 680; letter-spacing: .02em; }
 .product-row { min-height: 102px; padding: 18px 20px; border-bottom: 1px solid var(--line); }
 .product-row:focus-within { background: #fbfdff; }
@@ -106,7 +106,8 @@ a { color: var(--blue); }
 .row-actions { justify-self: end; display: flex; align-items: center; gap: 9px; }
 .row-actions a { font-weight: 680; text-decoration: none; white-space: nowrap; }
 .row-actions a::after { content: "→"; margin-left: 7px; }
-.action-menu { position: relative; }
+.row-actions .text-button { flex: 0 0 auto; white-space: nowrap; }
+.action-menu { position: relative; flex: 0 0 auto; }
 .more-button { width: 36px; height: 36px; border: 0; background: transparent; font-size: 22px; line-height: 1; cursor: pointer; }
 .menu-content { position: absolute; z-index: 8; right: 0; top: calc(100% + 4px); min-width: 190px; padding: 6px 0; border: 1px solid var(--line-strong); background: white; box-shadow: 0 14px 38px rgba(15,35,63,.15); }
 .menu-content button { width: 100%; padding: 10px 14px; border: 0; background: none; text-align: left; cursor: pointer; }
@@ -119,8 +120,8 @@ a { color: var(--blue); }
 .observed-at { margin-left: auto; color: var(--muted); font-size: 12px; }
 
 .drawer-backdrop { position: fixed; z-index: 29; inset: 0; background: rgba(8,20,39,.24); }
-.queue-drawer { position: fixed; z-index: 30; top: 0; right: 0; bottom: 0; width: min(460px, 100vw); display: flex; flex-direction: column; background: white; border-left: 1px solid var(--line); box-shadow: -20px 0 54px rgba(10,30,58,.14); transform: translateX(102%); transition: transform .22s ease; }
-.queue-drawer.open { transform: translateX(0); }
+.queue-drawer { position: fixed; z-index: 30; top: 0; right: 0; bottom: 0; width: min(460px, 100vw); display: flex; visibility: hidden; flex-direction: column; pointer-events: none; background: white; border-left: 1px solid var(--line); box-shadow: -20px 0 54px rgba(10,30,58,.14); transform: translateX(102%); transition: transform .22s ease, visibility 0s linear .22s; }
+.queue-drawer.open { visibility: visible; pointer-events: auto; transform: translateX(0); transition-delay: 0s; }
 .drawer-header, .queue-control, .drawer-footer { flex: 0 0 auto; padding: 24px 30px; border-bottom: 1px solid var(--line); }
 .drawer-header { display: flex; align-items: center; justify-content: space-between; }
 .drawer-header h2 { margin: 0; font-size: 30px; letter-spacing: -.035em; }
@@ -181,12 +182,12 @@ legend { padding: 0 6px; font-weight: 650; }
 .dialog-form h3 { margin: 0; font-size: 16px; }
 .global-status { position: fixed; z-index: 50; left: 50%; bottom: 24px; max-width: min(560px, calc(100vw - 32px)); margin: 0; padding: 12px 17px; transform: translateX(-50%); background: var(--ink); color: white; box-shadow: 0 8px 26px rgba(7,21,46,.2); }
 
-@media (max-width: 980px) {
+@media (max-width: 1160px) {
   .center-main { width: min(100% - 40px, 900px); }
   .catalog-tools { grid-template-columns: 1fr; gap: 12px; }
   .filters { justify-content: flex-start; }
   .product-head { display: none; }
-  .product-row { grid-template-columns: minmax(0,1fr) minmax(150px,.65fr) 110px; gap: 16px; }
+  .product-row { grid-template-columns: minmax(0,1fr) minmax(150px,.65fr) 200px; gap: 16px; }
   .product-row > .recent-work { grid-column: 1 / span 1; padding-left: 62px; }
   .product-row > .status-cell { grid-column: 2; grid-row: 1 / span 2; }
   .product-row > .activity-time { display: none; }

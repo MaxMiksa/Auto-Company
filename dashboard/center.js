@@ -351,7 +351,8 @@
   function renderCounts() {
     const counts = normalizeCounts();
     for (const key of ["All", "Running", "Queued", "Attention", "Archived"]) $(`count${key}`).textContent = counts[key.toLowerCase()] ? String(counts[key.toLowerCase()]) : "";
-    const queueCount = (counts.queued || 0) + (counts.running || 0) + (counts.attention || 0);
+    const current = state.summary?.currentRequest;
+    const queueCount = (state.summary?.queuedCount || 0) + (state.summary?.attentionCount || 0) + (current && current.state !== "attention" ? 1 : 0);
     $("queueNavCount").hidden = !queueCount; $("queueNavCount").textContent = String(queueCount);
   }
 
