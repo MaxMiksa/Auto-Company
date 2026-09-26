@@ -33,7 +33,7 @@ function journalHelpers() {
   vm.runInContext(fs.readFileSync(path.join(dashboard, "i18n.js"), "utf8"), context);
   const binding = journalApp.indexOf("\n  document.querySelectorAll('[data-tab]')");
   assert.ok(binding > 0, "Journal event wiring must follow helper declarations");
-  vm.runInContext(journalApp.slice(0, binding) + "\n globalThis.journal = { state, scope, scopedCenterRuntimeState, runtimeLabel, requestContextLabel };\n})();", context);
+  vm.runInContext(journalApp.slice(0, binding) + "\n globalThis.journal = { state, scope, scopedCenterRuntimeState, runtimeStateValue, runtimeLabel, requestContextLabel };\n})();", context);
   context.journal.state.language = "en";
   return context.journal;
 }
@@ -98,17 +98,36 @@ test("unfiltered catalog without formed products points to explorations", () => 
 });
 
 test("product detail trusts only the confirmed matching center request", () => {
-  const { state, scopedCenterRuntimeState, runtimeLabel } = journalHelpers();
-  const request = { requestId: "request-a", entryId: "entry-a", state: "running", liveConfirmedAt: "2026-09-26T23:24:49+08:00" };
+  const { state, scopedCenterRuntimeState, runtimeStateValue, runtimeLabel } = journalHelpers();
+  const now = Date.now();
+  const request = { requestId: "request-a", entryId: "entry-a", state: "running", liveConfirmedAt: new Date(now - 1000).toISOString() };
   state.data = { entry: { entryId: "entry-a", executionSummary: { requestId: "request-a", state: "running" } }, cycles: [{ status: "completed", active: false }] };
   state.centerSummary = { currentRequest: request };
-  assert.equal(scopedCenterRuntimeState(), "running");
+  state.statusFailed = false;
+  assert.equal(scopedCenterRuntimeState(state.data, state.centerSummary, now), "running");
+  assert.equal(runtimeStateValue(), "running");
   assert.equal(runtimeLabel(), "Running");
   state.centerSummary = { currentRequest: { ...request, entryId: "entry-b" } };
-  assert.equal(scopedCenterRuntimeState(), null);
+  assert.equal(scopedCenterRuntimeState(state.data, state.centerSummary, now), null);
+  assert.equal(runtimeStateValue(), "unknown");
   assert.equal(runtimeLabel(), "Unknown");
   state.centerSummary = { currentRequest: { ...request, liveConfirmedAt: null } };
-  assert.equal(scopedCenterRuntimeState(), null);
+  assert.equal(scopedCenterRuntimeState(state.data, state.centerSummary, now), null);
+});
+
+test("product detail drops stale or disconnected running evidence", () => {
+  const { state, scopedCenterRuntimeState, runtimeStateValue, runtimeLabel } = journalHelpers();
+  const now = Date.now();
+  const entry = { entryId: "entry-a", executionSummary: { requestId: "request-a", state: "running" } };
+  const currentRequest = { requestId: "request-a", entryId: "entry-a", state: "running", liveConfirmedAt: new Date(now - 1000).toISOString() };
+  state.data = { entry, runtime: { state: "running" } }; state.centerSummary = { currentRequest }; state.statusFailed = true;
+  assert.equal(scopedCenterRuntimeState(state.data, state.centerSummary, now), null);
+  assert.equal(runtimeStateValue(), "unknown");
+  assert.equal(runtimeLabel(), "Unknown");
+  state.statusFailed = false; state.centerSummary.currentRequest.liveConfirmedAt = new Date(now - 15001).toISOString();
+  assert.equal(scopedCenterRuntimeState(state.data, state.centerSummary, now), null);
+  assert.equal(runtimeStateValue(), "unknown");
+  assert.equal(runtimeLabel(), "Unknown");
 });
 
 test("cross-product running context includes the queued-plan identity", () => {

@@ -56,17 +56,20 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
   function readOnly() { return state.data?.readOnly !== false; }
   function centerModeKey() { return state.data?.entry?.runtimeId ? 'centerManaged' : 'centerArchive'; }
   function liveProcess() { return !readOnly() && !state.statusFailed && state.data?.runtime?.processState === 'running'; }
-  function scopedCenterRuntimeState(data = state.data, summary = state.centerSummary) {
-    if (!scope.center) return null;
+  function scopedCenterRuntimeState(data = state.data, summary = state.centerSummary, currentTime = Date.now()) {
+    if (!scope.center || state.statusFailed) return null;
     const entry = data?.entry; const execution = entry?.executionSummary; const request = summary?.currentRequest;
     if (!entry?.entryId || !request?.liveConfirmedAt || request.entryId !== entry.entryId) return null;
+    const confirmationAge = currentTime - Date.parse(request.liveConfirmedAt);
+    if (!Number.isFinite(confirmationAge) || confirmationAge < 0 || confirmationAge > 15000) return null;
     if (!execution?.requestId || execution.requestId !== request.requestId || execution.state !== request.state) return null;
     return ['starting', 'running', 'stopping'].includes(request.state) ? request.state : null;
   }
-  function runtimeLabel() {
+  function runtimeStateValue() {
     const centerState = scopedCenterRuntimeState();
-    return statusLabel(centerState || (scope.center ? 'unknown' : state.action === 'stop' ? 'stopping' : state.data?.control?.stopUnconfirmed ? (state.data?.control?.action === 'stop' ? 'stopping' : 'stop_failed') : state.statusFailed ? 'unavailable' : state.data?.runtime?.state));
+    return centerState || (scope.center ? 'unknown' : state.action === 'stop' ? 'stopping' : state.data?.control?.stopUnconfirmed ? (state.data?.control?.action === 'stop' ? 'stopping' : 'stop_failed') : state.statusFailed ? 'unavailable' : state.data?.runtime?.state);
   }
+  function runtimeLabel() { return statusLabel(runtimeStateValue()); }
   function requestContextLabel(request) {
     const name = request?.displayName || message('unknown');
     const plan = [request?.config?.model, request?.config?.effort].filter(Boolean).join(' · ');
@@ -503,14 +506,14 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
   function renderRuntime() {
     const data = state.data;
     const runtime = data?.runtime || {};
-    const centerState = scopedCenterRuntimeState();
     const unavailable = scope.center ? false : state.statusFailed || runtime.available === false;
+    const displayedState = runtimeStateValue();
     const process = runtime.processState || runtime.state;
     const action = state.action || data?.control?.action;
     const retryStop = data?.control?.stopUnconfirmed === true;
     const locked = !data || readOnly() || (unavailable && !retryStop) || Boolean(action || state.mediaAction);
-    $('runtimeState').textContent = runtimeLabel();
-    $('runtimeState').dataset.state = unavailable ? 'unavailable' : centerState || runtime.state || 'unknown';
+    $('runtimeState').textContent = statusLabel(displayedState);
+    $('runtimeState').dataset.state = unavailable ? 'unavailable' : displayedState;
     $('startButton').disabled = locked || retryStop || !['stopped', 'inactive'].includes(process);
     $('stopButton').disabled = locked || (!retryStop && process !== 'running');
     iconLabel($('startButton'), 'play', message(action === 'start' ? 'starting' : 'start'));
