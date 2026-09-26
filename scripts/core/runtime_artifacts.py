@@ -286,6 +286,26 @@ def write_context(root, cycle, project):
     if not isinstance(project, str) or (project and not re.fullmatch(r"projects/[a-z0-9](?:[a-z0-9-]*[a-z0-9])?", project)):
         raise ValueError("Valid project identity required")
     value = {"version": 1, "cycleId": cycle, "project": project, "recordedAt": now(), "source": "runtime_context"}
+    # Capture actual cycle-start configuration, never infer historical language
+    # from whatever NEXT period is currently selected in this runtime root.
+    try:
+        from product_identity import read_state
+        from localization import language_state
+        state = read_state(root)
+        row = state["cycles"].get(cycle)
+        identity = state["identities"].get(row["identityId"]) if row else None
+        language = language_state(root)
+        actual = os.environ.get("AUTO_COMPANY_LANGUAGE")
+        if (row and identity and row["state"] == "reserved" and identity["kind"] == "product"
+                and row["project"] == project == identity["project"]
+                and os.environ.get("AUTO_COMPANY_CYCLE") == "1" and os.environ.get("AUTO_COMPANY_CYCLE_ID") == cycle
+                and os.environ.get("AUTO_COMPANY_STABLE_PRODUCT_ID") == identity["id"]
+                and language["locked"] and actual == language["language"] and actual in {"en", "zh-CN"}
+                and re.fullmatch(r"[0-9a-f]{32}", language.get("productId") or "")):
+            value["languageEvidence"] = {"schemaVersion": 1, "productId": identity["id"], "cycleId": cycle,
+                                         "language": actual, "languagePeriodId": language["productId"], "recordedAt": value["recordedAt"]}
+    except (OSError, ValueError, TypeError, KeyError):
+        pass
     target = safe_path(root, f"logs/{cycle}.context.json")
     target.parent.mkdir(parents=True, exist_ok=True)
     descriptor, temporary = tempfile.mkstemp(prefix=".cycle-context-", dir=target.parent)
@@ -444,6 +464,9 @@ def main():
     sub.add_parser("preview-stop")
     args = parser.parse_args()
     root = args.root.resolve()
+    if args.action != "prompt" and ((root / ".auto-company-center.json").exists() or (root / ".auto-company-center.json").is_symlink()):
+        from center_runner import artifact_admission
+        artifact_admission(root, cleanup=args.action == "finalize" and args.cleanup_only)
     if args.action == "prompt":
         print(PROMPT)
         return 0
@@ -526,6 +549,9 @@ def main():
     record.update(url=f"http://127.0.0.1:{server.server_port}/", token=token, state="running", pid=os.getpid(),
                   lifetime="cycle" if record["cycleId"] else "operator", directory=directory.relative_to(root).as_posix(),
                   startedAt=now(), endedAt=None)
+    if (root / ".auto-company-center.json").exists():
+        from center_runner import identity
+        record["processIdentity"] = identity(os.getpid())
     if not observe(root, record):
         server.server_close()
         return 1

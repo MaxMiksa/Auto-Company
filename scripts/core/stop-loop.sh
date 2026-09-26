@@ -10,6 +10,14 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
+if [ -e "$PROJECT_DIR/.auto-company-center.json" ] || [ -L "$PROJECT_DIR/.auto-company-center.json" ]; then
+    # Managed stop belongs to the dispatch owner. Ordinary stop/pause/resume
+    # must never signal a different request or clear its protection markers.
+    python3 "$SCRIPT_DIR/center_runner.py" admit --root "$PROJECT_DIR" || exit 78
+    case "${1:-}" in
+        --pause|--resume|--pause-daemon|--resume-daemon) echo "Managed context: use the product center." >&2; exit 78 ;;
+    esac
+fi
 source "$PROJECT_DIR/scripts/core/ui-messages.sh"
 PID_FILE="$PROJECT_DIR/.auto-loop.pid"
 PAUSE_FLAG="$PROJECT_DIR/.auto-loop-paused"

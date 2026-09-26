@@ -3,6 +3,11 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
+if [ -e "$PROJECT_DIR/.auto-company-center.json" ] || [ -L "$PROJECT_DIR/.auto-company-center.json" ]; then
+    bash "$PROJECT_DIR/scripts/core/ui-messages.sh" center.managed >&2
+    exit 1
+fi
 PLIST_PATH="$HOME/Library/LaunchAgents/com.autocompany.loop.plist"
 
 if [ -e "$PLIST_PATH" ] || [ -L "$PLIST_PATH" ]; then

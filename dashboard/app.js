@@ -28,7 +28,9 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
   const ICONS = {"notebook-pen": "<path d=\"M13.4 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7.4\" />\n  <path d=\"M2 6h4\" />\n  <path d=\"M2 10h4\" />\n  <path d=\"M2 14h4\" />\n  <path d=\"M2 18h4\" />\n  <path d=\"M21.378 5.626a1 1 0 1 0-3.004-3.004l-5.01 5.012a2 2 0 0 0-.506.854l-.837 2.87a.5.5 0 0 0 .62.62l2.87-.837a2 2 0 0 0 .854-.506z\" />", "chart-no-axes-column": "<line x1=\"18\" x2=\"18\" y1=\"20\" y2=\"10\" />\n  <line x1=\"12\" x2=\"12\" y1=\"20\" y2=\"4\" />\n  <line x1=\"6\" x2=\"6\" y1=\"20\" y2=\"14\" />", "terminal": "<polyline points=\"4 17 10 11 4 5\" />\n  <line x1=\"12\" x2=\"20\" y1=\"19\" y2=\"19\" />", "play": "<polygon points=\"6 3 20 12 6 21 6 3\" />", "square": "<rect width=\"18\" height=\"18\" x=\"3\" y=\"3\" rx=\"2\" />", "sliders-horizontal": "<line x1=\"21\" x2=\"14\" y1=\"4\" y2=\"4\" />\n  <line x1=\"10\" x2=\"3\" y1=\"4\" y2=\"4\" />\n  <line x1=\"21\" x2=\"12\" y1=\"12\" y2=\"12\" />\n  <line x1=\"8\" x2=\"3\" y1=\"12\" y2=\"12\" />\n  <line x1=\"21\" x2=\"16\" y1=\"20\" y2=\"20\" />\n  <line x1=\"12\" x2=\"3\" y1=\"20\" y2=\"20\" />\n  <line x1=\"14\" x2=\"14\" y1=\"2\" y2=\"6\" />\n  <line x1=\"8\" x2=\"8\" y1=\"10\" y2=\"14\" />\n  <line x1=\"16\" x2=\"16\" y1=\"18\" y2=\"22\" />", "refresh-cw": "<path d=\"M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8\" />\n  <path d=\"M21 3v5h-5\" />\n  <path d=\"M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16\" />\n  <path d=\"M8 16H3v5\" />", "file-text": "<path d=\"M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z\" />\n  <path d=\"M14 2v4a2 2 0 0 0 2 2h4\" />\n  <path d=\"M10 9H8\" />\n  <path d=\"M16 13H8\" />\n  <path d=\"M16 17H8\" />", "list-checks": "<path d=\"m3 17 2 2 4-4\" />\n  <path d=\"m3 7 2 2 4-4\" />\n  <path d=\"M13 6h8\" />\n  <path d=\"M13 12h8\" />\n  <path d=\"M13 18h8\" />", "panels-top-left": "<rect width=\"18\" height=\"18\" x=\"3\" y=\"3\" rx=\"2\" />\n  <path d=\"M3 9h18\" />\n  <path d=\"M9 21V9\" />", "external-link": "<path d=\"M15 3h6v6\" />\n  <path d=\"M10 14 21 3\" />\n  <path d=\"M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6\" />", "chevron-right": "<path d=\"m9 18 6-6-6-6\" />", "x": "<path d=\"M18 6 6 18\" />\n  <path d=\"m6 6 12 12\" />"};
   const $ = (id) => document.getElementById(id);
   const DEFAULT_HISTORY_LIMIT = 4;
-  const state = { data: null, language: 'zh-CN', tab: 'work', expanded: new Set(), older: false, selectedLog: 'runtime', logText: '', logLoadedId: '', logRequest: 0, logPending: null, refreshPending: null, signature: '', statusFailed: true, action: '', languageState: null, languageSaving: false, languageLoading: false, languageRevision: 0, languageError: '', languageSaved: false, timer: null, autoChanged: false, currentCycle: null, receivedAt: 0, elapsedTimer: null };
+  const productMatch = (globalThis.location?.pathname || '/journal').match(/^\/products\/([^/]+)\/?$/);
+  const scope = { center: Boolean(productMatch), entryId: productMatch ? decodeURIComponent(productMatch[1]) : null, token: 0, contextToken: 0, entries: [] };
+  const state = { data: null, language: 'zh-CN', tab: 'work', expanded: new Set(), older: false, selectedLog: scope.center ? '' : 'runtime', logText: '', logLoadedId: '', logRequest: 0, logPending: null, refreshPending: null, signature: '', statusFailed: true, action: '', languageState: null, languageSaving: false, languageLoading: false, languageRevision: 0, languageError: '', languageSaved: false, timer: null, autoChanged: false, currentCycle: null, receivedAt: 0, elapsedTimer: null, centerSummary: null, mediaIntent: null };
   const message = (key, values = {}) => {
     const dictionary = window.JOURNAL_MESSAGES[state.language] || window.JOURNAL_MESSAGES.en;
     return Object.entries(values).reduce((result, [name, value]) => result.replaceAll(`{${name}}`, String(value)), dictionary[key] || key);
@@ -52,6 +54,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
     return ['stopping', 'stop_failed', 'completed', 'completed_with_timeout', 'failed', 'interrupted', 'stopped_status', 'running', 'idle', 'paused', 'waiting_limit', 'circuit_break', 'stopped', 'active', 'inactive', 'configured', 'not_configured', 'not_installed', 'mismatched', 'activating', 'deactivating', 'reloading', 'unsupported'].includes(status) ? message(status) : status === 'unavailable' ? message('statusUnavailable') : message('unknown');
   }
   function readOnly() { return state.data?.readOnly !== false; }
+  function centerModeKey() { return state.data?.entry?.runtimeId ? 'centerManaged' : 'centerArchive'; }
   function liveProcess() { return !readOnly() && !state.statusFailed && state.data?.runtime?.processState === 'running'; }
   function runtimeLabel() { return statusLabel(state.action === 'stop' ? 'stopping' : state.data?.control?.stopUnconfirmed ? (state.data?.control?.action === 'stop' ? 'stopping' : 'stop_failed') : state.statusFailed ? 'unavailable' : state.data?.runtime?.state); }
   function pauseLabel(value) { return message(`pause_${value}`) === `pause_${value}` ? String(value || '') : message(`pause_${value}`); }
@@ -64,6 +67,38 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
       if (!response.ok || result.ok === false) throw new Error(result.error || result.output || `HTTP ${response.status}`);
       return result;
     } finally { clearTimeout(timer); }
+  }
+  async function fetchCenter(path, options = {}, timeout = 100000) {
+    const result = await fetchJSON(`/api/center/v1${path}`, options, timeout);
+    if (result?.schemaVersion !== 1 || !Object.hasOwn(result, 'data')) throw new Error('Invalid product center response');
+    return result.data;
+  }
+  async function fetchAllCenterEntries() {
+    const items = []; let cursor = null; let total = null; const seen = new Set();
+    do {
+      const suffix = cursor ? `&cursor=${encodeURIComponent(cursor)}` : '';
+      const page = await fetchCenter(`/entries?filter=all&sort=activity&limit=100${suffix}`);
+      if (!page || !Array.isArray(page.items)) throw new Error('Invalid product center entries');
+      items.push(...page.items); total = page.total; cursor = page.nextCursor || null;
+      if (cursor && seen.has(cursor)) throw new Error('Repeated product center cursor');
+      if (cursor) seen.add(cursor);
+    } while (cursor);
+    if (Number.isFinite(total) && items.length !== total) throw new Error('Incomplete product center entries');
+    return items;
+  }
+  function scopedJournalPath(suffix = '') { return `/entries/${encodeURIComponent(scope.entryId)}${suffix}`; }
+  function safeScopedResource(value) {
+    if (!scope.center || typeof value !== 'string') return null;
+    const prefix = `/api/center/v1/entries/${encodeURIComponent(scope.entryId)}/resources/`;
+    try { const url = new URL(value, location.origin); return url.origin === location.origin && url.pathname.startsWith(prefix) ? `${url.pathname}${url.search}` : null; }
+    catch (_) { return null; }
+  }
+  async function fetchScopedText(value, timeout = 15000) {
+    const url = safeScopedResource(value);
+    if (!url) throw new Error('Invalid scoped resource');
+    const controller = new AbortController(); const timer = setTimeout(() => controller.abort(), timeout);
+    try { const response = await fetch(url, { cache: 'no-store', signal: controller.signal }); if (!response.ok) throw new Error(`HTTP ${response.status}`); return await response.text(); }
+    finally { clearTimeout(timer); }
   }
   function formatTime(value, withDate = false) {
     if (!value || !Number.isFinite(Date.parse(value))) return message('unknownTime');
@@ -253,11 +288,12 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
     const presentation = checkPresentation(cycle);
     rows.push({ kind: 'check', title: message('latestCheckRecord'), status: presentation.status, detail: presentation.detail,
       time: check?.endedAt || check?.recordedAt || check?.startedAt,
-      path: check?.available === true ? check.path : null });
+      path: check?.available === true && !scope.center ? check.path : null,
+      url: check?.available === true && scope.center ? safeScopedResource(check.url) : null });
     for (const artifact of cycle.artifacts || []) {
       if (artifact.kind !== 'document') continue;
       rows.push({ kind: 'document', time: artifact.recordedAt, title: message(artifact.available === true ? 'documentRecorded' : 'documentUnavailable'),
-        detail: String(artifact.path || artifact.label || '').split(/[\\/]/).pop() });
+        detail: String(artifact.path || artifact.label || '').split(/[\\/]/).pop(), url: scope.center ? safeScopedResource(artifact.url) : null });
     }
     if (cycle.workReport && cycle.workReportStatus === 'valid') rows.push({ kind: 'report', time: cycle.workReport.recorded_at, title: message('workRecorded') });
     // Missing timestamps remain unknown, rather than borrowing a cycle or consensus time.
@@ -271,12 +307,12 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
       const title = element('div', 'record-title', record.title);
       if (record.status) title.append(progressIcon(record.status, record.detail));
       body.append(title);
-      if (record.detail || record.path) {
+      if (record.detail || record.path || record.url) {
         const detail = element('div', `record-detail${record.status === 'failed' ? ' status-failed' : ''}`);
         if (record.detail) detail.append(element('span', 'record-counts', record.detail));
-        if (record.path) {
-          const link = element('a', 'check-report', message('checkReport'));
-          link.href = `/api/journal/document?path=${encodeURIComponent(record.path)}`; link.target = '_blank'; link.rel = 'noopener';
+        if (record.path || record.url) {
+          const link = element('a', 'check-report', message(record.kind === 'document' ? 'document' : 'checkReport'));
+          link.href = record.url || `/api/journal/document?path=${encodeURIComponent(record.path)}`; link.target = '_blank'; link.rel = 'noopener';
           link.append(icon('external-link')); detail.append(link);
         }
         body.append(detail);
@@ -458,10 +494,12 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
     iconLabel($('startButton'), 'play', message(action === 'start' ? 'starting' : 'start'));
     iconLabel($('stopButton'), 'square', message(action === 'stop' ? 'stopping' : 'stop'));
     $('startButton').title = $('stopButton').title = readOnly() ? message('readOnly') : unavailable ? message('statusUnavailable') : '';
+    $('startButton').hidden = scope.center;
+    $('stopButton').hidden = scope.center;
     $('refreshButton').disabled = Boolean(state.refreshPending || state.action);
-    $('modeNote').textContent = data ? message(readOnly() ? 'preview' : 'live') : '';
+    $('modeNote').textContent = data ? message(scope.center ? centerModeKey() : readOnly() ? 'preview' : 'live') : '';
     $('autoRefresh').disabled = Boolean(data && readOnly());
-    document.querySelectorAll('.legacy-link').forEach((node) => { node.hidden = data?.legacyAvailable !== true; });
+    document.querySelectorAll('.legacy-link').forEach((node) => { node.hidden = scope.center || data?.legacyAvailable !== true; });
     document.querySelectorAll('.dialog-links a[href^="/docs/"]').forEach((node) => { node.hidden = readOnly(); });
     const reason = runtime.pauseReason || data?.budgetPause?.reason;
     const paused = ['paused', 'waiting_limit', 'circuit_break'].includes(runtime.state);
@@ -494,11 +532,12 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
   function renderLanguage() {
     const current = state.languageState;
     const next = current?.nextLanguage || current?.language || state.language;
-    $('settingsLanguage').textContent = languageLabel(current?.language || state.data?.runtime?.language || state.language);
-    $('settingsMode').textContent = message(readOnly() ? 'preview' : 'live');
-    $('settingsDescription').textContent = message(readOnly() ? 'settingsDescription' : 'settingsLive');
+    const productLanguage = scope.center && current?.productLanguageStatus === 'unknown' ? null : current?.productLanguage || current?.language || state.data?.runtime?.language;
+    $('settingsLanguage').textContent = languageLabel(productLanguage);
+    $('settingsMode').textContent = message(scope.center ? centerModeKey() : readOnly() ? 'preview' : 'live');
+    $('settingsDescription').textContent = message(scope.center ? centerModeKey() : readOnly() ? 'settingsDescription' : 'settingsLive');
     $('languageSelect').value = next;
-    $('languageSelect').disabled = readOnly() || state.languageSaving || state.languageLoading || !current;
+    $('languageSelect').disabled = scope.center || readOnly() || state.languageSaving || state.languageLoading || !current;
     $('languageHint').textContent = message(readOnly() ? 'languageExplanation' : current?.locked ? 'languageLocked' : 'languageUnlocked', { current: languageLabel(current?.language), next: languageLabel(next) });
     $('languageStatus').textContent = state.languageSaving ? message('languageSaving') : state.languageLoading ? message('languageLoading') : state.languageError ? message(state.languageError) : current?.pending ? message('languagePending') : state.languageSaved ? message('languageSaved') : '';
     $('languageStatus').classList.toggle('status-failed', Boolean(state.languageError));
@@ -515,7 +554,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
     } else { applyLanguage(); renderLanguage(); }
   }
   async function refreshLanguage() {
-    if (readOnly() || state.languageLoading || state.languageSaving) return;
+    if (scope.center || readOnly() || state.languageLoading || state.languageSaving) return;
     state.languageLoading = true;
     renderLanguage();
     try { applyLanguageState(await fetchJSON('/api/language', {}, 10000)); }
@@ -523,7 +562,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
     finally { state.languageLoading = false; renderLanguage(); }
   }
   async function saveLanguage() {
-    if (readOnly() || state.languageSaving || state.languageLoading) return;
+    if (scope.center || readOnly() || state.languageSaving || state.languageLoading) return;
     const language = $('languageSelect').value;
     ++state.languageRevision;
     state.languageSaving = true;
@@ -547,6 +586,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
     return message(artifact.evidenceStatus === 'stale' ? 'artifactStale' : 'artifactUnavailable');
   }
   function mediaURL(value, productId) {
+    if (scope.center) return safeScopedResource(value);
     if (typeof productId !== 'string' || !/^[0-9a-f]{32}$/.test(productId) || typeof value !== 'string') return null;
     return new RegExp(`^/api/product-media/${productId}/[a-zA-Z0-9_.-]+\\.(?:png|svg)$`).test(value) ? value : null;
   }
@@ -558,13 +598,22 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
     renderSidebar();
     renderRuntime();
     try {
-      await fetchJSON('/api/product-media/capture', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ productId }) }, 170000);
+      const sourceRevision = state.data?.entry?.sourceRecordRevision;
+      const intentSignature = `${productId}:${state.data?.sourceId || ''}:${sourceRevision ?? ''}`;
+      if (!state.mediaIntent || state.mediaIntent.signature !== intentSignature) state.mediaIntent = { signature: intentSignature, key: crypto.randomUUID() };
+      const options = { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(scope.center
+        ? { sourceId: state.data?.sourceId, expectedRevision: sourceRevision, idempotencyKey: state.mediaIntent.key }
+        : { productId }) };
+      if (scope.center) await fetchCenter(scopedJournalPath('/media/capture'), options, 170000);
+      else await fetchJSON('/api/product-media/capture', options, 170000);
+      state.mediaIntent = null;
     } catch (_) { state.mediaError = { productId, previousSuccess }; }
     finally {
       state.mediaAction = false;
       await refresh();
       renderSidebar();
       renderRuntime();
+      if (scope.center) refreshCenterContext();
     }
   }
   function mediaRetryError(media) {
@@ -671,7 +720,8 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
           item.append(element('span', '', `${label} · ${unavailableArtifact(artifact)}`));
         } else {
           const link = element('a', 'artifact-link');
-          link.href = artifact.url || `/api/journal/document?path=${encodeURIComponent(artifact.path)}`;
+          link.href = scope.center ? safeScopedResource(artifact.url) : artifact.url || `/api/journal/document?path=${encodeURIComponent(artifact.path)}`;
+          if (!link.href || (scope.center && !safeScopedResource(artifact.url))) { item.replaceChildren(element('span', '', `${label} · ${message('artifactUnavailable')}`)); list.append(item); continue; }
           link.target = '_blank';
           link.rel = 'noopener';
           link.title = artifact.path || artifact.url;
@@ -690,8 +740,14 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
     runtime.append(element('h2', '', message('runtime')));
     const sum = aggregate(data.cycles.filter((cycle) => !cycle.active));
     const usage = `${compactNumber(sum.totalTokens)}${knownNumber(sum.totalTokens) ? ' tokens' : ''}${sum.partial && sum.known ? message('usagePartialShort') : ''}`;
-    const config = data.runtime || {};
-    runtime.append(runtimeRows([[message('engine'), config.engine], [message('model'), config.model], [message('reasoning'), config.reasoning === 'unknown' ? message('unknown') : config.reasoning], [message('language'), languageLabel(config.language || data.language)], [message('recordedUsage'), usage]]));
+    const recordedCycle = scope.center ? data.cycles.find((cycle) => cycle.belongsToCurrentProject !== false) : null;
+    const config = scope.center ? {
+      engine: recordedCycle?.engine || 'unknown',
+      model: recordedCycle?.observedConfig?.model || recordedCycle?.model || 'unknown',
+      reasoning: recordedCycle?.observedConfig?.reasoning || 'unknown',
+    } : data.runtime || {};
+    const productLanguage = scope.center ? (data.languageState?.productLanguageStatus === 'unknown' ? null : data.languageState?.productLanguage) : config.language || data.language;
+    runtime.append(runtimeRows([[message('engine'), config.engine], [message('model'), config.model], [message('reasoning'), config.reasoning === 'unknown' ? message('unknown') : config.reasoning], [message('language'), languageLabel(productLanguage)], [message('recordedUsage'), usage]]));
     const details = bindDisclosure(element('details', 'runtime-disclosure'), 'runtime');
     details.append(element('summary', '', message('moreRuntime')), runtimeRows([[message('state'), runtimeLabel()], [message('source'), data.sourceName]]));
     details.append(element('p', 'sidebar-note', message(config.configSource === 'session_context' ? 'observedSession' : 'unconfirmedSession')));
@@ -705,12 +761,16 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
     document.documentElement.lang = state.language;
     document.title = `${state.data?.project?.name || 'Auto Company'} · ${message('work')}`;
     document.querySelectorAll('[data-i18n]').forEach((node) => { node.textContent = message(node.dataset.i18n); });
+    document.querySelectorAll('[data-i18n-placeholder]').forEach((node) => { node.placeholder = message(node.dataset.i18nPlaceholder); });
+    $('centerContextNav').hidden = !scope.center;
+    if (scope.center) document.querySelector('.brand').href = '/center';
     for (const [id, name] of [['tab-work', 'notebook-pen'], ['tab-usage', 'chart-no-axes-column'], ['tab-logs', 'terminal'], ['settingsButton', 'sliders-horizontal']]) iconLabel($(id), name, $(id).textContent);
     $('refreshButton').replaceChildren(icon('refresh-cw'));
     $('closeSettingsButton').replaceChildren(icon('x'));
     $('refreshButton').title = message('refresh');
     $('refreshButton').setAttribute('aria-label', message('refresh'));
     $('closeSettingsButton').setAttribute('aria-label', message('close'));
+    $('closeProductSwitcherButton').setAttribute('aria-label', message('close'));
     document.querySelector('.tabs').setAttribute('aria-label', message('work'));
     document.querySelector('.table-scroll').setAttribute('aria-label', message('usageDetail'));
     $('projectSidebar').setAttribute('aria-label', message('artifacts'));
@@ -739,6 +799,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
     if (!latest?.active && liveProcess() && data.runtime?.state === 'running') latest = { id: '__current__', number: data.runtime?.currentCycleNumber, startedAt: data.runtime?.lastRun, status: 'running', active: true, synthetic: true };
     if (latest?.active && state.statusFailed) latest = { ...latest, active: false, status: 'unknown' };
     state.currentCycle = latest;
+    if (scope.center) $('productSwitcherName').textContent = data.project?.name || data.entry?.displayName || message('switchProduct');
     renderCurrent(latest);
     renderHistory();
     renderSidebar();
@@ -837,10 +898,14 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
   function renderLogOptions() {
     const select = clear($('logSelect'));
     const cycles = state.data.cycles;
-    if (state.selectedLog !== 'runtime' && !cycles.some((cycle) => cycle.id === state.selectedLog)) state.selectedLog = 'runtime';
-    const global = element('option', '', message('runtimeLog'));
-    global.value = 'runtime';
-    select.append(global);
+    const hasRuntime = !scope.center || Boolean(safeScopedResource(state.data.runtimeLogUrl));
+    if (state.selectedLog !== 'runtime' && !cycles.some((cycle) => cycle.id === state.selectedLog)) state.selectedLog = hasRuntime ? 'runtime' : '';
+    if (!state.selectedLog && cycles.length) state.selectedLog = cycles[0].id;
+    if (hasRuntime) {
+      const global = element('option', '', message('runtimeLog'));
+      global.value = 'runtime';
+      select.append(global);
+    }
     for (const cycle of cycles) {
       const label = cycle.identityKind === 'exploration' ? message('explorationNumber', { number: paddedCycleNumber(cycle) }) : `${message('cycle')} ${paddedCycleNumber(cycle)}`;
       const option = element('option', '', `${label} · ${formatTime(cycle.startedAt, true)} · ${statusLabel(cycle.status)}`);
@@ -870,6 +935,15 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
     $('refreshLogButton').disabled = true;
     $('logStatus').textContent = message('loadingLog');
     const promise = (async () => { try {
+      if (scope.center) {
+        const cycle = state.data.cycles.find((item) => item.id === id);
+        const value = await fetchScopedText(id === 'runtime' ? state.data.runtimeLogUrl : cycle?.logUrl, 15000);
+        if (request !== state.logRequest) return;
+        state.logText = value; state.logLoadedId = id; $('logText').textContent = value;
+        $('logStatus').textContent = value ? message('logAvailable', { count: number(value.length) }) : message('logEmpty');
+        $('copyLogButton').disabled = !value;
+        return;
+      }
       const result = await fetchJSON(id === 'runtime' ? '/api/log-tail?lines=180' : `/api/journal/log?id=${encodeURIComponent(id)}`, {}, 15000);
       if (request !== state.logRequest) return;
       if (id !== 'runtime' && !result.available) { $('logText').textContent = ''; $('logStatus').textContent = message('noLog'); return; }
@@ -897,6 +971,54 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
     }
     if (focus) $(`tab-${tab}`).focus();
   }
+  function switcherMatches(query) {
+    const value = String(query || '').trim().toLocaleLowerCase(state.language);
+    return scope.entries.filter((entry) => !entry.archived && entry.kind !== 'reference' && (!value || [entry.displayName, entry.description, entry.alias].some((item) => String(item || '').toLocaleLowerCase(state.language).includes(value))));
+  }
+  function renderProductSwitcher(query = '') {
+    const list = clear($('productSwitcherList'));
+    const entries = switcherMatches(query);
+    $('productSwitcherStatus').textContent = entries.length ? '' : message('noProductsFound');
+    for (const entry of entries) {
+      const option = element('a', `product-switcher-option${entry.entryId === scope.entryId ? ' current' : ''}`);
+      option.href = `/products/${encodeURIComponent(entry.entryId)}`;
+      option.setAttribute('role', 'option'); option.setAttribute('aria-selected', String(entry.entryId === scope.entryId)); option.dataset.entryId = entry.entryId;
+      const copy = element('span'); copy.append(element('strong', '', entry.displayName || message('unknown')), element('small', '', entry.description || message('unavailable')));
+      option.append(copy);
+      if (entry.entryId === scope.entryId) option.append(element('span', 'switcher-current', message('currentProduct')));
+      list.append(option);
+    }
+  }
+  async function openProductSwitcher() {
+    if (!scope.center) return;
+    const dialog = $('productSwitcherDialog'); const token = ++scope.token;
+    $('productSwitcherSearch').value = ''; $('productSwitcherStatus').textContent = message('loadingProducts'); clear($('productSwitcherList'));
+    dialog.showModal(); $('productSwitcherSearch').focus();
+    try {
+      const [entries, summary] = await Promise.all([fetchAllCenterEntries(), fetchCenter('/summary')]);
+      if (token !== scope.token || !dialog.open || !Array.isArray(entries)) return;
+      scope.entries = entries; renderProductSwitcher();
+      const active = summary?.currentRequest;
+      $('centerRuntimeContext').textContent = !active ? '' : active.entryId === scope.entryId ? message('viewingRunningProduct') : message('otherProductRunning', { name: active.displayName || message('unknown') });
+    } catch (_) { if (token === scope.token) $('productSwitcherStatus').textContent = message('readFailed'); }
+  }
+  async function refreshCenterContext() {
+    if (!scope.center) return;
+    const token = ++scope.contextToken; const entryId = scope.entryId;
+    try {
+      const summary = state.centerSummary || await fetchCenter('/summary');
+      if (token !== scope.contextToken || entryId !== scope.entryId) return;
+      const active = summary?.currentRequest;
+      $('centerRuntimeContext').textContent = !active ? '' : active.entryId === scope.entryId ? message('viewingRunningProduct') : message('otherProductRunning', { name: active.displayName || message('unknown') });
+    } catch (_) { if (token === scope.contextToken) $('centerRuntimeContext').textContent = ''; }
+  }
+  function moveSwitcherFocus(direction) {
+    const options = [...$('productSwitcherList').querySelectorAll('[role="option"]')];
+    if (!options.length) return;
+    const current = options.indexOf(document.activeElement);
+    const next = current < 0 ? (direction > 0 ? 0 : options.length - 1) : (current + direction + options.length) % options.length;
+    options[next].focus();
+  }
   function scheduleRefresh() {
     clearTimeout(state.timer);
     state.timer = null;
@@ -910,19 +1032,23 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
     $('refreshStatus').textContent = message('refreshing');
     const languageRevision = state.languageRevision;
     const promise = (async () => { try {
-      const data = await fetchJSON('/api/journal');
+      const requestEntryId = scope.entryId;
+      const scopedResult = scope.center ? await Promise.all([fetchCenter(scopedJournalPath('/journal')), fetchCenter('/summary')]) : null;
+      const data = scope.center ? scopedResult[0] : await fetchJSON('/api/journal');
+      if (scope.center) state.centerSummary = scopedResult[1];
+      if (scope.center && (requestEntryId !== scope.entryId || data.entryId !== scope.entryId)) throw new Error('Out-of-scope journal response');
       if (!data.ok || !Array.isArray(data.cycles)) throw new Error('invalid journal response');
       const signature = JSON.stringify({ ...data, generatedAt: undefined, status: data.status ? { ...data.status, timestamp: undefined, elapsedMs: undefined } : undefined });
       if (state.data && Number.isFinite(Date.parse(data.generatedAt)) && Date.parse(data.generatedAt) < Date.parse(state.data.generatedAt)) throw new Error('Out-of-order journal snapshot');
       state.data = data;
       state.receivedAt = performance.now();
-      state.statusFailed = data.runtime?.available === false || data.status?.ok === false || !data.runtime || ['unknown', 'unavailable'].includes(data.runtime.state);
+      state.statusFailed = scope.center ? false : data.runtime?.available === false || data.status?.ok === false || !data.runtime || ['unknown', 'unavailable'].includes(data.runtime.state);
       if (languageRevision === state.languageRevision && !state.languageSaving && !state.languageLoading) {
         if (data.languageState) {
           const language = data.languageState;
           if (['en', 'zh-CN'].includes(language.language) && (!language.nextLanguage || ['en', 'zh-CN'].includes(language.nextLanguage))) state.languageState = language;
         }
-        state.language = state.languageState?.language || (data.language === 'zh-CN' ? 'zh-CN' : 'en');
+        state.language = scope.center && ['en', 'zh-CN'].includes(state.centerSummary?.language) ? state.centerSummary.language : state.languageState?.language || (data.language === 'zh-CN' ? 'zh-CN' : 'en');
       }
       if (!state.autoChanged) $('autoRefresh').checked = !readOnly();
       $('connectionError').hidden = !state.statusFailed;
@@ -935,6 +1061,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
         requestAnimationFrame(() => window.scrollTo({ top: scrollPosition, behavior: 'instant' }));
       }
       renderRuntime();
+      if (scope.center) refreshCenterContext();
       $('refreshStatus').textContent = message('refreshed', { time: formatTime(data.generatedAt || new Date().toISOString()) });
       if (state.tab === 'logs') await loadLog();
     } catch (_) {
@@ -1011,6 +1138,12 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
     } catch (_) { $('logStatus').textContent = message('copyFailed'); }
   });
   $('settingsButton').addEventListener('click', () => { $('settingsDialog').showModal(); refreshLanguage(); });
+  $('productSwitcherButton').addEventListener('click', openProductSwitcher);
+  $('closeProductSwitcherButton').addEventListener('click', () => $('productSwitcherDialog').close());
+  $('productSwitcherSearch').addEventListener('input', () => renderProductSwitcher($('productSwitcherSearch').value));
+  $('productSwitcherSearch').addEventListener('keydown', (event) => { if (event.key === 'ArrowDown') { event.preventDefault(); moveSwitcherFocus(1); } else if (event.key === 'ArrowUp') { event.preventDefault(); moveSwitcherFocus(-1); } });
+  $('productSwitcherList').addEventListener('keydown', (event) => { if (event.key === 'ArrowDown') { event.preventDefault(); moveSwitcherFocus(1); } else if (event.key === 'ArrowUp') { event.preventDefault(); moveSwitcherFocus(-1); } else if (event.key === 'Enter') document.activeElement?.click(); });
+  $('productSwitcherDialog').addEventListener('close', () => { ++scope.token; $('productSwitcherButton').focus(); });
   $('languageSelect').addEventListener('change', saveLanguage);
   $('closeSettingsButton').addEventListener('click', () => $('settingsDialog').close());
   $('settingsDialog').addEventListener('click', (event) => {

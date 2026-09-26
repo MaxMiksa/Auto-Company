@@ -194,6 +194,7 @@ For monitoring, dashboard, and autostart commands, see the [Windows + WSL Setup 
 | Cycle summary | `make cycles` | `.\scripts\windows\cycles-win.ps1` |
 | Stop | Foreground: `make stop`; daemon: `make pause` | `.\scripts\windows\stop-win.ps1` |
 | Web dashboard | `make dashboard` | `.\scripts\windows\dashboard-win.ps1` |
+| [Product center](docs/product-center.md) | `make center` | `.\scripts\windows\center-win.ps1` |
 | Install daemon | `make install` | Auto-installed/started by `start-win.ps1` |
 | Uninstall daemon | `make uninstall` | `wsl -d Ubuntu --cd <repo_wsl_path> bash -lc 'make uninstall'` |
 | Pause daemon | `make pause` | `wsl -d Ubuntu --cd <repo_wsl_path> bash -lc 'make pause'` |

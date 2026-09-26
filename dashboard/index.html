@@ -15,6 +15,13 @@
     <header class="site-header">
       <div class="topbar page-width">
         <a class="brand" href="/">AUTO COMPANY</a>
+        <div id="centerContextNav" class="center-context-nav" hidden>
+          <a href="/center" class="center-back-link" data-i18n="backToProducts">产品</a>
+          <button id="productSwitcherButton" class="product-switcher-button" type="button" aria-haspopup="dialog" aria-controls="productSwitcherDialog">
+            <span id="productSwitcherName" data-i18n="switchProduct">切换产品</span><span aria-hidden="true">⌄</span>
+          </button>
+          <span id="centerRuntimeContext" class="center-runtime-context" role="status"></span>
+        </div>
         <div class="header-actions">
           <span id="runtimeState" class="runtime-state" role="status" data-i18n="unknown">未知</span>
           <button id="startButton" class="button start-button" disabled data-i18n="start">启动运行</button>
@@ -157,6 +164,18 @@
         <a href="/docs/troubleshooting" target="_blank" rel="noopener" data-i18n="docsTroubleshooting">故障排查 ↗</a>
         <a href="/docs/language" target="_blank" rel="noopener" data-i18n="docsLanguage">语言设置说明 ↗</a>
       </div>
+    </dialog>
+    <dialog id="productSwitcherDialog" class="product-switcher-dialog" aria-labelledby="productSwitcherTitle">
+      <div class="dialog-header">
+        <h2 id="productSwitcherTitle" data-i18n="switchProduct">切换产品</h2>
+        <button id="closeProductSwitcherButton" class="icon-button close-button" aria-label="关闭">×</button>
+      </div>
+      <label class="switcher-search" for="productSwitcherSearch">
+        <span class="visually-hidden" data-i18n="searchProducts">搜索产品</span>
+        <input id="productSwitcherSearch" type="search" autocomplete="off" data-i18n-placeholder="searchProducts" placeholder="搜索产品">
+      </label>
+      <p id="productSwitcherStatus" class="fine-print" role="status"></p>
+      <div id="productSwitcherList" class="product-switcher-list" role="listbox" aria-label="产品"></div>
     </dialog>
   </body>
 </html>

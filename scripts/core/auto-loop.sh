@@ -53,6 +53,13 @@ set -euo pipefail
 # === Resolve project root (always relative to this script) ===
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
+# Managed roots have one explicit dispatch owner. Unmanaged CLI entry points
+# retain their original behavior; this check runs before any root mutation.
+center_admission_check() {
+    { [ ! -e "$PROJECT_DIR/.auto-company-center.json" ] && [ ! -L "$PROJECT_DIR/.auto-company-center.json" ]; } ||
+        python3 "$SCRIPT_DIR/center_runner.py" admit --root "$PROJECT_DIR"
+}
+center_admission_check || exit 78
 source "$PROJECT_DIR/scripts/core/ui-messages.sh"
 source "$SCRIPT_DIR/process-supervisor.sh"
 
@@ -496,6 +503,7 @@ resolve_engine_bin() {
 
 run_engine_cycle() {
     local prompt="$1"
+    center_admission_check || cleanup 1 center_admission_lost
     # This is workflow context, not an OS sandbox or an authentication boundary.
     export AUTO_COMPANY_ROOT="$PROJECT_DIR"
     export AUTO_COMPANY_CYCLE=1
@@ -632,6 +640,7 @@ log "Interval: ${LOOP_INTERVAL}s | Timeout: ${CYCLE_TIMEOUT_SECONDS}s | Breaker:
 # === Main Loop ===
 
 while true; do
+    center_admission_check || cleanup 1 center_admission_lost
     # Check for stop request
     if check_stop_requested; then
         log "Stop requested. Shutting down gracefully."

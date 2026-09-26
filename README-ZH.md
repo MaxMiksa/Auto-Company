@@ -195,6 +195,7 @@ cd Auto-Company
 | 周期摘要 | `make cycles` | `.\scripts\windows\cycles-win.ps1` |
 | 停止 | 前台：`make stop`；后台守护：`make pause` | `.\scripts\windows\stop-win.ps1` |
 | 可视化看板 | `make dashboard` | `.\scripts\windows\dashboard-win.ps1` |
+| [多产品管理中心](docs/product-center.md) | `make center` | `.\scripts\windows\center-win.ps1` |
 | 安装守护 | `make install` | 由 `start-win.ps1` 自动安装/启动 WSL daemon |
 | 卸载守护 | `make uninstall` | `wsl -d Ubuntu --cd <repo_wsl_path> bash -lc 'make uninstall'` |
 | 暂停守护 | `make pause` | `wsl -d Ubuntu --cd <repo_wsl_path> bash -lc 'make pause'` |

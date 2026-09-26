@@ -16,6 +16,13 @@ PID_FILE="$PROJECT_DIR/.auto-loop.pid"
 CONSENSUS_FILE="$PROJECT_DIR/memories/consensus.md"
 SERVICE_NAME="auto-company.service"
 
+if [ -e "$PROJECT_DIR/.auto-company-center.json" ] || [ -L "$PROJECT_DIR/.auto-company-center.json" ]; then
+    case "${1:-status}" in
+        status) ;;
+        *) ui_message center.managed >&2; exit 1 ;;
+    esac
+fi
+
 systemd_user_available() {
     command -v systemctl >/dev/null 2>&1 && \
         systemctl --user --version >/dev/null 2>&1 && \

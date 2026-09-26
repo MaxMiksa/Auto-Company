@@ -816,6 +816,11 @@ class DashboardHandler(BaseHTTPRequestHandler):
             return
         parsed = urlparse(self.path)
         path = parsed.path
+        managed_marker = REPO_ROOT / ".auto-company-center.json"
+        if path != "/api/action/refresh" and (managed_marker.exists() or managed_marker.is_symlink()):
+            self._json({"ok": False, "code": "CENTER_MANAGED",
+                        "error": "This runtime is managed by the product center. Use the center controls."}, code=409)
+            return
         if path == "/api/product-media/capture":
             if not CONTROL_LOCK.acquire(blocking=False):
                 self._json({"ok": False, "error": "A runtime action is already in progress."}, code=409)

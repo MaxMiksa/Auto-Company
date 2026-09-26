@@ -1,0 +1,131 @@
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
+const test = require("node:test");
+const vm = require("node:vm");
+
+const dashboard = path.resolve(__dirname, "../dashboard");
+const html = fs.readFileSync(path.join(dashboard, "center.html"), "utf8");
+const app = fs.readFileSync(path.join(dashboard, "center.js"), "utf8");
+const i18n = fs.readFileSync(path.join(dashboard, "center-i18n.js"), "utf8");
+const journalHTML = fs.readFileSync(path.join(dashboard, "index.html"), "utf8");
+const journalApp = fs.readFileSync(path.join(dashboard, "app.js"), "utf8");
+
+function helpers() {
+  const context = vm.createContext({
+    window: {}, location: { pathname: "/center", origin: "http://127.0.0.1:8842" },
+    document: {}, URL, Intl, Date, Number, Object, Set, Map, String, Math, AbortController, setTimeout, clearTimeout,
+    crypto: { randomUUID: (() => { let value = 0; return () => `intent-${++value}`; })() },
+  });
+  vm.runInContext(i18n, context);
+  const binding = app.lastIndexOf("\n  applyLanguage(); wire(); renderPage(); refresh();");
+  assert.ok(binding > 0, "Center event wiring must follow helper declarations");
+  vm.runInContext(app.slice(0, binding) + "\n globalThis.center = { state, message, entryState, capability, normalizeCounts, filteredEntries, requestState, statusLabel, write };\n})();", context);
+  context.center.state.language = "en";
+  return { ...context.center, messages: context.window.CENTER_MESSAGES, context };
+}
+
+test("center fixed labels are complete and bilingual", () => {
+  const { messages } = helpers();
+  assert.deepEqual(Object.keys(messages.en).sort(), Object.keys(messages["zh-CN"]).sort());
+  const placeholders = (value) => [...value.matchAll(/\{([a-zA-Z]+)\}/g)].map((match) => match[1]).sort();
+  for (const key of Object.keys(messages.en)) {
+    assert.ok(messages.en[key] && messages["zh-CN"][key], `Empty translation: ${key}`);
+    assert.deepEqual(placeholders(messages.en[key]), placeholders(messages["zh-CN"][key]), key);
+  }
+  const rendered = [...html.matchAll(/data-i18n(?:-placeholder|-aria)?="([^"]+)"/g), ...app.matchAll(/message\("([^"]+)"/g)];
+  for (const [, key] of rendered) assert.ok(messages.en[key], `Missing rendered translation: ${key}`);
+});
+
+test("entry state preserves unknown and keeps archive separate from execution", () => {
+  const { entryState, statusLabel, messages } = helpers();
+  assert.equal(entryState({ archived: true, executionSummary: { state: "running" } }), "archived");
+  assert.equal(entryState({ executionSummary: { state: "running" } }), "running");
+  assert.equal(entryState({ executionSummary: { state: "queued" } }), "queued");
+  assert.equal(entryState({ executionSummary: { state: "ended" } }), "ended");
+  assert.equal(entryState({ executionSummary: { state: "unknown" } }), "unknown");
+  assert.equal(entryState({ availability: { state: "conflict" }, capabilities: { execute: false }, executionSummary: { state: "idle" } }), "unknown");
+  assert.equal(entryState({ availability: "read_only", capabilities: { execute: false }, executionSummary: { state: "idle" } }), "read_only");
+  assert.equal(entryState({ availability: "available", executionSummary: {} }), "idle");
+  assert.equal(statusLabel("future-state"), messages.en.state_unknown);
+});
+
+test("capability reasons remain visible independently of the boolean", () => {
+  const { capability } = helpers();
+  assert.deepEqual({ ...capability({ capabilities: { execute: true } }, "execute") }, { enabled: true, reason: "" });
+  assert.deepEqual({ ...capability({ capabilities: { execute: false }, capabilityReasons: { execute: "READ_ONLY_SOURCE" } }, "execute") }, { enabled: false, reason: "READ_ONLY_SOURCE" });
+  assert.deepEqual({ ...capability({ capabilities: { execute: { enabled: false, reason: "SOURCE_CONFLICT" } } }, "execute") }, { enabled: false, reason: "SOURCE_CONFLICT" });
+});
+
+test("catalog filters use recorded state and never search report bodies", () => {
+  const { state, filteredEntries } = helpers();
+  state.entries = [
+    { entryId: "a", displayName: "Alpha", description: "Decision tool", archived: false, kind: "product", executionSummary: { state: "idle" }, hiddenReport: "needle" },
+    { entryId: "b", displayName: "Beta", description: "Text tool", archived: false, kind: "product", executionSummary: { state: "queued" } },
+    { entryId: "c", displayName: "Archive", archived: true, kind: "product", executionSummary: { state: "ended" } },
+    { entryId: "d", displayName: "Explore", archived: false, kind: "exploration", executionSummary: { state: "unknown" } },
+    { entryId: "e", displayName: "Reference", archived: false, kind: "reference", executionSummary: { state: "idle" }, capabilities: { execute: false } },
+  ];
+  state.filter = "all"; state.query = "needle";
+  assert.equal(filteredEntries().length, 0);
+  state.query = ""; assert.deepEqual(Array.from(filteredEntries(), (entry) => entry.entryId), ["a", "b"]);
+  state.filter = "queued"; assert.deepEqual(Array.from(filteredEntries(), (entry) => entry.entryId), ["b"]);
+  state.filter = "attention"; assert.deepEqual(Array.from(filteredEntries(), (entry) => entry.entryId), []);
+  state.filter = "archived"; assert.deepEqual(Array.from(filteredEntries(), (entry) => entry.entryId), ["c"]);
+  state.filter = "exploration"; assert.deepEqual(Array.from(filteredEntries(), (entry) => entry.entryId), ["d"]);
+  state.filter = "reference"; assert.deepEqual(Array.from(filteredEntries(), (entry) => entry.entryId), ["e"]);
+});
+
+test("center actions use the versioned envelope routes and explicit write preconditions", () => {
+  for (const route of ["/summary", "/entries?filter=all&sort=activity&limit=100", "/requests?limit=100", "/imports/probe", "/imports/commit", "/explorations", "/queue/order", "/queue/stop-all", "/preferences"]) {
+    assert.ok(app.includes(route), `Missing route ${route}`);
+  }
+  assert.match(app, /expectedSourceRevision: entry\.sourceRevision/);
+  assert.match(app, /expectedDispatchId: request\.dispatchId/);
+  assert.match(app, /expectedRevision: state\.summary\?\.queueRevision/);
+  assert.match(app, /kindHint: "reference"/);
+  assert.match(app, /mode: form\.elements\.mode\.value === "reference" \? "reference" : "readonly"/);
+  assert.match(app, /entry\.kind !== "reference"/);
+  assert.match(app, /\/entries\/\$\{encodeURIComponent\(entry\.entryId\)\}\/detach/);
+  assert.match(app, /source\.displayName \|\| source\.rootName/);
+  assert.match(app, /source\.displayPath/);
+  assert.match(app, /X-Idempotency-Key/);
+});
+
+test("uncertain transport retries reuse an intent key until success", async () => {
+  const { write, context } = helpers(); const requests = []; let call = 0;
+  context.fetch = async (_url, options) => {
+    requests.push(JSON.parse(options.body)); call += 1;
+    if (call <= 2) throw new TypeError("transport lost");
+    return { ok: true, status: 200, json: async () => ({ schemaVersion: 1, data: { accepted: true } }) };
+  };
+  await assert.rejects(write("/explorations", { direction: "A" }));
+  await assert.rejects(write("/explorations", { direction: "B" }));
+  await write("/explorations", { direction: "A" });
+  await write("/explorations", { direction: "A" });
+  assert.equal(requests[0].idempotencyKey, requests[2].idempotencyKey);
+  assert.notEqual(requests[0].idempotencyKey, requests[1].idempotencyKey);
+  assert.notEqual(requests[2].idempotencyKey, requests[3].idempotencyKey);
+});
+
+test("product detail routes are entry scoped while the legacy journal stays unchanged", () => {
+  assert.match(journalHTML, /id="productSwitcherDialog"/);
+  assert.match(journalApp, /\^\\\/products\\\/\(\[\^\/\]\+\)/);
+  assert.match(journalApp, /fetchCenter\(scopedJournalPath\('\/journal'\)\)/);
+  assert.match(journalApp, /fetchScopedText\(id === 'runtime' \? state\.data\.runtimeLogUrl : cycle\?\.logUrl/);
+  assert.match(journalApp, /else await fetchJSON\('\/api\/product-media\/capture'/);
+  assert.ok(journalApp.includes("else await fetchJSON('/api/product-media/capture'"));
+  assert.ok(journalApp.includes("scope.center ? await Promise.all([fetchCenter(scopedJournalPath('/journal')), fetchCenter('/summary')]) : null"));
+  assert.match(journalApp, /fetchAllCenterEntries\(\)/);
+  assert.match(journalApp, /engine: recordedCycle\?\.engine \|\| 'unknown'/);
+  assert.match(journalApp, /reasoning: recordedCycle\?\.observedConfig\?\.reasoning \|\| 'unknown'/);
+  assert.match(journalApp, /state\.data\?\.entry\?\.sourceRecordRevision/);
+});
+
+test("center markup uses native dialogs and keeps the queue drawer initially off-canvas", () => {
+  for (const id of ["newWorkDialog", "continueDialog", "importDialog", "sourceDialog", "settingsDialog", "confirmDialog"]) assert.match(html, new RegExp(`<dialog id="${id}"`));
+  assert.match(html, /id="queueDrawer"[^>]+aria-hidden="true"/);
+  const css = fs.readFileSync(path.join(dashboard, "center.css"), "utf8");
+  assert.match(css, /\.queue-drawer[\s\S]*transform:\s*translateX\(102%\)/);
+  assert.match(css, /@media \(max-width: 640px\)/);
+});
