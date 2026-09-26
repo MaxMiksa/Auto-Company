@@ -44,6 +44,13 @@ def now():
     return datetime.now(timezone.utc).isoformat()
 
 
+def recently_confirmed(request):
+    try:
+        return 0 <= (datetime.now(timezone.utc) - datetime.fromisoformat(request["liveConfirmedAt"])).total_seconds() <= 15
+    except (KeyError, TypeError, ValueError):
+        return False
+
+
 def uid(prefix):
     return prefix + "_" + uuid.uuid4().hex
 
@@ -297,6 +304,8 @@ class CenterRuntime:
         if old in TERMINAL:
             return request
         request.update(state=state, revision=request.get("revision", 0) + 1, **fields)
+        if state != "running":
+            request.update(executionBlockedReason=None, executionBlockedAt=None)
         if state in TERMINAL:
             request["endedAt"] = now()
             request["attentionReason"] = None
@@ -335,19 +344,16 @@ class CenterRuntime:
             preparations = [row for row in tx.list("operations") if row.get("reserved", {}).get("entryId") == entry["entryId"] and row.get("state") == "preparing"]
         if request:
             state = request["state"]
-            if state in {"starting", "running", "stopping"} and not request.get("liveConfirmedAt"):
+            if state in {"starting", "running", "stopping"} and not recently_confirmed(request):
                 state = "unknown"
-            elif state in {"starting", "running", "stopping"}:
-                try:
-                    if (datetime.now(timezone.utc) - datetime.fromisoformat(request["liveConfirmedAt"])).total_seconds() > 15:
-                        state = "unknown"
-                except (TypeError, ValueError):
-                    state = "unknown"
+            elif state == "running" and request.get("executionBlockedReason"):
+                state = "blocked"
             if state == "failed":
                 state = "attention"
             elif state == "canceled":
                 state = "ended"
-            result["executionSummary"] = {"state": state, "requestId": request["requestId"], "terminalReason": request.get("terminalReason"), "attentionReason": request.get("attentionReason")}
+            result["executionSummary"] = {"state": state, "requestId": request["requestId"], "terminalReason": request.get("terminalReason"),
+                                          "attentionReason": request.get("attentionReason"), "reason": request.get("executionBlockedReason") if state == "blocked" else None}
         else:
             result["executionSummary"] = {"state": "preparing" if preparations else "idle" if runtime and runtime.get("managed") else "unknown",
                                           "reason": None if runtime and runtime.get("managed") else "unmanaged_source"}
@@ -362,10 +368,10 @@ class CenterRuntime:
                 executable = False
         owned = executable
         sys.path.insert(0, str(self.framework_root / "scripts/core"))
-        from center_runner import compatible, execution_context, protective_reason
+        from center_runner import compatible, execution_context, governance_reason, protective_reason
         context = execution_context(source["root"], source.get("productId")) if source else {"valid": False, "reason": "context_unavailable"}
         control_compatible = compatible(source["root"]) if source else False
-        execution_reason = context["reason"] if not context["valid"] else "runtime_incompatible" if not control_compatible else protective_reason(source["root"])
+        execution_reason = context["reason"] if not context["valid"] else "runtime_incompatible" if not control_compatible else protective_reason(source["root"]) or governance_reason(source["root"])
         executable = owned and execution_reason is None
         takeover = False
         if source and not (runtime and runtime.get("managed")) and self.adapter.available and entry.get("kind") in {"product", "exploration"} and entry.get("availability") == "available" and not entry.get("archived"):
@@ -398,6 +404,8 @@ class CenterRuntime:
         entry = tx.get("entries", request["entryId"]) or {}
         projection = tx.get("projections", request["sourceId"]) or {}
         visible = {key: value for key, value in request.items() if key not in {"nonce", "configFingerprint"}}
+        if request["state"] != "running" or not recently_confirmed(request):
+            visible.update(executionBlockedReason=None, executionBlockedAt=None)
         if isinstance(visible.get("receipt"), dict):
             visible["receipt"] = {key: value for key, value in visible["receipt"].items() if key not in {"root", "nonce"}}
         return {**visible, "displayName": projection.get("displayName") or entry.get("displayName"),
@@ -1096,6 +1104,11 @@ class CenterRuntime:
                     self._children.pop(current["dispatchId"], None)
             elif receipt and probe.get("ownerAlive") and (probe.get("owner") or {}).get("dispatchId") == current["dispatchId"] and not probe["slotFree"]:
                 current["liveConfirmedAt"] = now()
+                blocked = receipt.get("executionBlockedReason") if receipt.get("state") == "running" and not current.get("stopRequested") else None
+                blocked = blocked if blocked == "unresolved_p1" else None
+                if current.get("executionBlockedReason") != blocked:
+                    current.update(executionBlockedReason=blocked, executionBlockedAt=receipt.get("executionBlockedAt") if blocked else None)
+                    self._event(tx, current, current["state"], "runner", blocked or "governance_observation_changed")
                 tx.put("requests", current["requestId"], current)
                 receipt_state = receipt.get("state")
                 if receipt_state in {"accepted", "terminal"}:

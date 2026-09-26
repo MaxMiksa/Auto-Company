@@ -277,6 +277,65 @@ class QueueTests(unittest.TestCase):
         self.assertEqual(observed["capabilityReasons"]["execute"], "runtime_incompatible")
         self.assertTrue(observed["capabilities"]["release"])
 
+    def test_unresolved_p1_blocks_capability_enqueue_and_dispatch_without_editing_consensus(self):
+        sys.path.insert(0, str(ROOT / "scripts/core"))
+        from center_runner import CONTROL_FILES, governance_reason
+        root = Path(self.a["root"])
+        for name in CONTROL_FILES:
+            target = root / name
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(ROOT / name, target)
+        original = self.adapter.query
+        def query(action, **kwargs):
+            if action == "preflight" and kwargs.get("require_context") != "0":
+                reason = governance_reason(root)
+                return {"compatible": True, "quiescent": reason is None, "reason": reason}
+            return original(action, **kwargs)
+        self.adapter.query = query
+        request = self.create(executionMode="start_now")
+        consensus = root / "memories/consensus.md"
+        consensus.parent.mkdir()
+        data = b"## Human Overrides\n- retain fixture\n## Priority Issues\n- [ ] P1: human decision required\n"
+        consensus.write_bytes(data)
+        view = self.runtime.decorate_entry({**self.a, "availability": "available"})
+        self.assertFalse(view["capabilities"]["execute"])
+        self.assertEqual(view["capabilityReasons"]["execute"], "unresolved_p1")
+        self.runtime.tick()
+        self.assertEqual(self.runtime.get_request(request["requestId"])["reasonDetail"], "UNRESOLVED_P1")
+        self.assertEqual(self.adapter.launched, [])
+        self.runtime.request_action(request["requestId"], "reconcile", {"idempotencyKey": "p1-reconcile-fixture"})
+        with self.assertRaises(CenterError) as caught:
+            self.create(key="p1-blocked-new-request")
+        self.assertEqual(caught.exception.code, "UNRESOLVED_P1")
+        self.assertTrue(self.runtime.decorate_entry({**self.a, "availability": "available"})["capabilities"]["release"])
+        self.assertEqual(consensus.read_bytes(), data)
+        self.assertFalse((root / ".auto-loop-paused").exists())
+
+    def test_live_p1_block_is_work_state_holds_slot_and_still_allows_owned_stop(self):
+        first = self.create(executionMode="start_now")
+        self.create(self.b, "blocked-queued-fixture")
+        self.runtime.tick()
+        self.adapter.acknowledge("running", executionBlockedReason="unresolved_p1", executionBlockedAt="2026-09-27T00:00:00+00:00")
+        self.runtime.tick()
+        observed = self.runtime.get_request(first["requestId"])
+        self.assertEqual((observed["state"], observed["executionBlockedReason"]), ("running", "unresolved_p1"))
+        self.assertEqual(self.runtime.summary()["currentRequest"]["executionBlockedReason"], "unresolved_p1")
+        self.assertEqual(len(self.adapter.launched), 1)
+        view = {**self.a, "availability": "available"}
+        self.assertEqual(self.runtime.decorate_entry(view)["executionSummary"]["state"], "blocked")
+        count = len(observed["events"])
+        self.runtime.tick()
+        self.assertEqual(len(self.runtime.get_request(first["requestId"])["events"]), count)
+        with self.store.transaction() as tx:
+            row = tx.get("requests", first["requestId"])
+            row["liveConfirmedAt"] = "2000-01-01T00:00:00+00:00"
+            tx.put("requests", row["requestId"], row)
+        self.assertEqual(self.runtime.decorate_entry(view)["executionSummary"]["state"], "unknown")
+        self.assertIsNone(self.runtime.get_request(first["requestId"])["executionBlockedReason"])
+        stopped = self.runtime.request_action(first["requestId"], "stop", {"idempotencyKey": "blocked-owned-stop"})
+        self.assertEqual(stopped["state"], "stopping")
+        self.assertIsNone(stopped["executionBlockedReason"])
+
     def test_preflight_attention_can_be_confirmed_unstarted_then_replaced(self):
         request = self.create()
         self.adapter.preflight = {"quiescent": False, "reason": "governance_pause"}
@@ -552,6 +611,37 @@ class ContextLanguageTests(unittest.TestCase):
             self.assertNotIn("languageEvidence", json.loads((root / "logs" / (exploration + ".context.json")).read_text()))
 
 
+class GovernanceObservationTests(unittest.TestCase):
+    def test_original_priority_grammar_and_observation_are_read_only_and_require_current_guard(self):
+        sys.path.insert(0, str(ROOT / "scripts/core"))
+        from center_runner import governance_reason, execution_blocked_reason, protective_reason
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            consensus = root / "memories/consensus.md"
+            consensus.parent.mkdir()
+            prefix = "## Human Overrides\n- P1 outside the priority section\n## Priority Issues\n"
+            for item, expected in (("- [ ] P1: decision\n", "unresolved_p1"), ("1. **P1**: decision\n", "unresolved_p1"),
+                                   ("- [X] P1: human resolved fixture\n", None), ("- P2: other\n", None)):
+                with self.subTest(item=item):
+                    consensus.write_text(prefix + item)
+                    before = {str(path): path.read_bytes() for path in root.rglob("*") if path.is_file()}
+                    self.assertEqual(governance_reason(root), expected)
+                    self.assertEqual({str(path): path.read_bytes() for path in root.rglob("*") if path.is_file()}, before)
+            consensus.write_text(prefix + "- [ ] P1: decision\n")
+            state = root / ".auto-loop-state"
+            state.write_text("STATUS=paused\nPAUSE_REASON=unresolved_p1\n")
+            since = time.time_ns()
+            os.utime(state, ns=(since - 1000000000, since - 1000000000))
+            self.assertIsNone(execution_blocked_reason(root, since))
+            os.utime(state, ns=(since + 1000000, since + 1000000))
+            self.assertEqual(execution_blocked_reason(root, since), "unresolved_p1")
+            self.assertIsNone(protective_reason(root), "P1 observation must not enter the automatic stop path")
+            state.write_text("STATUS=running\nPAUSE_REASON=unresolved_p1\n")
+            self.assertIsNone(execution_blocked_reason(root, 0))
+            consensus.write_text("invalid governance fixture")
+            self.assertEqual(governance_reason(root), "context_unavailable")
+
+
 class ExecutionContextTests(unittest.TestCase):
     def setUp(self):
         sys.path.insert(0, str(ROOT / "scripts/core"))
@@ -670,6 +760,9 @@ if [ "${SPAWN_ORPHAN:-0}" = 1 ]; then
     python3 -c 'import os,time; child=os.fork(); os._exit(0) if child else None; os.setsid(); open(os.environ["AUTO_COMPANY_ROOT"]+"/orphan","w").write(str(os.getpid())); time.sleep(120)' &
 fi
 if [ "${SLOW_ENGINE:-0}" = 1 ]; then sleep 120; fi
+if [ "${ADD_P1:-0}" = 1 ]; then
+    python3 -c 'import os,pathlib; p=pathlib.Path(os.environ["AUTO_COMPANY_ROOT"])/"memories/consensus.md"; p.write_text(p.read_text().replace("## Priority Issues", "## Priority Issues\\n- [ ] P1: fixture needs human decision"))'
+fi
 printf '{"type":"result","subtype":"success","result":"offline","usage":{"input_tokens":1,"output_tokens":1}}\\n'
 if [ "$count" -ge "${STOP_AFTER:-2}" ]; then touch "$AUTO_COMPANY_ROOT/.auto-loop-stop"; fi
 ''')
@@ -748,6 +841,57 @@ if [ "$count" -ge "${STOP_AFTER:-2}" ]; then touch "$AUTO_COMPANY_ROOT/.auto-loo
         duplicate = subprocess.run([sys.executable, str(self.runner), "run", "--manifest", str(self.manifest_path)], env=self.env, capture_output=True, timeout=10)
         self.assertEqual(duplicate.returncode, 78)
         self.assertEqual((self.root / "invocations").read_text().strip(), "2")
+
+    def test_original_guard_p1_wait_is_reported_without_stopping_or_releasing_slot(self):
+        process = self.launch(ADD_P1="1", STOP_AFTER="99", LOOP_INTERVAL="1")
+        receipt_path = self.control / "receipt.json"
+        self.wait_for(lambda: receipt_path.exists() and json.loads(receipt_path.read_text()).get("executionBlockedReason") == "unresolved_p1", timeout=25)
+        self.wait_for(lambda: (self.root / "logs/auto-loop.log").read_text().count("[P1_BLOCK]") >= 2)
+        self.assertIsNone(process.poll())
+        self.assertEqual((self.root / "invocations").read_text().strip(), "1")
+        receipt = json.loads(receipt_path.read_text())
+        self.assertEqual(receipt["state"], "running")
+        self.assertTrue(receipt["executionBlockedAt"])
+        probe = subprocess.run([sys.executable, str(self.runner), "probe", "--center-id", self.manifest["centerId"], "--manifest", str(self.manifest_path)],
+                               env=self.env, capture_output=True, text=True, check=True, timeout=10)
+        self.assertFalse(json.loads(probe.stdout)["slotFree"])
+        self.assertFalse((self.root / ".auto-loop-stop").exists())
+        self.assertFalse((self.root / ".auto-loop-paused").exists())
+        consensus = (self.root / "memories/consensus.md").read_bytes()
+        self.heartbeat(True)
+        process.wait(timeout=20)
+        receipt = json.loads(receipt_path.read_text())
+        self.assertEqual(receipt["reason"], "user_stop")
+        self.assertTrue(receipt["cleanupConfirmed"])
+        self.assertIsNone(receipt["executionBlockedReason"])
+        self.assertEqual((self.root / "memories/consensus.md").read_bytes(), consensus)
+
+    def test_p1_rejects_runner_and_takeover_before_loop_but_does_not_prevent_release(self):
+        consensus = self.root / "memories/consensus.md"
+        data = b"## Human Overrides\n- retained fixture\n## Priority Issues\n- [ ] P1: human decision required\n"
+        consensus.write_bytes(data)
+        process = self.launch()
+        process.wait(timeout=15)
+        receipt = json.loads((self.control / "receipt.json").read_text())
+        self.assertEqual((receipt["state"], receipt["reason"], receipt["launched"]), ("terminal", "unresolved_p1", False))
+        self.assertTrue(receipt["cleanupConfirmed"])
+        self.assertFalse((self.root / "invocations").exists())
+        marker_path = self.root / ".auto-company-center.json"
+        marker = json.loads(marker_path.read_text())
+        marker_path.unlink()
+        binding = self.control / "binding.json"
+        manifest = {"root": str(self.root), "marker": marker}
+        atomic_json(binding, {**manifest, "action": "takeover", "oldMarker": None})
+        denied = subprocess.run([sys.executable, str(self.runner), "bind", "--manifest", str(binding)], env=self.env, capture_output=True, text=True, timeout=10)
+        self.assertEqual(denied.returncode, 78)
+        self.assertIn("unresolved_p1", denied.stderr)
+        atomic_json(marker_path, marker)
+        atomic_json(binding, {**manifest, "action": "release", "oldMarker": marker})
+        released = subprocess.run([sys.executable, str(self.runner), "bind", "--manifest", str(binding)], env=self.env, capture_output=True, text=True, timeout=10)
+        self.assertEqual(released.returncode, 0, released.stderr)
+        self.assertFalse(marker_path.exists())
+        self.assertEqual(consensus.read_bytes(), data)
+        self.assertFalse((self.root / ".auto-loop-paused").exists())
 
     def test_competing_runner_and_owned_stop_preserve_unrelated_sentinel(self):
         sentinel = subprocess.Popen(["sleep", "60"])

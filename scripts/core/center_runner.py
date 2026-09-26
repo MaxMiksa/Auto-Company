@@ -8,7 +8,9 @@ from __future__ import annotations
 
 import argparse
 import ctypes
+from functools import lru_cache
 import hashlib
+import importlib.util
 import json
 import os
 from pathlib import Path
@@ -24,6 +26,7 @@ MAX_JSON = 128 * 1024
 HEARTBEAT_TIMEOUT = 15
 CONTROL_FILES = ("scripts/core/auto-loop.sh", "scripts/core/center_runner.py", "scripts/core/stop-loop.sh",
                  "scripts/core/project-context.py", "scripts/core/product_identity.py",
+                 "scripts/core/consensus-format.py", "scripts/core/consensus-guard.sh",
                  "scripts/core/localization.py", "scripts/core/runtime_artifacts.py", "dashboard/server.py", "Makefile",
                  "scripts/macos/start-daemon.sh", "scripts/macos/install-daemon.sh", "scripts/wsl/dashboard-wsl.sh",
                  "scripts/wsl/install-wsl-daemon.sh", "scripts/windows/start-win.ps1", "scripts/windows/stop-win.ps1")
@@ -228,6 +231,52 @@ def protective_reason(root):
     return None
 
 
+@lru_cache(maxsize=1)
+def consensus_rules():
+    spec = importlib.util.spec_from_file_location("center_consensus_format", Path(__file__).with_name("consensus-format.py"))
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def governance_reason(root):
+    """Read the original P1 grammar without recovering or changing consensus."""
+    from product_identity import safe_path
+    try:
+        root = Path(root)
+        consensus = safe_path(root, "memories/consensus.md")
+        if not consensus.exists():
+            # A fresh exploration is initialized by the original guard. Missing
+            # established consensus requires explicit operator recovery.
+            prior = ("memories/.consensus-initialized", "memories/consensus.md.bak", ".auto-loop-state",
+                     "memories/snapshots", "memories/resets")
+            return "context_unavailable" if any(safe_path(root, name).exists() for name in prior) else None
+        if consensus.stat().st_size > 2 * 1024 * 1024:
+            return "context_unavailable"
+        rules = consensus_rules()
+        sections = rules.sections(consensus)
+        return "unresolved_p1" if rules.unresolved_p1(sections[rules.HEADINGS[1]]) else None
+    except (OSError, ValueError, KeyError):
+        return "context_unavailable"
+
+
+def execution_blocked_reason(root, since_ns):
+    """Only a guard observation from this live loop establishes a work block."""
+    try:
+        path = Path(root) / ".auto-loop-state"
+        before = path.stat()
+        if path.is_symlink() or before.st_size > 16384 or before.st_mtime_ns < since_ns:
+            return None
+        state = dict(line.split("=", 1) for line in path.read_text(encoding="utf-8").splitlines() if "=" in line)
+        if path.stat().st_mtime_ns != before.st_mtime_ns:
+            return None
+        if state.get("STATUS") == "paused" and state.get("PAUSE_REASON") == "unresolved_p1" and governance_reason(root) == "unresolved_p1":
+            return "unresolved_p1"
+    except (OSError, ValueError):
+        pass
+    return None
+
+
 def compatible(root):
     root, framework = Path(root), Path(__file__).resolve().parents[2]
     try:
@@ -316,6 +365,9 @@ def preflight(root, center_id=None, allow_protected=False, require_context=True,
         context = execution_context(root, expected_product_id, check_git=True)
         if not context["valid"]:
             result["reason"] = context["reason"]
+            return result
+        if reason := governance_reason(root):
+            result["reason"] = reason
             return result
     if not lock_free(root / ".auto-loop.pid"):
         result["reason"] = "external_loop_active"
@@ -434,6 +486,8 @@ def run(manifest_path):
     launched, child, child_identity, stopping, owned = False, None, None, None, {}
 
     def publish(state, **fields):
+        if state != "running":
+            receipt.update(executionBlockedReason=None, executionBlockedAt=None)
         receipt.update(state=state, observedAt=now(), **fields)
         atomic_json(receipt_path, receipt)
         atomic_json(folder / "owner.json", receipt)
@@ -459,6 +513,7 @@ def run(manifest_path):
         env.update(AUTO_COMPANY_CENTER_MANIFEST=str(manifest_path), AUTO_COMPANY_CENTER_SLOT_FD=str(descriptor))
         control_for(manifest)
         command = ["bash", str(root / "scripts/core/auto-loop.sh")]
+        launched_at_ns = time.time_ns()
         with (Path(manifest["controlDir"]) / "runner.log").open("ab") as output:
             child = subprocess.Popen(command, cwd=root, env=env, stdin=subprocess.DEVNULL, stdout=output,
                                      stderr=subprocess.STDOUT, start_new_session=True, pass_fds=(descriptor,))
@@ -479,6 +534,12 @@ def run(manifest_path):
                     stopping = stopping or "provider_pause"
             except OSError:
                 pass
+            if not stopping:
+                blocked = execution_blocked_reason(root, launched_at_ns)
+                if blocked != receipt.get("executionBlockedReason"):
+                    # P1_BLOCK keeps the original loop alive and retains the slot.
+                    # It is a work fact, not an instruction to stop or clear P1.
+                    publish("running", executionBlockedReason=blocked, executionBlockedAt=now() if blocked else None)
             if stopping and stop_started is None:
                 publish("stopping", reason=stopping)
                 atomic_json(Path(manifest["controlDir"]) / "stop-observed.json", {"reason": stopping, "at": now()})

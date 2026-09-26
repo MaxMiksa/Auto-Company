@@ -20,7 +20,7 @@ function helpers() {
   vm.runInContext(i18n, context);
   const binding = app.lastIndexOf("\n  applyLanguage(); wire(); renderPage(); refresh();");
   assert.ok(binding > 0, "Center event wiring must follow helper declarations");
-  vm.runInContext(app.slice(0, binding) + "\n globalThis.center = { state, message, entryState, capability, capabilityReason, errorText, requestReason, normalizeCounts, filteredEntries, emptyListState, requestState, statusLabel, write };\n})();", context);
+  vm.runInContext(app.slice(0, binding) + "\n globalThis.center = { state, message, entryState, capability, capabilityReason, errorText, requestReason, requestIsFresh, executionBlockReason, requestDisplayState, normalizeCounts, filteredEntries, emptyListState, requestState, statusLabel, write };\n})();", context);
   context.center.state.language = "en";
   return { ...context.center, messages: context.window.CENTER_MESSAGES, context };
 }
@@ -33,7 +33,7 @@ function journalHelpers() {
   vm.runInContext(fs.readFileSync(path.join(dashboard, "i18n.js"), "utf8"), context);
   const binding = journalApp.indexOf("\n  document.querySelectorAll('[data-tab]')");
   assert.ok(binding > 0, "Journal event wiring must follow helper declarations");
-  vm.runInContext(journalApp.slice(0, binding) + "\n globalThis.journal = { state, scope, freshCenterRequest, scopedCenterRuntimeState, scopedRecordedRuntimeState, runtimeStateValue, runtimeStatusLabel, runtimeLabel, requestContextLabel, centerRuntimeContextValue, historyGroups, explorationScope, explorationPageMatches, resetExploration, explorationRequestMatches };\n})();", context);
+  vm.runInContext(journalApp.slice(0, binding) + "\n globalThis.journal = { state, scope, freshCenterRequest, centerRequestDisplayState, scopedCenterRuntimeState, scopedRecordedRuntimeState, runtimeStateValue, runtimeStatusLabel, runtimeLabel, requestContextLabel, centerRuntimeContextValue, historyGroups, explorationScope, explorationPageMatches, resetExploration, explorationRequestMatches };\n})();", context);
   context.journal.state.language = "en";
   return context.journal;
 }
@@ -51,9 +51,12 @@ test("center fixed labels are complete and bilingual", () => {
 });
 
 test("entry state preserves unknown and keeps archive separate from execution", () => {
-  const { entryState, statusLabel, messages } = helpers();
+  const { state, entryState, statusLabel, messages } = helpers();
+  const now = Date.now();
+  state.summary = { currentRequest: { requestId: "request-a", entryId: "entry-a", state: "running", liveConfirmedAt: new Date(now - 1000).toISOString() } };
   assert.equal(entryState({ archived: true, executionSummary: { state: "running" } }), "archived");
-  assert.equal(entryState({ executionSummary: { state: "running" } }), "running");
+  assert.equal(entryState({ entryId: "entry-a", executionSummary: { requestId: "request-a", state: "running" } }, now), "running");
+  assert.equal(entryState({ entryId: "entry-b", executionSummary: { requestId: "request-b", state: "running" } }, now), "unknown");
   assert.equal(entryState({ executionSummary: { state: "queued" } }), "queued");
   assert.equal(entryState({ executionSummary: { state: "ended" } }), "ended");
   assert.equal(entryState({ executionSummary: { state: "unknown" } }), "unknown");
@@ -93,6 +96,43 @@ test("execution preflight failures use fixed bilingual guidance instead of inter
   assert.doesNotMatch(capabilityReason("product_registration_invalid"), /product_registration_invalid/i);
   assert.match(app, /const previewStop = capability\(entry, "previewStop"\)/);
   assert.match(app, /"previewStop", current && previewStop\.enabled/);
+});
+
+test("live unresolved P1 projects as blocked while preserving the raw running request", () => {
+  const { state, requestState, executionBlockReason, requestDisplayState, entryState, capabilityReason, errorText, requestReason, statusLabel, filteredEntries, normalizeCounts } = helpers();
+  const now = Date.now();
+  const request = { requestId: "request-blocked", entryId: "blocked", state: "running", liveConfirmedAt: new Date(now - 1000).toISOString(), executionBlockedReason: "unresolved_p1", executionBlockedAt: new Date(now - 2000).toISOString() };
+  state.stale = false;
+  state.summary = { currentRequest: request, attentionCount: 0, counts: { attention: 0 } };
+  assert.equal(requestState(request), "running", "Queue controls must retain the raw slot-owning state");
+  assert.equal(executionBlockReason(request, now), "unresolved_p1");
+  assert.equal(requestDisplayState(request, now), "blocked");
+  assert.equal(statusLabel("blocked"), "Protection paused");
+  const blockedEntry = { entryId: "blocked", kind: "product", archived: false, executionSummary: { requestId: "request-blocked", state: "blocked", reason: "unresolved_p1" } };
+  assert.equal(entryState(blockedEntry, now), "blocked");
+  assert.equal(capabilityReason("unresolved_p1"), "An unresolved P1 issue is waiting for a human decision before work can continue.");
+  assert.equal(errorText({ code: "UNRESOLVED_P1" }), "An unresolved P1 issue is waiting for a human decision before work can continue.");
+  assert.equal(requestReason("UNRESOLVED_P1"), "An unresolved P1 issue is waiting for a human decision before work can continue.");
+  state.entries = [blockedEntry]; state.filter = "attention";
+  assert.deepEqual(Array.from(filteredEntries(), entry => entry.entryId), ["blocked"]);
+  assert.equal(normalizeCounts().attention, 1, "Product filter counts must not be overwritten by raw request summary counts");
+  state.stale = true;
+  assert.equal(executionBlockReason(request, now), "");
+  assert.equal(requestDisplayState(request, now), "unknown");
+  assert.equal(entryState(blockedEntry, now), "unknown");
+  state.stale = false;
+  const expired = { ...request, liveConfirmedAt: new Date(now - 15001).toISOString() };
+  assert.equal(requestDisplayState(expired, now), "unknown");
+  assert.equal(requestDisplayState({ ...expired, executionBlockedReason: null, executionBlockedAt: null }, now), "unknown", "An expired backend projection that cleared the block marker must not revert to Running");
+  state.summary.currentRequest = expired;
+  assert.equal(entryState(blockedEntry, now), "unknown");
+  state.summary.currentRequest = { ...request, requestId: "request-other", entryId: "other" };
+  assert.equal(entryState(blockedEntry, now), "unknown");
+  state.summary.currentRequest = request;
+  assert.equal(requestDisplayState({ ...request, executionBlockedAt: null }, now), "unknown");
+  assert.match(app, /const value = requestState\(request\);\s+const displayValue = requestDisplayState\(request\)/);
+  assert.match(app, /if \(\["running", "starting", "stopping"\]\.includes\(value\)\) \{\s+const stop =/);
+  assert.match(app, /state\.projectionTimer = setInterval\(refreshRuntimeProjection, 1000\)/, "The visible projection must expire even while a refresh request is pending");
 });
 
 test("catalog filters use recorded state and never search report bodies", () => {
@@ -184,6 +224,28 @@ test("cross-product running context includes the queued-plan identity", () => {
   assert.equal(centerRuntimeContextValue(state.centerSummary, now), "Other work · Starting…: Auto Company · gpt-5.6-luna · high");
   state.centerSummary.currentRequest.state = "stopping";
   assert.equal(centerRuntimeContextValue(state.centerSummary, now), "Other work · Stopping…: Auto Company · gpt-5.6-luna · high");
+});
+
+test("product detail shows only fresh matching unresolved-P1 protection", () => {
+  const { state, centerRequestDisplayState, scopedCenterRuntimeState, runtimeStateValue, runtimeLabel, centerRuntimeContextValue } = journalHelpers();
+  const now = Date.now();
+  const request = { requestId: "request-p1", entryId: "entry-a", state: "running", liveConfirmedAt: new Date(now - 1000).toISOString(), executionBlockedReason: "unresolved_p1", executionBlockedAt: new Date(now - 2000).toISOString(), displayName: "Guarded product", config: { model: "gpt-6-sol", effort: "high" } };
+  state.statusFailed = false;
+  state.data = { entry: { entryId: "entry-a", executionSummary: { requestId: "request-p1", state: "blocked", reason: "unresolved_p1" } } };
+  state.centerSummary = { currentRequest: request };
+  assert.equal(centerRequestDisplayState(request, now), "blocked");
+  assert.equal(scopedCenterRuntimeState(state.data, state.centerSummary, now), "blocked");
+  assert.equal(runtimeStateValue(), "blocked");
+  assert.equal(runtimeLabel(), "Protection paused · Waiting for human review");
+  assert.equal(centerRuntimeContextValue(state.centerSummary, now), "Current work · Protection paused · Waiting for human review");
+  state.centerSummary = { currentRequest: { ...request, entryId: "entry-b" } };
+  assert.equal(centerRuntimeContextValue(state.centerSummary, now), "Other work · Protection paused · Waiting for human review: Guarded product · gpt-6-sol · high");
+  state.centerSummary = { currentRequest: { ...request, liveConfirmedAt: new Date(now - 15001).toISOString() } };
+  assert.equal(scopedCenterRuntimeState(state.data, state.centerSummary, now), null);
+  assert.equal(centerRuntimeContextValue(state.centerSummary, now), "");
+  state.centerSummary = { currentRequest: request }; state.statusFailed = true;
+  assert.equal(runtimeStateValue(), "unknown");
+  assert.equal(centerRuntimeContextValue(state.centerSummary, now), "");
 });
 
 test("linked exploration pages stay separate and match the product source snapshot", () => {

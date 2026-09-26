@@ -51,7 +51,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
   }
   function statusLabel(status) {
     if (['not_started', 'startup_unconfirmed'].includes(status)) return message(status);
-    return ['starting', 'stopping', 'stop_failed', 'completed', 'completed_with_timeout', 'failed', 'interrupted', 'stopped_status', 'running', 'idle', 'paused', 'waiting_limit', 'circuit_break', 'stopped', 'active', 'inactive', 'configured', 'not_configured', 'not_installed', 'mismatched', 'activating', 'deactivating', 'reloading', 'unsupported'].includes(status) ? message(status) : status === 'unavailable' ? message('statusUnavailable') : message('unknown');
+    return ['starting', 'stopping', 'stop_failed', 'completed', 'completed_with_timeout', 'failed', 'interrupted', 'stopped_status', 'running', 'blocked', 'idle', 'paused', 'waiting_limit', 'circuit_break', 'stopped', 'active', 'inactive', 'configured', 'not_configured', 'not_installed', 'mismatched', 'activating', 'deactivating', 'reloading', 'unsupported'].includes(status) ? message(status) : status === 'unavailable' ? message('statusUnavailable') : message('unknown');
   }
   function readOnly() { return state.data?.readOnly !== false; }
   function centerModeKey() { return state.data?.entry?.runtimeId ? 'centerManaged' : 'centerArchive'; }
@@ -64,11 +64,18 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
     if (!Number.isFinite(confirmationAge) || confirmationAge < 0 || confirmationAge > 15000) return null;
     return request;
   }
+  function centerRequestDisplayState(request, currentTime = Date.now()) {
+    if (request?.state !== 'running' || request?.executionBlockedReason !== 'unresolved_p1') return request?.state;
+    const blockedAt = Date.parse(request.executionBlockedAt);
+    return Number.isFinite(blockedAt) && blockedAt <= currentTime ? 'blocked' : 'unknown';
+  }
   function scopedCenterRuntimeState(data = state.data, summary = state.centerSummary, currentTime = Date.now()) {
     const entry = data?.entry; const execution = entry?.executionSummary; const request = freshCenterRequest(summary, currentTime);
     if (!entry?.entryId || !request || request.entryId !== entry.entryId) return null;
-    if (!execution?.requestId || execution.requestId !== request.requestId || execution.state !== request.state) return null;
-    return request.state;
+    const displayState = centerRequestDisplayState(request, currentTime);
+    if (!execution?.requestId || execution.requestId !== request.requestId || execution.state !== displayState) return null;
+    if (displayState === 'blocked' && execution.reason !== request.executionBlockedReason) return null;
+    return displayState;
   }
   function scopedRecordedRuntimeState(data = state.data) {
     if (!scope.center) return null;
@@ -81,7 +88,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
     return centerState || scopedRecordedRuntimeState() || (scope.center ? 'unknown' : state.action === 'stop' ? 'stopping' : state.data?.control?.stopUnconfirmed ? (state.data?.control?.action === 'stop' ? 'stopping' : 'stop_failed') : state.statusFailed ? 'unavailable' : state.data?.runtime?.state);
   }
   function runtimeStatusLabel(value) {
-    const keys = { ended: 'lastWorkEnded', canceled: 'workCanceled', failed: 'workFailed', queued: 'workQueued', attention: 'workAttention' };
+    const keys = { blocked: 'workBlocked', ended: 'lastWorkEnded', canceled: 'workCanceled', failed: 'workFailed', queued: 'workQueued', attention: 'workAttention' };
     return keys[value] ? message(keys[value]) : statusLabel(value);
   }
   function runtimeLabel() { return runtimeStatusLabel(runtimeStateValue()); }
@@ -97,7 +104,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
       const scopedState = scopedCenterRuntimeState(state.data, summary, currentTime);
       return scopedState ? message('currentWorkState', { state: statusLabel(scopedState) }) : '';
     }
-    return message('otherWorkState', { state: statusLabel(active.state), name: requestContextLabel(active) });
+    return message('otherWorkState', { state: statusLabel(centerRequestDisplayState(active, currentTime)), name: requestContextLabel(active) });
   }
   function renderCenterRuntimeContext(summary = state.centerSummary) {
     const value = centerRuntimeContextValue(summary);

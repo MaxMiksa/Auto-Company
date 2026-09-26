@@ -10,7 +10,7 @@
     summary: null, entries: [], requests: [], preferences: null,
     query: "", filter: "all", loading: true, stale: false, refreshing: null,
     refreshToken: 0, timer: null, menuEntryId: null, historyVisible: false,
-    activeEntry: null, managementEntry: null, selectedSourceId: null, sourceToken: 0, probe: null, confirmAction: null, drawerOpen: false, pendingWrites: new Map(),
+    activeEntry: null, managementEntry: null, selectedSourceId: null, sourceToken: 0, probe: null, confirmAction: null, drawerOpen: false, pendingWrites: new Map(), projectionSignature: "", projectionTimer: null,
   };
 
   function message(key, values = {}) {
@@ -75,7 +75,7 @@
       GOVERNANCE_PAUSED: "governancePaused", BUDGET_PAUSED: "budgetPaused", CURSOR_EXPIRED: "cursorExpired",
       REVISION_CONFLICT: "revisionConflict", UNSUPPORTED: "unsupported", INVALID_RESPONSE: "invalidResponse",
       EXECUTION_DOMAIN_UNCONFIGURED: "executionUnavailable", OPEN_REQUEST_EXISTS: "openRequestExists",
-      PRODUCT_LANGUAGE_LOCKED: "productLanguageLocked", PRODUCT_REGISTRATION_INVALID: "productRegistrationInvalid",
+      PRODUCT_LANGUAGE_LOCKED: "productLanguageLocked", PRODUCT_REGISTRATION_INVALID: "productRegistrationInvalid", UNRESOLVED_P1: "unresolvedP1",
       RECOVERY_REQUIRED: "recoveryRequired", INVALID_CONFIG: "invalidConfig",
     };
     const key = map[error?.code] || (error?.messageKey && window.CENTER_MESSAGES.en[error.messageKey] ? error.messageKey : null);
@@ -96,11 +96,37 @@
   }
 
   function requestState(request) { return text(request?.state).toLowerCase() || "unknown"; }
+  function requestIsFresh(request, currentTime = Date.now()) {
+    if (state.stale) return false;
+    const liveAge = currentTime - Date.parse(request?.liveConfirmedAt);
+    return Number.isFinite(liveAge) && liveAge >= 0 && liveAge <= 15000;
+  }
+  function executionBlockReason(request, currentTime = Date.now()) {
+    if (!requestIsFresh(request, currentTime) || requestState(request) !== "running" || text(request?.executionBlockedReason).toLowerCase() !== "unresolved_p1") return "";
+    const blockedAt = Date.parse(request.executionBlockedAt);
+    if (!Number.isFinite(blockedAt) || blockedAt > currentTime) return "";
+    return "unresolved_p1";
+  }
+  function requestDisplayState(request, currentTime = Date.now()) {
+    const value = requestState(request);
+    if (!["starting", "running", "stopping"].includes(value)) return value;
+    if (!requestIsFresh(request, currentTime)) return "unknown";
+    const blockedReason = text(request?.executionBlockedReason).toLowerCase();
+    if (blockedReason) return executionBlockReason(request, currentTime) ? "blocked" : "unknown";
+    return value;
+  }
   function execution(entry) { return typeof entry?.executionSummary === "object" && entry.executionSummary ? entry.executionSummary : { state: text(entry?.executionSummary) }; }
-  function entryState(entry) {
+  function entryState(entry, currentTime = Date.now()) {
     if (entry?.archived) return "archived";
-    const value = text(execution(entry).state).toLowerCase();
-    if (["running", "starting", "stopping", "queued", "attention", "failed", "ended", "canceled", "preparing", "paused", "unknown"].includes(value)) return value;
+    const summary = execution(entry); const value = text(summary.state).toLowerCase();
+    if (["blocked", "running", "starting", "stopping"].includes(value)) {
+      const request = state.summary?.currentRequest;
+      if (!summary.requestId || summary.requestId !== request?.requestId || entry?.entryId !== request?.entryId) return "unknown";
+      const projected = requestDisplayState(request, currentTime);
+      if (value === "blocked") return projected === "blocked" && summary.reason === "unresolved_p1" ? "blocked" : "unknown";
+      return projected === value ? value : "unknown";
+    }
+    if (["queued", "attention", "failed", "ended", "canceled", "preparing", "paused", "unknown"].includes(value)) return value;
     const availability = entry?.availability?.state || entry?.availability;
     if (["unknown", "unavailable", "conflict"].includes(availability)) return "unknown";
     if (availability === "read_only" || (value === "idle" && entry?.capabilities?.execute === false)) return "read_only";
@@ -123,7 +149,7 @@
 
   function capabilityReason(reason, fallback = "capabilityUnavailable") {
     if (!reason) return message(fallback);
-    const known = { unmanaged_source: "unmanagedSource", read_only_source: "readOnlySource", execution_domain_unconfigured: "executionUnavailable", runtime_incompatible: "runtimeIncompatible", slot_busy: "slotBusy", open_request_exists: "openRequestExists", source_unavailable: "sourceUnavailableReason", entry_archived: "archiveBlocked", product_registration_invalid: "productRegistrationInvalid", context_unavailable: "contextUnavailable", governance_pause: "governancePaused", budget_pause: "budgetPaused", stop_unconfirmed: "stopUnconfirmed" };
+    const known = { unmanaged_source: "unmanagedSource", read_only_source: "readOnlySource", execution_domain_unconfigured: "executionUnavailable", runtime_incompatible: "runtimeIncompatible", slot_busy: "slotBusy", open_request_exists: "openRequestExists", source_unavailable: "sourceUnavailableReason", entry_archived: "archiveBlocked", product_registration_invalid: "productRegistrationInvalid", context_unavailable: "contextUnavailable", governance_pause: "governancePaused", budget_pause: "budgetPaused", stop_unconfirmed: "stopUnconfirmed", unresolved_p1: "unresolvedP1" };
     if (window.CENTER_MESSAGES[state.language][reason]) return message(reason);
     const key = known[reason] || known[String(reason).toLowerCase()];
     return key ? message(key) : errorText({ code: reason });
@@ -133,7 +159,7 @@
     const value = text(reason);
     if (value === "user_stop") return message("requestedStop");
     if (value === "user_cancel") return message("requestedCancel");
-    return /^(?:PRODUCT_REGISTRATION_INVALID|CONTEXT_UNAVAILABLE|GOVERNANCE_PAUSE|BUDGET_PAUSE|STOP_UNCONFIRMED)$/i.test(value) ? capabilityReason(value) : value || message("unknownError");
+    return /^(?:PRODUCT_REGISTRATION_INVALID|CONTEXT_UNAVAILABLE|GOVERNANCE_PAUSE|BUDGET_PAUSE|STOP_UNCONFIRMED|UNRESOLVED_P1)$/i.test(value) ? capabilityReason(value) : value || message("unknownError");
   }
 
   async function allEntries() {
@@ -151,18 +177,14 @@
   }
 
   function normalizeCounts() {
-    const fromSummary = state.summary?.counts || {};
     const counts = { all: state.entries.filter((entry) => !entry.archived && ["product", "legacy"].includes(entry.kind)).length, running: 0, queued: 0, attention: 0, archived: 0 };
     for (const entry of state.entries) {
       const value = entryState(entry);
       if (value === "archived") counts.archived += 1;
       if (entry.kind !== "exploration" && ["running", "starting", "stopping"].includes(value)) counts.running += 1;
       if (entry.kind !== "exploration" && value === "queued") counts.queued += 1;
-      if (entry.kind !== "exploration" && ["attention", "failed", "unknown"].includes(value)) counts.attention += 1;
+      if (entry.kind !== "exploration" && ["blocked", "attention", "failed", "unknown"].includes(value)) counts.attention += 1;
     }
-    for (const key of Object.keys(counts)) if (knownNumber(fromSummary[key])) counts[key] = fromSummary[key];
-    if (knownNumber(state.summary?.queuedCount)) counts.queued = state.summary.queuedCount;
-    if (knownNumber(state.summary?.attentionCount)) counts.attention = state.summary.attentionCount;
     return counts;
   }
 
@@ -173,7 +195,7 @@
       const filterMatch = state.filter === "all" ? !entry.archived && entry.kind !== "exploration"
         : state.filter === "running" ? entry.kind !== "exploration" && ["running", "starting", "stopping"].includes(value)
         : state.filter === "queued" ? entry.kind !== "exploration" && value === "queued"
-        : state.filter === "attention" ? entry.kind !== "exploration" && ["attention", "failed", "unknown"].includes(value)
+        : state.filter === "attention" ? entry.kind !== "exploration" && ["blocked", "attention", "failed", "unknown"].includes(value)
         : state.filter === "archived" ? entry.archived === true
         : state.filter === "exploration" ? entry.kind === "exploration" && !entry.archived
         : state.filter === "reference" ? entry.kind === "reference" && !entry.archived : true;
@@ -223,7 +245,7 @@
   function statusSymbol(value) {
     const visual = ["running", "starting", "stopping"].includes(value) ? "running"
       : value === "queued" ? "queued" : ["paused", "ended", "archived", "read_only"].includes(value) ? "paused"
-      : value === "attention" ? "attention" : value === "failed" ? "failed" : "unknown";
+      : ["blocked", "attention"].includes(value) ? "attention" : value === "failed" ? "failed" : "unknown";
     const node = element("span", `status-symbol ${visual}`);
     node.setAttribute("role", "img"); node.setAttribute("aria-label", statusLabel(value));
     return node;
@@ -251,7 +273,8 @@
     const statusCopy = element("div"); statusCopy.append(element("strong", "", statusLabel(value)));
     const summary = execution(entry);
     const position = summary.queuePosition || summary.position;
-    const detail = value === "queued" && knownNumber(position) ? message("queuePosition", { position })
+    const detail = value === "blocked" ? capabilityReason(summary.reason)
+      : value === "queued" && knownNumber(position) ? message("queuePosition", { position })
       : summary.reason === "unmanaged_source" ? message("unmanagedSource") : "";
     if (detail) statusCopy.append(element("p", "status-detail", detail));
     status.append(statusSymbol(value), statusCopy);
@@ -318,7 +341,7 @@
       link.hidden = true; return;
     }
     $("activityTitle").textContent = text(request.displayName) || message(`kind_${request.kind}`);
-    const parts = [statusLabel(requestState(request))];
+    const parts = [statusLabel(requestDisplayState(request))];
     if (knownNumber(request.cycleNumber)) parts.unshift(message("currentCycle", { number: String(request.cycleNumber).padStart(2, "0") }));
     if (request.startedAt) parts.push(message("startedAt", { time: formatTime(request.startedAt, true) }));
     $("activityDetail").textContent = parts.join(" · ");
@@ -349,6 +372,23 @@
     $("connectionNotice").textContent = message(state.entries.length ? "staleData" : "loadFailed");
     $("observedAt").textContent = state.observedAt ? message(state.stale ? "observedStale" : "refreshedAt", { time: formatTime(state.observedAt) }) : "";
     document.querySelectorAll(".filter-button").forEach((button) => button.setAttribute("aria-pressed", String(button.dataset.filter === state.filter)));
+    state.projectionSignature = runtimeProjectionSignature();
+  }
+
+  function runtimeProjectionSignature(currentTime = Date.now()) {
+    return JSON.stringify({
+      stale: state.stale,
+      current: requestDisplayState(state.summary?.currentRequest, currentTime),
+      entries: state.entries.map((entry) => [entry.entryId, entryState(entry, currentTime)]),
+      requests: state.requests.map((request) => [request.requestId, requestDisplayState(request, currentTime)]),
+    });
+  }
+
+  function refreshRuntimeProjection(currentTime = Date.now()) {
+    const signature = runtimeProjectionSignature(currentTime);
+    if (signature === state.projectionSignature) return;
+    renderActivity(); renderCounts(); renderEntries(); renderQueue();
+    state.projectionSignature = signature;
   }
 
   function queueGroups() {
@@ -370,12 +410,14 @@
     item.append(element("span", "queue-number", group === "queued" ? String(index + 1).padStart(2, "0") : ""));
     const body = element("div"); body.append(element("h4", "", text(request.displayName) || message(`kind_${request.kind}`)));
     const value = requestState(request);
+    const displayValue = requestDisplayState(request);
     const activeCycle = ["starting", "running", "stopping"].includes(value) && request.cycleNumber;
-    body.append(element("p", "", `${statusLabel(value)}${activeCycle ? ` · ${message("cycleNumber", { number: String(activeCycle).padStart(2, "0") })}` : ""}`));
+    body.append(element("p", "", `${statusLabel(displayValue)}${activeCycle ? ` · ${message("cycleNumber", { number: String(activeCycle).padStart(2, "0") })}` : ""}`));
     const config = request.config || {};
     if (config.model || config.effort) body.append(element("p", "", message("plannedConfig", { model: config.model || message("notRecorded"), effort: config.effort || message("notRecorded") })));
     if (config.productLanguage) body.append(element("p", "", message("languageConfig", { language: languageLabel(config.productLanguage) })));
-    if (request.attentionReason || request.reasonDetail || request.terminalReason) body.append(element("p", "", message("attentionReason", { reason: requestReason(request.reasonDetail || request.attentionReason || request.terminalReason) })));
+    const reason = executionBlockReason(request) || request.reasonDetail || request.attentionReason || request.terminalReason;
+    if (reason) body.append(element("p", "", message("attentionReason", { reason: requestReason(reason) })));
     const actions = element("div", "queue-actions");
     if (["running", "starting", "stopping"].includes(value)) {
       const stop = element("button", "text-button danger", message("stopItem")); stop.type = "button"; stop.disabled = value === "stopping" || state.stale; stop.addEventListener("click", () => confirmRequestAction(request, "stop")); actions.append(stop);
@@ -728,4 +770,5 @@
   }
 
   applyLanguage(); wire(); renderPage(); refresh();
+  state.projectionTimer = setInterval(refreshRuntimeProjection, 1000);
 })();
