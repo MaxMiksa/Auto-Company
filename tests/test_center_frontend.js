@@ -33,7 +33,7 @@ function journalHelpers() {
   vm.runInContext(fs.readFileSync(path.join(dashboard, "i18n.js"), "utf8"), context);
   const binding = journalApp.indexOf("\n  document.querySelectorAll('[data-tab]')");
   assert.ok(binding > 0, "Journal event wiring must follow helper declarations");
-  vm.runInContext(journalApp.slice(0, binding) + "\n globalThis.journal = { state, scope, scopedCenterRuntimeState, runtimeStateValue, runtimeLabel, requestContextLabel };\n})();", context);
+  vm.runInContext(journalApp.slice(0, binding) + "\n globalThis.journal = { state, scope, freshCenterRequest, scopedCenterRuntimeState, runtimeStateValue, runtimeLabel, requestContextLabel, centerRuntimeContextValue };\n})();", context);
   context.journal.state.language = "en";
   return context.journal;
 }
@@ -98,7 +98,7 @@ test("unfiltered catalog without formed products points to explorations", () => 
 });
 
 test("product detail trusts only the confirmed matching center request", () => {
-  const { state, scopedCenterRuntimeState, runtimeStateValue, runtimeLabel } = journalHelpers();
+  const { state, scopedCenterRuntimeState, runtimeStateValue, runtimeLabel, centerRuntimeContextValue } = journalHelpers();
   const now = Date.now();
   const request = { requestId: "request-a", entryId: "entry-a", state: "running", liveConfirmedAt: new Date(now - 1000).toISOString() };
   state.data = { entry: { entryId: "entry-a", executionSummary: { requestId: "request-a", state: "running" } }, cycles: [{ status: "completed", active: false }] };
@@ -107,6 +107,7 @@ test("product detail trusts only the confirmed matching center request", () => {
   assert.equal(scopedCenterRuntimeState(state.data, state.centerSummary, now), "running");
   assert.equal(runtimeStateValue(), "running");
   assert.equal(runtimeLabel(), "Running");
+  assert.equal(centerRuntimeContextValue(state.centerSummary, now), "Current work · Running");
   state.centerSummary = { currentRequest: { ...request, entryId: "entry-b" } };
   assert.equal(scopedCenterRuntimeState(state.data, state.centerSummary, now), null);
   assert.equal(runtimeStateValue(), "unknown");
@@ -116,7 +117,7 @@ test("product detail trusts only the confirmed matching center request", () => {
 });
 
 test("product detail drops stale or disconnected running evidence", () => {
-  const { state, scopedCenterRuntimeState, runtimeStateValue, runtimeLabel } = journalHelpers();
+  const { state, freshCenterRequest, scopedCenterRuntimeState, runtimeStateValue, runtimeLabel, centerRuntimeContextValue } = journalHelpers();
   const now = Date.now();
   const entry = { entryId: "entry-a", executionSummary: { requestId: "request-a", state: "running" } };
   const currentRequest = { requestId: "request-a", entryId: "entry-a", state: "running", liveConfirmedAt: new Date(now - 1000).toISOString() };
@@ -124,16 +125,24 @@ test("product detail drops stale or disconnected running evidence", () => {
   assert.equal(scopedCenterRuntimeState(state.data, state.centerSummary, now), null);
   assert.equal(runtimeStateValue(), "unknown");
   assert.equal(runtimeLabel(), "Unknown");
+  assert.equal(centerRuntimeContextValue(state.centerSummary, now), "");
   state.statusFailed = false; state.centerSummary.currentRequest.liveConfirmedAt = new Date(now - 15001).toISOString();
+  assert.equal(freshCenterRequest(state.centerSummary, now), null);
   assert.equal(scopedCenterRuntimeState(state.data, state.centerSummary, now), null);
   assert.equal(runtimeStateValue(), "unknown");
   assert.equal(runtimeLabel(), "Unknown");
+  assert.equal(centerRuntimeContextValue(state.centerSummary, now), "");
 });
 
 test("cross-product running context includes the queued-plan identity", () => {
-  const { requestContextLabel } = journalHelpers();
+  const { state, requestContextLabel, centerRuntimeContextValue } = journalHelpers();
   assert.equal(requestContextLabel({ displayName: "Auto Company", config: { model: "gpt-5.6-luna", effort: "high" } }), "Auto Company · gpt-5.6-luna · high");
   assert.equal(requestContextLabel({ displayName: "Auto Company", sourceId: "source_1234567890" }), "Auto Company · …34567890");
+  const now = Date.now(); state.statusFailed = false;
+  state.centerSummary = { currentRequest: { requestId: "other", entryId: "entry-b", state: "starting", liveConfirmedAt: new Date(now - 1000).toISOString(), displayName: "Auto Company", config: { model: "gpt-5.6-luna", effort: "high" } } };
+  assert.equal(centerRuntimeContextValue(state.centerSummary, now), "Other work · Starting…: Auto Company · gpt-5.6-luna · high");
+  state.centerSummary.currentRequest.state = "stopping";
+  assert.equal(centerRuntimeContextValue(state.centerSummary, now), "Other work · Stopping…: Auto Company · gpt-5.6-luna · high");
 });
 
 test("center actions use the versioned envelope routes and explicit write preconditions", () => {

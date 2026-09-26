@@ -56,14 +56,19 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
   function readOnly() { return state.data?.readOnly !== false; }
   function centerModeKey() { return state.data?.entry?.runtimeId ? 'centerManaged' : 'centerArchive'; }
   function liveProcess() { return !readOnly() && !state.statusFailed && state.data?.runtime?.processState === 'running'; }
-  function scopedCenterRuntimeState(data = state.data, summary = state.centerSummary, currentTime = Date.now()) {
+  function freshCenterRequest(summary = state.centerSummary, currentTime = Date.now()) {
     if (!scope.center || state.statusFailed) return null;
-    const entry = data?.entry; const execution = entry?.executionSummary; const request = summary?.currentRequest;
-    if (!entry?.entryId || !request?.liveConfirmedAt || request.entryId !== entry.entryId) return null;
+    const request = summary?.currentRequest;
+    if (!request?.liveConfirmedAt || !['starting', 'running', 'stopping'].includes(request.state)) return null;
     const confirmationAge = currentTime - Date.parse(request.liveConfirmedAt);
     if (!Number.isFinite(confirmationAge) || confirmationAge < 0 || confirmationAge > 15000) return null;
+    return request;
+  }
+  function scopedCenterRuntimeState(data = state.data, summary = state.centerSummary, currentTime = Date.now()) {
+    const entry = data?.entry; const execution = entry?.executionSummary; const request = freshCenterRequest(summary, currentTime);
+    if (!entry?.entryId || !request || request.entryId !== entry.entryId) return null;
     if (!execution?.requestId || execution.requestId !== request.requestId || execution.state !== request.state) return null;
-    return ['starting', 'running', 'stopping'].includes(request.state) ? request.state : null;
+    return request.state;
   }
   function runtimeStateValue() {
     const centerState = scopedCenterRuntimeState();
@@ -75,9 +80,17 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
     const plan = [request?.config?.model, request?.config?.effort].filter(Boolean).join(' · ');
     return plan ? `${name} · ${plan}` : request?.sourceId ? `${name} · …${String(request.sourceId).slice(-8)}` : name;
   }
-  function renderCenterRuntimeContext(summary) {
-    const active = summary?.currentRequest;
-    const value = !active ? '' : active.entryId === scope.entryId ? message('viewingRunningProduct') : message('otherProductRunning', { name: requestContextLabel(active) });
+  function centerRuntimeContextValue(summary = state.centerSummary, currentTime = Date.now()) {
+    const active = freshCenterRequest(summary, currentTime);
+    if (!active) return '';
+    if (active.entryId === scope.entryId) {
+      const scopedState = scopedCenterRuntimeState(state.data, summary, currentTime);
+      return scopedState ? message('currentWorkState', { state: statusLabel(scopedState) }) : '';
+    }
+    return message('otherWorkState', { state: statusLabel(active.state), name: requestContextLabel(active) });
+  }
+  function renderCenterRuntimeContext(summary = state.centerSummary) {
+    const value = centerRuntimeContextValue(summary);
     $('centerRuntimeContext').textContent = value;
     $('centerRuntimeContext').title = value;
   }
@@ -152,6 +165,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
   }
   function updateElapsed() {
     document.querySelectorAll('.live-elapsed').forEach((node) => { if (node.dataset.cycleId === state.currentCycle?.id) node.textContent = liveDuration(state.currentCycle); });
+    if (scope.center) renderCenterLiveState();
   }
   function cycleTitle(cycle) {
     if (cycle.workReport) return cycle.workReport.title;
@@ -507,13 +521,11 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
     const data = state.data;
     const runtime = data?.runtime || {};
     const unavailable = scope.center ? false : state.statusFailed || runtime.available === false;
-    const displayedState = runtimeStateValue();
     const process = runtime.processState || runtime.state;
     const action = state.action || data?.control?.action;
     const retryStop = data?.control?.stopUnconfirmed === true;
     const locked = !data || readOnly() || (unavailable && !retryStop) || Boolean(action || state.mediaAction);
-    $('runtimeState').textContent = statusLabel(displayedState);
-    $('runtimeState').dataset.state = unavailable ? 'unavailable' : displayedState;
+    renderRuntimeState();
     $('startButton').disabled = locked || retryStop || !['stopped', 'inactive'].includes(process);
     $('stopButton').disabled = locked || (!retryStop && process !== 'running');
     iconLabel($('startButton'), 'play', message(action === 'start' ? 'starting' : 'start'));
@@ -523,7 +535,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
     $('stopButton').hidden = scope.center;
     $('refreshButton').disabled = Boolean(state.refreshPending || state.action);
     $('modeNote').textContent = data ? message(scope.center ? centerModeKey() : readOnly() ? 'preview' : 'live') : '';
-    $('autoRefresh').disabled = Boolean(data && readOnly());
+    $('autoRefresh').disabled = Boolean(data && readOnly() && !scope.center);
     document.querySelectorAll('.legacy-link').forEach((node) => { node.hidden = scope.center || data?.legacyAvailable !== true; });
     document.querySelectorAll('.dialog-links a[href^="/docs/"]').forEach((node) => { node.hidden = readOnly(); });
     const reason = runtime.pauseReason || data?.budgetPause?.reason;
@@ -532,6 +544,18 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
     $('runtimeNotice').textContent = reason ? message('pauseReason', { reason: pauseLabel(reason) }) : paused ? message('pauseReview') : data?.budgetPause ? message('budgetPause') : '';
     updateElapsed();
     renderDiagnostics();
+  }
+  function renderRuntimeState() {
+    const runtime = state.data?.runtime || {};
+    const displayedState = runtimeStateValue();
+    const unavailable = !scope.center && (state.statusFailed || runtime.available === false);
+    const node = $('runtimeState');
+    node.textContent = statusLabel(displayedState);
+    if (node.dataset) node.dataset.state = unavailable ? 'unavailable' : displayedState;
+  }
+  function renderCenterLiveState() {
+    renderRuntimeState();
+    renderCenterRuntimeContext(state.centerSummary);
   }
   function renderDiagnostics() {
     const data = state.data;
@@ -1033,7 +1057,9 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
       const summary = state.centerSummary || await fetchCenter('/summary');
       if (token !== scope.contextToken || entryId !== scope.entryId) return;
       renderCenterRuntimeContext(summary);
-    } catch (_) { if (token === scope.contextToken) $('centerRuntimeContext').textContent = ''; }
+    } catch (_) {
+      if (token === scope.contextToken) { $('centerRuntimeContext').textContent = ''; $('centerRuntimeContext').title = ''; }
+    }
   }
   function moveSwitcherFocus(direction) {
     const options = [...$('productSwitcherList').querySelectorAll('[role="option"]')];
@@ -1045,7 +1071,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
   function scheduleRefresh() {
     clearTimeout(state.timer);
     state.timer = null;
-    if (!$('autoRefresh').checked || document.hidden || state.action || state.refreshPending || readOnly()) return;
+    if (!$('autoRefresh').checked || document.hidden || state.action || state.refreshPending || (readOnly() && !scope.center)) return;
     state.timer = setTimeout(refresh, state.statusFailed ? 15000 : 5000);
   }
   function refresh() {
@@ -1073,7 +1099,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
         }
         state.language = scope.center && ['en', 'zh-CN'].includes(state.centerSummary?.language) ? state.centerSummary.language : state.languageState?.language || (data.language === 'zh-CN' ? 'zh-CN' : 'en');
       }
-      if (!state.autoChanged) $('autoRefresh').checked = !readOnly();
+      if (!state.autoChanged) $('autoRefresh').checked = scope.center || !readOnly();
       $('connectionError').hidden = !state.statusFailed;
       $('connectionError').textContent = message('runtimeUnavailable');
       $('loadingState').hidden = true;
@@ -1094,7 +1120,10 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
       $('connectionError').hidden = false;
       $('connectionError').textContent = message(state.data ? 'stale' : 'readFailed');
       $('refreshStatus').textContent = state.data?.generatedAt ? message('lastUpdated', { time: formatTime(state.data.generatedAt, true) }) : '';
-      if (state.data) render();
+      if (state.data) {
+        if (scope.center) renderCenterLiveState();
+        else render();
+      }
       else renderRuntime();
     } finally {
       state.refreshPending = null;
@@ -1148,7 +1177,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
   $('startButton').addEventListener('click', () => runAction('start'));
   $('stopButton').addEventListener('click', () => runAction('stop'));
   $('autoRefresh').addEventListener('change', () => { state.autoChanged = true; scheduleRefresh(); });
-  document.addEventListener('visibilitychange', () => { if (!document.hidden && $('autoRefresh').checked && !readOnly() && !state.action) refresh(); else scheduleRefresh(); });
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && $('autoRefresh').checked && (scope.center || !readOnly()) && !state.action) refresh(); else scheduleRefresh(); });
   $('olderButton').addEventListener('click', () => { state.older = !state.older; renderHistory(); });
   $('usagePeriod').addEventListener('change', renderUsage);
   $('usageDate').addEventListener('change', renderUsage);
