@@ -175,6 +175,15 @@
     });
   }
 
+  function emptyListState(entries = filteredEntries()) {
+    if (entries.length) return null;
+    if (state.stale && !state.entries.length) return { messageKey: "loadFailed" };
+    if (state.query || state.filter !== "all") return { messageKey: "noMatches", actionKey: "clearFilters", target: "all" };
+    const hasProduct = state.entries.some((entry) => !entry.archived && ["product", "legacy"].includes(entry.kind));
+    if (!hasProduct) return { messageKey: "noFormedProducts", actionKey: "viewExplorations", target: "exploration" };
+    return { messageKey: "noProducts" };
+  }
+
   function safeAssetURL(value) {
     if (typeof value !== "string" || !value.startsWith(`${API}/`)) return null;
     try { const url = new URL(value, location.origin); return url.origin === location.origin && url.pathname.startsWith(`${API}/`) ? `${url.pathname}${url.search}` : null; }
@@ -280,8 +289,13 @@
     const entries = filteredEntries();
     for (const entry of entries) container.append(renderRow(entry));
     if (!entries.length) {
-      const empty = element("span", "", state.stale && !state.entries.length ? message("loadFailed") : state.entries.length ? message("noMatches") : message("noProducts")); listState.append(empty);
-      if (state.entries.length) { const clearButton = element("button", "text-button", message("clearFilters")); clearButton.type = "button"; clearButton.addEventListener("click", clearFilters); listState.append(clearButton); }
+      const emptyState = emptyListState(entries);
+      listState.append(element("span", "", message(emptyState.messageKey)));
+      if (emptyState.actionKey) {
+        const action = element("button", "text-button", message(emptyState.actionKey)); action.type = "button";
+        action.addEventListener("click", () => { state.query = ""; $("productSearch").value = ""; setFilter(emptyState.target); });
+        listState.append(action);
+      }
     }
   }
 

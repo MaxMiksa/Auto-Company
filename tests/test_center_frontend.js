@@ -20,9 +20,22 @@ function helpers() {
   vm.runInContext(i18n, context);
   const binding = app.lastIndexOf("\n  applyLanguage(); wire(); renderPage(); refresh();");
   assert.ok(binding > 0, "Center event wiring must follow helper declarations");
-  vm.runInContext(app.slice(0, binding) + "\n globalThis.center = { state, message, entryState, capability, normalizeCounts, filteredEntries, requestState, statusLabel, write };\n})();", context);
+  vm.runInContext(app.slice(0, binding) + "\n globalThis.center = { state, message, entryState, capability, normalizeCounts, filteredEntries, emptyListState, requestState, statusLabel, write };\n})();", context);
   context.center.state.language = "en";
   return { ...context.center, messages: context.window.CENTER_MESSAGES, context };
+}
+
+function journalHelpers() {
+  const context = vm.createContext({
+    window: {}, location: { pathname: "/products/entry-a", origin: "http://127.0.0.1:8843" },
+    document: {}, URL, Intl, Date, Number, Object, Set, Map, String, Math, AbortController, setTimeout, clearTimeout,
+  });
+  vm.runInContext(fs.readFileSync(path.join(dashboard, "i18n.js"), "utf8"), context);
+  const binding = journalApp.indexOf("\n  document.querySelectorAll('[data-tab]')");
+  assert.ok(binding > 0, "Journal event wiring must follow helper declarations");
+  vm.runInContext(journalApp.slice(0, binding) + "\n globalThis.journal = { state, scope, scopedCenterRuntimeState, runtimeLabel, requestContextLabel };\n})();", context);
+  context.journal.state.language = "en";
+  return context.journal;
 }
 
 test("center fixed labels are complete and bilingual", () => {
@@ -74,6 +87,34 @@ test("catalog filters use recorded state and never search report bodies", () => 
   state.filter = "archived"; assert.deepEqual(Array.from(filteredEntries(), (entry) => entry.entryId), ["c"]);
   state.filter = "exploration"; assert.deepEqual(Array.from(filteredEntries(), (entry) => entry.entryId), ["d"]);
   state.filter = "reference"; assert.deepEqual(Array.from(filteredEntries(), (entry) => entry.entryId), ["e"]);
+});
+
+test("unfiltered catalog without formed products points to explorations", () => {
+  const { state, emptyListState } = helpers();
+  state.entries = [{ entryId: "explore", kind: "exploration", archived: false }]; state.filter = "all"; state.query = "";
+  assert.deepEqual({ ...emptyListState([]) }, { messageKey: "noFormedProducts", actionKey: "viewExplorations", target: "exploration" });
+  state.query = "missing";
+  assert.deepEqual({ ...emptyListState([]) }, { messageKey: "noMatches", actionKey: "clearFilters", target: "all" });
+});
+
+test("product detail trusts only the confirmed matching center request", () => {
+  const { state, scopedCenterRuntimeState, runtimeLabel } = journalHelpers();
+  const request = { requestId: "request-a", entryId: "entry-a", state: "running", liveConfirmedAt: "2026-09-26T23:24:49+08:00" };
+  state.data = { entry: { entryId: "entry-a", executionSummary: { requestId: "request-a", state: "running" } }, cycles: [{ status: "completed", active: false }] };
+  state.centerSummary = { currentRequest: request };
+  assert.equal(scopedCenterRuntimeState(), "running");
+  assert.equal(runtimeLabel(), "Running");
+  state.centerSummary = { currentRequest: { ...request, entryId: "entry-b" } };
+  assert.equal(scopedCenterRuntimeState(), null);
+  assert.equal(runtimeLabel(), "Unknown");
+  state.centerSummary = { currentRequest: { ...request, liveConfirmedAt: null } };
+  assert.equal(scopedCenterRuntimeState(), null);
+});
+
+test("cross-product running context includes the queued-plan identity", () => {
+  const { requestContextLabel } = journalHelpers();
+  assert.equal(requestContextLabel({ displayName: "Auto Company", config: { model: "gpt-5.6-luna", effort: "high" } }), "Auto Company · gpt-5.6-luna · high");
+  assert.equal(requestContextLabel({ displayName: "Auto Company", sourceId: "source_1234567890" }), "Auto Company · …34567890");
 });
 
 test("center actions use the versioned envelope routes and explicit write preconditions", () => {

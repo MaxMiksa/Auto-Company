@@ -1839,7 +1839,7 @@ dialog .runtime-details {
 .center-back-link::after { content: "/"; margin-left: 13px; color: var(--line-strong); }
 .product-switcher-button { min-width: 0; max-width: 260px; display: inline-flex; align-items: center; gap: 7px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 3px; background: #fff; color: var(--ink); font-weight: 650; cursor: pointer; }
 .product-switcher-button span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.center-runtime-context { overflow: hidden; max-width: 240px; color: var(--muted); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.center-runtime-context { overflow: hidden; max-width: 360px; color: var(--muted); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
 .product-switcher-dialog { width: min(520px, calc(100vw - 32px)); padding: 24px; }
 .product-switcher-dialog .dialog-header { margin-bottom: 17px; }
 .switcher-search { display: block; margin-bottom: 10px; }

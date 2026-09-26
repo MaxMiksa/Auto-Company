@@ -51,12 +51,33 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
   }
   function statusLabel(status) {
     if (['not_started', 'startup_unconfirmed'].includes(status)) return message(status);
-    return ['stopping', 'stop_failed', 'completed', 'completed_with_timeout', 'failed', 'interrupted', 'stopped_status', 'running', 'idle', 'paused', 'waiting_limit', 'circuit_break', 'stopped', 'active', 'inactive', 'configured', 'not_configured', 'not_installed', 'mismatched', 'activating', 'deactivating', 'reloading', 'unsupported'].includes(status) ? message(status) : status === 'unavailable' ? message('statusUnavailable') : message('unknown');
+    return ['starting', 'stopping', 'stop_failed', 'completed', 'completed_with_timeout', 'failed', 'interrupted', 'stopped_status', 'running', 'idle', 'paused', 'waiting_limit', 'circuit_break', 'stopped', 'active', 'inactive', 'configured', 'not_configured', 'not_installed', 'mismatched', 'activating', 'deactivating', 'reloading', 'unsupported'].includes(status) ? message(status) : status === 'unavailable' ? message('statusUnavailable') : message('unknown');
   }
   function readOnly() { return state.data?.readOnly !== false; }
   function centerModeKey() { return state.data?.entry?.runtimeId ? 'centerManaged' : 'centerArchive'; }
   function liveProcess() { return !readOnly() && !state.statusFailed && state.data?.runtime?.processState === 'running'; }
-  function runtimeLabel() { return statusLabel(state.action === 'stop' ? 'stopping' : state.data?.control?.stopUnconfirmed ? (state.data?.control?.action === 'stop' ? 'stopping' : 'stop_failed') : state.statusFailed ? 'unavailable' : state.data?.runtime?.state); }
+  function scopedCenterRuntimeState(data = state.data, summary = state.centerSummary) {
+    if (!scope.center) return null;
+    const entry = data?.entry; const execution = entry?.executionSummary; const request = summary?.currentRequest;
+    if (!entry?.entryId || !request?.liveConfirmedAt || request.entryId !== entry.entryId) return null;
+    if (!execution?.requestId || execution.requestId !== request.requestId || execution.state !== request.state) return null;
+    return ['starting', 'running', 'stopping'].includes(request.state) ? request.state : null;
+  }
+  function runtimeLabel() {
+    const centerState = scopedCenterRuntimeState();
+    return statusLabel(centerState || (scope.center ? 'unknown' : state.action === 'stop' ? 'stopping' : state.data?.control?.stopUnconfirmed ? (state.data?.control?.action === 'stop' ? 'stopping' : 'stop_failed') : state.statusFailed ? 'unavailable' : state.data?.runtime?.state));
+  }
+  function requestContextLabel(request) {
+    const name = request?.displayName || message('unknown');
+    const plan = [request?.config?.model, request?.config?.effort].filter(Boolean).join(' · ');
+    return plan ? `${name} · ${plan}` : request?.sourceId ? `${name} · …${String(request.sourceId).slice(-8)}` : name;
+  }
+  function renderCenterRuntimeContext(summary) {
+    const active = summary?.currentRequest;
+    const value = !active ? '' : active.entryId === scope.entryId ? message('viewingRunningProduct') : message('otherProductRunning', { name: requestContextLabel(active) });
+    $('centerRuntimeContext').textContent = value;
+    $('centerRuntimeContext').title = value;
+  }
   function pauseLabel(value) { return message(`pause_${value}`) === `pause_${value}` ? String(value || '') : message(`pause_${value}`); }
   async function fetchJSON(url, options = {}, timeout = 100000) {
     const controller = new AbortController();
@@ -482,13 +503,14 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
   function renderRuntime() {
     const data = state.data;
     const runtime = data?.runtime || {};
-    const unavailable = state.statusFailed || runtime.available === false;
+    const centerState = scopedCenterRuntimeState();
+    const unavailable = scope.center ? false : state.statusFailed || runtime.available === false;
     const process = runtime.processState || runtime.state;
     const action = state.action || data?.control?.action;
     const retryStop = data?.control?.stopUnconfirmed === true;
     const locked = !data || readOnly() || (unavailable && !retryStop) || Boolean(action || state.mediaAction);
     $('runtimeState').textContent = runtimeLabel();
-    $('runtimeState').dataset.state = unavailable ? 'unavailable' : runtime.state || 'unknown';
+    $('runtimeState').dataset.state = unavailable ? 'unavailable' : centerState || runtime.state || 'unknown';
     $('startButton').disabled = locked || retryStop || !['stopped', 'inactive'].includes(process);
     $('stopButton').disabled = locked || (!retryStop && process !== 'running');
     iconLabel($('startButton'), 'play', message(action === 'start' ? 'starting' : 'start'));
@@ -998,8 +1020,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
       const [entries, summary] = await Promise.all([fetchAllCenterEntries(), fetchCenter('/summary')]);
       if (token !== scope.token || !dialog.open || !Array.isArray(entries)) return;
       scope.entries = entries; renderProductSwitcher();
-      const active = summary?.currentRequest;
-      $('centerRuntimeContext').textContent = !active ? '' : active.entryId === scope.entryId ? message('viewingRunningProduct') : message('otherProductRunning', { name: active.displayName || message('unknown') });
+      renderCenterRuntimeContext(summary);
     } catch (_) { if (token === scope.token) $('productSwitcherStatus').textContent = message('readFailed'); }
   }
   async function refreshCenterContext() {
@@ -1008,8 +1029,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
     try {
       const summary = state.centerSummary || await fetchCenter('/summary');
       if (token !== scope.contextToken || entryId !== scope.entryId) return;
-      const active = summary?.currentRequest;
-      $('centerRuntimeContext').textContent = !active ? '' : active.entryId === scope.entryId ? message('viewingRunningProduct') : message('otherProductRunning', { name: active.displayName || message('unknown') });
+      renderCenterRuntimeContext(summary);
     } catch (_) { if (token === scope.contextToken) $('centerRuntimeContext').textContent = ''; }
   }
   function moveSwitcherFocus(direction) {
