@@ -713,6 +713,17 @@ button:focus:not(:focus-visible), main:focus {
   margin-top: 4px;
 }
 
+.exploration-message {
+  margin: 8px 0 12px var(--body-start);
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.exploration-retry {
+  margin: 0 0 16px var(--body-start);
+  font-size: 12px;
+}
+
 .exploration-list .history-number {
   font-size: 13px;
   letter-spacing: 0;

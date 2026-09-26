@@ -33,7 +33,7 @@ function journalHelpers() {
   vm.runInContext(fs.readFileSync(path.join(dashboard, "i18n.js"), "utf8"), context);
   const binding = journalApp.indexOf("\n  document.querySelectorAll('[data-tab]')");
   assert.ok(binding > 0, "Journal event wiring must follow helper declarations");
-  vm.runInContext(journalApp.slice(0, binding) + "\n globalThis.journal = { state, scope, freshCenterRequest, scopedCenterRuntimeState, scopedRecordedRuntimeState, runtimeStateValue, runtimeStatusLabel, runtimeLabel, requestContextLabel, centerRuntimeContextValue };\n})();", context);
+  vm.runInContext(journalApp.slice(0, binding) + "\n globalThis.journal = { state, scope, freshCenterRequest, scopedCenterRuntimeState, scopedRecordedRuntimeState, runtimeStateValue, runtimeStatusLabel, runtimeLabel, requestContextLabel, centerRuntimeContextValue, historyGroups, explorationScope, explorationPageMatches, resetExploration, explorationRequestMatches };\n})();", context);
   context.journal.state.language = "en";
   return context.journal;
 }
@@ -159,6 +159,49 @@ test("cross-product running context includes the queued-plan identity", () => {
   assert.equal(centerRuntimeContextValue(state.centerSummary, now), "Other work · Starting…: Auto Company · gpt-5.6-luna · high");
   state.centerSummary.currentRequest.state = "stopping";
   assert.equal(centerRuntimeContextValue(state.centerSummary, now), "Other work · Stopping…: Auto Company · gpt-5.6-luna · high");
+});
+
+test("linked exploration pages stay separate and match the product source snapshot", () => {
+  const { state, historyGroups, explorationScope, explorationPageMatches, resetExploration, explorationRequestMatches } = journalHelpers();
+  const product = {
+    ok: true, entryId: "entry-a", sourceId: "source-a", sourceRevision: 7, explorationAvailable: true,
+    entry: { entryId: "entry-a", sourceId: "source-a", kind: "product" },
+    cycles: [{ id: "product-2", identityKind: "product" }, { id: "product-1", identityKind: "product" }],
+  };
+  const expected = explorationScope(product);
+  assert.deepEqual({ ...expected }, { entryId: "entry-a", sourceId: "source-a", sourceRevision: 7, key: '["entry-a","source-a",7]' });
+  assert.deepEqual(Array.from(historyGroups(product, product.cycles[0]).main, (cycle) => cycle.id), ["product-1"]);
+  assert.equal(historyGroups(product, product.cycles[0]).exploration.length, 0);
+  const page = { entryId: "entry-a", sourceId: "source-a", sourceRevision: 7, entry: { entryId: "entry-a", sourceId: "source-a" }, cycles: [{ id: "exp-1", identityKind: "exploration" }] };
+  assert.equal(explorationPageMatches(page, expected), true);
+  assert.equal(explorationPageMatches({ ...page, sourceId: "source-b" }, expected), false);
+  assert.equal(explorationPageMatches({ ...page, sourceRevision: 8 }, expected), false);
+  assert.equal(explorationPageMatches({ ...page, cycles: [{ id: "product-1", identityKind: "product" }] }, expected), false);
+  state.exploration.key = expected.key; state.exploration.token = 4; state.exploration.loaded = true; state.exploration.cycles = page.cycles;
+  state.data = product;
+  assert.equal(explorationRequestMatches(4, expected), true);
+  resetExploration({ ...expected, key: '["entry-a","source-b",1]' });
+  assert.equal(explorationRequestMatches(4, expected), false);
+  assert.equal(state.exploration.token, 5);
+  assert.equal(state.exploration.loaded, false);
+  assert.equal(state.exploration.cycles.length, 0);
+});
+
+test("standalone exploration keeps its own cycles in the main journal", () => {
+  const { historyGroups, explorationScope } = journalHelpers();
+  const data = {
+    entryId: "entry-exp", sourceId: "source-exp", sourceRevision: 3, explorationAvailable: true,
+    entry: { entryId: "entry-exp", sourceId: "source-exp", kind: "exploration" },
+    cycles: [{ id: "exp-2", identityKind: "exploration" }, { id: "exp-1", identityKind: "exploration" }],
+  };
+  const groups = historyGroups(data, data.cycles[0]);
+  assert.deepEqual(Array.from(groups.main, (cycle) => cycle.id), ["exp-1"]);
+  assert.equal(groups.exploration.length, 0);
+  assert.equal(explorationScope(data), null);
+  assert.match(journalApp, /section=exploration&sourceId=\$\{encodeURIComponent\(expected\.sourceId\)\}&limit=100/);
+  assert.match(journalApp, /nextBefore/);
+  assert.match(journalApp, /state\.exploration\.failed && !retry/);
+  assert.match(journalApp, /loadLinkedExploration\(true\)/);
 });
 
 test("center actions use the versioned envelope routes and explicit write preconditions", () => {

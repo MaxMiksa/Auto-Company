@@ -30,7 +30,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
   const DEFAULT_HISTORY_LIMIT = 4;
   const productMatch = (globalThis.location?.pathname || '/journal').match(/^\/products\/([^/]+)\/?$/);
   const scope = { center: Boolean(productMatch), entryId: productMatch ? decodeURIComponent(productMatch[1]) : null, token: 0, contextToken: 0, entries: [] };
-  const state = { data: null, language: 'zh-CN', tab: 'work', expanded: new Set(), older: false, selectedLog: scope.center ? '' : 'runtime', logText: '', logLoadedId: '', logRequest: 0, logPending: null, refreshPending: null, signature: '', statusFailed: true, action: '', languageState: null, languageSaving: false, languageLoading: false, languageRevision: 0, languageError: '', languageSaved: false, timer: null, autoChanged: false, currentCycle: null, receivedAt: 0, elapsedTimer: null, centerSummary: null, mediaIntent: null };
+  const state = { data: null, language: 'zh-CN', tab: 'work', expanded: new Set(), older: false, selectedLog: scope.center ? '' : 'runtime', logText: '', logLoadedId: '', logRequest: 0, logPending: null, refreshPending: null, signature: '', statusFailed: true, action: '', languageState: null, languageSaving: false, languageLoading: false, languageRevision: 0, languageError: '', languageSaved: false, timer: null, autoChanged: false, currentCycle: null, receivedAt: 0, elapsedTimer: null, centerSummary: null, mediaIntent: null, exploration: { key: '', token: 0, loading: false, loaded: false, failed: false, total: null, cycles: [] } };
   const message = (key, values = {}) => {
     const dictionary = window.JOURNAL_MESSAGES[state.language] || window.JOURNAL_MESSAGES.en;
     return Object.entries(values).reduce((result, [name, value]) => result.replaceAll(`{${name}}`, String(value)), dictionary[key] || key);
@@ -225,6 +225,30 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
       main: older.filter((cycle) => !separateExploration || cycle.identityKind !== 'exploration'),
       exploration: separateExploration ? older.filter((cycle) => cycle.identityKind === 'exploration') : [],
     };
+  }
+  function explorationScope(data) {
+    if (!scope.center || data?.entry?.kind !== 'product' || data?.explorationAvailable !== true) return null;
+    const entryId = data.entryId || data.entry?.entryId;
+    const sourceId = data.sourceId || data.entry?.sourceId;
+    const sourceRevision = data.sourceRevision ?? data.entry?.sourceRevision ?? null;
+    if (!entryId || !sourceId) return null;
+    return { entryId, sourceId, sourceRevision, key: JSON.stringify([entryId, sourceId, sourceRevision]) };
+  }
+  function explorationPageMatches(data, expected) {
+    if (!data || !expected || data.entryId !== expected.entryId || data.entry?.entryId !== expected.entryId || data.sourceId !== expected.sourceId || data.entry?.sourceId !== expected.sourceId) return false;
+    if (expected.sourceRevision !== null && data.sourceRevision !== expected.sourceRevision) return false;
+    return Array.isArray(data.cycles) && data.cycles.every((cycle) => cycle.identityKind === 'exploration');
+  }
+  function resetExploration(nextScope = null) {
+    const token = state.exploration.token + 1;
+    state.exploration = { key: nextScope?.key || '', token, loading: false, loaded: false, failed: false, total: null, cycles: [] };
+  }
+  function explorationRequestMatches(token, expected) {
+    const current = explorationScope(state.data);
+    return token === state.exploration.token && current?.key === expected?.key;
+  }
+  function logCycles() {
+    return [...(state.data?.cycles || []), ...(state.exploration.loaded ? state.exploration.cycles : [])];
   }
   function logButton(cycle) {
     if (cycle.synthetic) {
@@ -457,22 +481,76 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
     row.append(summary, content);
     return row;
   }
-  function renderExplorationHistory(cycles) {
+  async function loadLinkedExploration(retry = false) {
+    const expected = explorationScope(state.data);
+    if (!expected || state.exploration.key !== expected.key || state.exploration.loading || state.exploration.loaded || (state.exploration.failed && !retry)) return;
+    const token = state.exploration.token + 1;
+    state.exploration.token = token;
+    state.exploration.loading = true;
+    state.exploration.failed = false;
+    renderExplorationHistory();
+    try {
+      const cycles = [];
+      const ids = new Set();
+      const cursors = new Set();
+      let before = null;
+      let total = null;
+      do {
+        const suffix = before ? `&before=${encodeURIComponent(before)}` : '';
+        const page = await fetchCenter(`${scopedJournalPath('/journal')}?section=exploration&sourceId=${encodeURIComponent(expected.sourceId)}&limit=100${suffix}`);
+        if (!explorationRequestMatches(token, expected)) return;
+        if (!explorationPageMatches(page, expected)) throw new Error('Out-of-scope exploration response');
+        for (const cycle of page.cycles) {
+          if (!cycle.id || ids.has(cycle.id)) throw new Error('Duplicate exploration cycle');
+          ids.add(cycle.id);
+          cycles.push(cycle);
+        }
+        total = page.total;
+        before = page.nextBefore || null;
+        if (before && cursors.has(before)) throw new Error('Repeated exploration cursor');
+        if (before) cursors.add(before);
+      } while (before);
+      if (Number.isFinite(total) && cycles.length !== total) throw new Error('Incomplete exploration journal');
+      if (!explorationRequestMatches(token, expected)) return;
+      state.exploration = { key: expected.key, token, loading: false, loaded: true, failed: false, total: Number.isFinite(total) ? total : null, cycles };
+    } catch (_) {
+      if (!explorationRequestMatches(token, expected)) return;
+      state.exploration = { key: expected.key, token, loading: false, loaded: false, failed: true, total: null, cycles: [] };
+    }
+    renderExplorationHistory();
+    renderLogOptions();
+  }
+  function renderExplorationHistory(embeddedCycles = []) {
     const section = clear($('explorationSection'));
-    section.hidden = !cycles.length;
-    if (!cycles.length) return;
+    const linked = explorationScope(state.data);
+    const cycles = linked ? state.exploration.cycles : embeddedCycles;
+    section.hidden = !linked && !cycles.length;
+    if (section.hidden) return;
     const disclosure = bindDisclosure(element('details', 'exploration-disclosure'), 'exploration-records');
     const summary = element('summary');
     const label = element('span', 'exploration-heading', message('explorationRecords'));
     label.id = 'explorationHeading';
-    summary.append(label, element('span', 'exploration-note', message('explorationRecordsNote', { count: cycles.length })));
+    summary.append(label);
+    const total = linked ? state.exploration.total : cycles.length;
+    if (Number.isFinite(total)) summary.append(element('span', 'exploration-note', message('explorationRecordsNote', { count: total })));
     const arrow = icon('chevron-right'); arrow.classList.add('exploration-chevron');
     summary.append(arrow);
     disclosure.setAttribute('aria-labelledby', label.id);
-    const list = element('div', 'exploration-list');
-    for (const cycle of cycles) list.append(historyRow(cycle, true));
-    disclosure.append(summary, list);
+    const content = element('div', 'exploration-list');
+    if (linked && state.exploration.loading) content.append(element('p', 'exploration-message', message('explorationLoading')));
+    else if (linked && state.exploration.failed) {
+      content.append(element('p', 'exploration-message status-failed', message('explorationLoadFailed')));
+      const retry = element('button', 'text-button exploration-retry', message('explorationRetry'));
+      retry.type = 'button';
+      retry.addEventListener('click', () => loadLinkedExploration(true));
+      content.append(retry);
+    } else if (linked && !state.exploration.loaded) content.append(element('p', 'exploration-message', message('explorationLoadHint')));
+    else if (!cycles.length) content.append(element('p', 'exploration-message', message('explorationEmpty')));
+    else for (const cycle of cycles) content.append(historyRow(cycle, true));
+    disclosure.append(summary, content);
+    if (linked) disclosure.addEventListener('toggle', () => { if (disclosure.open && !state.exploration.loading && !state.exploration.loaded && !state.exploration.failed) loadLinkedExploration(); });
     section.append(disclosure);
+    if (linked && disclosure.open && !state.exploration.loaded && !state.exploration.loading && !state.exploration.failed) loadLinkedExploration();
   }
   function renderHistory() {
     const history = clear($('historyList'));
@@ -956,7 +1034,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
   }
   function renderLogOptions() {
     const select = clear($('logSelect'));
-    const cycles = state.data.cycles;
+    const cycles = logCycles();
     const hasRuntime = !scope.center || Boolean(safeScopedResource(state.data.runtimeLogUrl));
     if (state.selectedLog !== 'runtime' && !cycles.some((cycle) => cycle.id === state.selectedLog)) state.selectedLog = hasRuntime ? 'runtime' : '';
     if (!state.selectedLog && cycles.length) state.selectedLog = cycles[0].id;
@@ -995,7 +1073,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
     $('logStatus').textContent = message('loadingLog');
     const promise = (async () => { try {
       if (scope.center) {
-        const cycle = state.data.cycles.find((item) => item.id === id);
+        const cycle = logCycles().find((item) => item.id === id);
         const value = await fetchScopedText(id === 'runtime' ? state.data.runtimeLogUrl : cycle?.logUrl, 15000);
         if (request !== state.logRequest) return;
         state.logText = value; state.logLoadedId = id; $('logText').textContent = value;
@@ -1099,6 +1177,8 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
       if (!data.ok || !Array.isArray(data.cycles)) throw new Error('invalid journal response');
       const signature = JSON.stringify({ ...data, generatedAt: undefined, status: data.status ? { ...data.status, timestamp: undefined, elapsedMs: undefined } : undefined });
       if (state.data && Number.isFinite(Date.parse(data.generatedAt)) && Date.parse(data.generatedAt) < Date.parse(state.data.generatedAt)) throw new Error('Out-of-order journal snapshot');
+      const nextExploration = explorationScope(data);
+      if (state.exploration.key !== (nextExploration?.key || '')) resetExploration(nextExploration);
       state.data = data;
       state.receivedAt = performance.now();
       state.statusFailed = scope.center ? false : data.runtime?.available === false || data.status?.ok === false || !data.runtime || ['unknown', 'unavailable'].includes(data.runtime.state);
