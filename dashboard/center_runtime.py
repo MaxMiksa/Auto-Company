@@ -360,20 +360,27 @@ class CenterRuntime:
                                       "entryId": entry["entryId"], "sourceId": entry["sourceId"]}.items())
             except (OSError, ValueError, KeyError):
                 executable = False
+        owned = executable
+        sys.path.insert(0, str(self.framework_root / "scripts/core"))
+        from center_runner import compatible, execution_context, protective_reason
+        context = execution_context(source["root"], source.get("productId")) if source else {"valid": False, "reason": "context_unavailable"}
+        control_compatible = compatible(source["root"]) if source else False
+        execution_reason = context["reason"] if not context["valid"] else "runtime_incompatible" if not control_compatible else protective_reason(source["root"])
+        executable = owned and execution_reason is None
         takeover = False
         if source and not (runtime and runtime.get("managed")) and self.adapter.available and entry.get("kind") in {"product", "exploration"} and entry.get("availability") == "available" and not entry.get("archived"):
-            sys.path.insert(0, str(self.framework_root / "scripts/core"))
-            from center_runner import compatible
-            takeover = compatible(source["root"])
+            takeover = control_compatible and execution_reason is None
         result["capabilities"] = {**entry.get("capabilities", {}), "execute": executable,
                                   "preview": executable and bool(entry.get("productId")) and not busy,
                                   "capture": executable and bool(entry.get("productId")) and not busy,
-                                  "takeover": takeover, "release": executable and not any(row["state"] in OPEN for row in rows) and not busy}
+                                  "previewStop": owned and bool(entry.get("productId")) and not busy,
+                                  "takeover": takeover, "release": owned and not any(row["state"] in OPEN for row in rows) and not busy}
         result["sourceRecordRevision"] = source.get("revision") if source else None
-        result["capabilityReasons"] = {"execute": None if executable else "read_only_source" if self.adapter.available else "execution_domain_unconfigured",
-                                       "takeover": None if takeover else "runtime_incompatible" if self.adapter.available else "execution_domain_unconfigured",
-                                       "release": "execution_domain_unconfigured" if not self.adapter.available else "read_only_source" if not executable else
+        result["capabilityReasons"] = {"execute": "execution_domain_unconfigured" if not self.adapter.available else "read_only_source" if not owned else execution_reason,
+                                       "takeover": None if takeover else "execution_domain_unconfigured" if not self.adapter.available else execution_reason or "runtime_incompatible",
+                                       "release": "execution_domain_unconfigured" if not self.adapter.available else "read_only_source" if not owned else
                                                   "open_request_exists" if any(row["state"] in OPEN for row in rows) else "slot_busy" if busy else None,
+                                       "previewStop": "execution_domain_unconfigured" if not self.adapter.available else "read_only_source" if not owned else "slot_busy" if busy else None,
                                        "media": "slot_busy" if busy else None}
         return result
 
@@ -480,7 +487,7 @@ class CenterRuntime:
                 raise CenterError("SOURCE_CHANGED", "Source revision changed", 409)
             if not self.adapter.available:
                 raise CenterError("EXECUTION_DOMAIN_UNCONFIGURED", "Execution domain is not configured", 409)
-            check = self.adapter.query("preflight", root=source["root"])
+            check = self.adapter.query("preflight", root=source["root"], expected_product_id=source.get("productId"))
             if not check.get("quiescent"):
                 raise CenterError(str(check.get("reason", "CONTEXT_UNAVAILABLE")).upper(), "Source cannot start until its current protection or owner is resolved", 409)
             with self.store.transaction() as tx:
@@ -781,7 +788,8 @@ class CenterRuntime:
             self.catalog.resolve_source(source["entryId"], source_id)
             if source.get("kind") in {"archive", "reference", "legacy"} or entry.get("kind") in {"legacy", "reference"}:
                 raise CenterError("READ_ONLY_SOURCE", "This source cannot be taken over", 403)
-            check = self.adapter.query("preflight", root=source["root"], center_id=self.store.center_id, allow_protected="1" if action == "release" else "0")
+            check = self.adapter.query("preflight", root=source["root"], center_id=self.store.center_id, allow_protected="1" if action == "release" else "0",
+                                       require_context="0" if action == "release" else "1", expected_product_id=source.get("productId"))
             if not check.get("quiescent"):
                 raise CenterError(str(check.get("reason", "CONTEXT_UNAVAILABLE")).upper(), "Source is not safely available for ownership change", 409)
             root = Path(source["root"])
@@ -789,14 +797,6 @@ class CenterRuntime:
             existing = read_json(marker_path) if marker_path.exists() else None
             if existing and (existing.get("centerId") != self.store.center_id or existing.get("sourceId") != source_id):
                 raise CenterError("OWNER_CONFLICT", "Another center or source owns this root", 409)
-            if action == "takeover":
-                # Only the current original-ledger continuation context may write.
-                sys.path.insert(0, str(self.framework_root / "scripts/core"))
-                from product_identity import read_state
-                state = read_state(root)
-                current = state.get("continuationProductId")
-                if source.get("productId") and current != source["productId"]:
-                    raise CenterError("CONTEXT_UNAVAILABLE", "The source does not own the current continuation context", 409)
             operation_id = uid("operation")
             runtime_id = (existing or {}).get("runtimeId") or source.get("runtimeId") or uid("runtime")
             marker = {"protocolVersion": 1, "centerId": self.store.center_id, "runtimeId": runtime_id, "entryId": source["entryId"], "sourceId": source_id}
@@ -818,7 +818,7 @@ class CenterRuntime:
                 self._remember(tx, key, body_hash, {"operationId": operation_id})
             try:
                 binding_path = self.data_dir / "operations" / operation_id / "binding.json"
-                atomic_json(binding_path, {"action": action, "root": self.adapter.path(root), "oldMarker": existing, "marker": marker})
+                atomic_json(binding_path, {"action": action, "root": self.adapter.path(root), "oldMarker": existing, "marker": marker, "productId": source.get("productId")})
                 self.adapter.query("bind", manifest=binding_path)
                 with self.store.transaction() as tx:
                     if action == "takeover":
@@ -858,7 +858,8 @@ class CenterRuntime:
                 or source["root"] != binding.get("root") or config_fingerprint(source["root"]) != binding.get("configFingerprint")):
             raise CenterError("RECOVERY_REQUIRED", "Binding source no longer matches its preparation manifest", 409)
         check = self.adapter.query("preflight", root=source["root"], center_id=self.store.center_id,
-                                   allow_protected="1" if action == "release" else "0")
+                                   allow_protected="1" if action == "release" else "0", require_context="0" if action == "release" else "1",
+                                   expected_product_id=source.get("productId"))
         if not check.get("quiescent"):
             raise CenterError("RECOVERY_REQUIRED", "Binding process ownership is not confirmed stopped", 409)
         target = Path(source["root"]) / MARKER
@@ -1005,7 +1006,7 @@ class CenterRuntime:
             if request.get("permissionConfigRevision") != digest({key: os.environ.get(key) for key in ("CODEX_SANDBOX_MODE", "CLAUDE_PERMISSION_MODE", "CURSOR_SANDBOX_MODE")}):
                 raise CenterError("CONFIG_CHANGED", "Permission configuration changed while waiting", 409)
             probe = self.adapter.query("probe", center_id=self.store.center_id)
-            check = self.adapter.query("preflight", root=source["root"])
+            check = self.adapter.query("preflight", root=source["root"], expected_product_id=source.get("productId"))
             previous_owner = probe.get("owner")
             if (not probe["slotFree"] or not check["quiescent"] or
                     previous_owner and (previous_owner.get("state") != "terminal" or not previous_owner.get("cleanupConfirmed"))):
@@ -1028,7 +1029,8 @@ class CenterRuntime:
             if configuration["engine"] == "codex":
                 environment["CODEX_REASONING_EFFORT"] = configuration["effort"]
             manifest = {key: request[key] for key in ("requestId", "dispatchId", "nonce", "runtimeId", "entryId", "sourceId")}
-            manifest.update(centerId=self.store.center_id, root=self.adapter.path(source["root"]), controlDir=self.adapter.path(control_dir), environment=environment)
+            manifest.update(centerId=self.store.center_id, root=self.adapter.path(source["root"]), controlDir=self.adapter.path(control_dir), environment=environment,
+                            productId=source.get("productId"))
             atomic_json(control_dir / "manifest.json", manifest)
             self._write_controls()
             # Durable launch intent precedes Popen. A crash at this boundary is

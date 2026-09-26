@@ -61,7 +61,9 @@ class CenterHttpTests(unittest.TestCase):
             ('{"value":NaN}', {}, 400),
             ("[]", {}, 400),
             ("{invalid", {}, 400),
-            ("x" * (center_server.MAX_BODY + 1), {}, 413),
+            # Reject the declared size before upload; unread large payloads can
+            # turn the server's early close into a Windows TCP reset.
+            ("", {"Content-Length": str(center_server.MAX_BODY + 1)}, 413),
             ("{}", {"Transfer-Encoding": "chunked"}, 400),
         ):
             with self.subTest(expected=expected, prefix=body[:40]):

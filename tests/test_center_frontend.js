@@ -20,7 +20,7 @@ function helpers() {
   vm.runInContext(i18n, context);
   const binding = app.lastIndexOf("\n  applyLanguage(); wire(); renderPage(); refresh();");
   assert.ok(binding > 0, "Center event wiring must follow helper declarations");
-  vm.runInContext(app.slice(0, binding) + "\n globalThis.center = { state, message, entryState, capability, normalizeCounts, filteredEntries, emptyListState, requestState, statusLabel, write };\n})();", context);
+  vm.runInContext(app.slice(0, binding) + "\n globalThis.center = { state, message, entryState, capability, capabilityReason, errorText, requestReason, normalizeCounts, filteredEntries, emptyListState, requestState, statusLabel, write };\n})();", context);
   context.center.state.language = "en";
   return { ...context.center, messages: context.window.CENTER_MESSAGES, context };
 }
@@ -68,6 +68,31 @@ test("capability reasons remain visible independently of the boolean", () => {
   assert.deepEqual({ ...capability({ capabilities: { execute: true } }, "execute") }, { enabled: true, reason: "" });
   assert.deepEqual({ ...capability({ capabilities: { execute: false }, capabilityReasons: { execute: "READ_ONLY_SOURCE" } }, "execute") }, { enabled: false, reason: "READ_ONLY_SOURCE" });
   assert.deepEqual({ ...capability({ capabilities: { execute: { enabled: false, reason: "SOURCE_CONFLICT" } } }, "execute") }, { enabled: false, reason: "SOURCE_CONFLICT" });
+});
+
+test("execution preflight failures use fixed bilingual guidance instead of internal codes", () => {
+  const { state, capabilityReason, errorText, requestReason } = helpers();
+  const english = {
+    registration: "The product registration does not match the current source. Restore or reconnect the registration before continuing.",
+    context: "The product identity or run records required to continue cannot be verified. Restore the source state first.",
+  };
+  assert.equal(capabilityReason("product_registration_invalid"), english.registration);
+  assert.equal(errorText({ code: "PRODUCT_REGISTRATION_INVALID", message: "technical fallback" }), english.registration);
+  assert.equal(capabilityReason("context_unavailable"), english.context);
+  assert.equal(errorText({ code: "CONTEXT_UNAVAILABLE" }), english.context);
+  assert.equal(requestReason("PRODUCT_REGISTRATION_INVALID"), english.registration);
+  assert.equal(requestReason("CONTEXT_UNAVAILABLE"), english.context);
+  assert.equal(capabilityReason("governance_pause"), "Governance protection paused execution");
+  assert.equal(capabilityReason("budget_pause"), "Budget protection paused execution");
+  assert.equal(capabilityReason("stop_unconfirmed"), "Stop is not confirmed");
+  assert.equal(requestReason("user_stop"), "Stopped as requested");
+  assert.equal(requestReason("user_cancel"), "Queued request canceled");
+  state.language = "zh-CN";
+  assert.equal(capabilityReason("product_registration_invalid"), "产品登记与当前源码不一致。请恢复或重新连接登记后再继续。");
+  assert.equal(requestReason("CONTEXT_UNAVAILABLE"), "无法核对继续工作所需的产品身份或运行记录。请先恢复来源状态。");
+  assert.doesNotMatch(capabilityReason("product_registration_invalid"), /product_registration_invalid/i);
+  assert.match(app, /const previewStop = capability\(entry, "previewStop"\)/);
+  assert.match(app, /"previewStop", current && previewStop\.enabled/);
 });
 
 test("catalog filters use recorded state and never search report bodies", () => {

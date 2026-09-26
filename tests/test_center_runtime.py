@@ -261,6 +261,22 @@ class QueueTests(unittest.TestCase):
         self.runtime.tick()
         self.assertEqual(self.runtime.decorate_entry(view)["executionSummary"]["state"], "running")
 
+    def test_incompatible_control_files_disable_execution_without_losing_owned_release(self):
+        sys.path.insert(0, str(ROOT / "scripts/core"))
+        from center_runner import CONTROL_FILES
+        root = Path(self.a["root"])
+        for name in CONTROL_FILES:
+            target = root / name
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(ROOT / name, target)
+        view = {**self.a, "availability": "available"}
+        self.assertTrue(self.runtime.decorate_entry(view)["capabilities"]["execute"])
+        (root / "scripts/core/stop-loop.sh").write_text("incomplete control update fixture\n")
+        observed = self.runtime.decorate_entry(view)
+        self.assertFalse(observed["capabilities"]["execute"])
+        self.assertEqual(observed["capabilityReasons"]["execute"], "runtime_incompatible")
+        self.assertTrue(observed["capabilities"]["release"])
+
     def test_preflight_attention_can_be_confirmed_unstarted_then_replaced(self):
         request = self.create()
         self.adapter.preflight = {"quiescent": False, "reason": "governance_pause"}
@@ -335,6 +351,53 @@ class QueueTests(unittest.TestCase):
         self.assertEqual((recovered["state"], recovered["reason"]), ("failed", "media_timeout"))
         self.assertTrue(recovered["recovered"])
         self.assertEqual(len(calls), 1)
+
+    def test_invalid_registration_disables_execute_and_rechecks_enqueue_and_dispatch_but_allows_release(self):
+        sys.path.insert(0, str(ROOT / "scripts/core"))
+        from product_identity import register_project, transaction
+        from center_runner import execution_context
+        root = Path(self.a["root"])
+        project = "projects/registered"
+        (root / project / ".git").mkdir(parents=True)
+        product = register_project(root, project)
+        with transaction(root) as state:
+            state["continuationProductId"] = product["id"]
+        registry = root / "projects/registry.tsv"
+        registry.write_text("name\tpath\tlifecycle\tcreated_at_utc\nregistered\tprojects/registered\tlocal\tfixture\n")
+        with self.store.transaction() as tx:
+            source = tx.get("sources", self.a["sourceId"])
+            source.update(productId=product["id"], project=project, kind="product")
+            tx.put("sources", source["sourceId"], source)
+        original = self.adapter.query
+        calls = []
+        def query(action, **kwargs):
+            calls.append((action, kwargs))
+            if action == "preflight" and kwargs.get("require_context") != "0":
+                result = execution_context(root, kwargs.get("expected_product_id"))
+                return {"compatible": True, "quiescent": result["valid"], "reason": result["reason"]}
+            if action == "bind":
+                (root / ".auto-company-center.json").unlink()
+                return {"ok": True}
+            return original(action, **kwargs)
+        self.adapter.query = query
+        request = self.create(executionMode="start_now")
+        registry.write_text("name\tpath\tlifecycle\tcreated_at_utc\n")
+        view = self.runtime.decorate_entry({**source, "kind": "product", "availability": "available"})
+        self.assertFalse(view["capabilities"]["execute"])
+        self.assertEqual(view["capabilityReasons"]["execute"], "product_registration_invalid")
+        self.runtime.tick()
+        self.assertEqual(self.runtime.get_request(request["requestId"])["reasonDetail"], "PRODUCT_REGISTRATION_INVALID")
+        self.assertEqual(self.adapter.launched, [])
+        self.runtime.request_action(request["requestId"], "reconcile", {"idempotencyKey": "invalid-register-reconcile"})
+        with self.assertRaises(CenterError) as caught:
+            self.create(key="invalid-registration-new")
+        self.assertEqual(caught.exception.code, "PRODUCT_REGISTRATION_INVALID")
+        view = self.runtime.decorate_entry({**source, "kind": "product", "availability": "available"})
+        self.assertTrue(view["capabilities"]["release"])
+        self.assertTrue(view["capabilities"]["previewStop"])
+        released = self.runtime.source_action(source["sourceId"], "release", {"idempotencyKey": "invalid-registration-release", "expectedRevision": 1})
+        self.assertEqual(released["state"], "succeeded")
+        self.assertTrue(any(action == "preflight" and options.get("require_context") == "0" for action, options in calls))
 
 
 class PreparationTests(unittest.TestCase):
@@ -487,6 +550,82 @@ class ContextLanguageTests(unittest.TestCase):
             with patch.dict(os.environ, {**environment, "AUTO_COMPANY_CYCLE_ID": exploration}):
                 write_context(root, exploration, "")
             self.assertNotIn("languageEvidence", json.loads((root / "logs" / (exploration + ".context.json")).read_text()))
+
+
+class ExecutionContextTests(unittest.TestCase):
+    def setUp(self):
+        sys.path.insert(0, str(ROOT / "scripts/core"))
+        from product_identity import register_project, transaction
+        from center_runner import execution_context
+        self.inspect = execution_context
+        self.temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        self.root = Path(self.temporary.name)
+        self.project = "projects/registered"
+        (self.root / self.project / ".git").mkdir(parents=True)
+        self.product = register_project(self.root, self.project)
+        with transaction(self.root) as state:
+            state["continuationProductId"] = self.product["id"]
+        self.registry = self.root / "projects/registry.tsv"
+        self.header = "name\tpath\tlifecycle\tcreated_at_utc\n"
+        self.row = "registered\tprojects/registered\tlocal\t2026-09-26T00:00:00Z\n"
+        self.registry.write_text(self.header + self.row)
+
+    def snapshot(self):
+        return {str(path.relative_to(self.root)): path.read_bytes() if path.is_file() else None for path in self.root.rglob("*")}
+
+    def test_registration_missing_duplicate_or_wrong_path_is_rejected_without_repair(self):
+        self.assertTrue(self.inspect(self.root, self.product["id"])["valid"])
+        for rows in ("", self.row + self.row, self.row.replace("projects/registered", "projects/other")):
+            with self.subTest(rows=rows):
+                self.registry.write_text(self.header + rows)
+                before = self.snapshot()
+                result = self.inspect(self.root, self.product["id"])
+                self.assertEqual((result["valid"], result["reason"]), (False, "product_registration_invalid"))
+                self.assertEqual(self.snapshot(), before)
+
+    def test_human_selection_takes_precedence_and_cannot_redirect_another_product_request(self):
+        from product_identity import register_project
+        (self.root / "projects/selected/.git").mkdir(parents=True)
+        selected = register_project(self.root, "projects/selected")
+        self.registry.write_text(self.header + self.row + "selected\tprojects/selected\tlocal\t2026-09-26T00:00:00Z\n")
+        (self.root / ".auto-company.local").write_text("ACTIVE_PROJECT=projects/selected\n")
+        self.assertTrue(self.inspect(self.root, selected["id"])["valid"])
+        self.assertFalse(self.inspect(self.root, self.product["id"])["valid"])
+        (self.root / "projects/selected/.auto-company/identity.json").write_text('{}')
+        self.assertFalse(self.inspect(self.root, selected["id"])["valid"])
+
+    def test_pending_transactions_and_missing_git_remain_read_only(self):
+        for relative in (".auto-company/product-state.transaction.json", ".auto-company/product-state.lock", ".auto-company.local.language-update"):
+            with self.subTest(relative=relative):
+                path = self.root / relative
+                path.write_text("pending fixture")
+                before = self.snapshot()
+                self.assertFalse(self.inspect(self.root, self.product["id"])["valid"])
+                self.assertEqual(self.snapshot(), before)
+                path.unlink()
+        (self.root / self.project / ".git").rmdir()
+        self.assertFalse(self.inspect(self.root, self.product["id"])["valid"])
+
+    @unittest.skipIf(os.name == "nt", "Execution-domain Git check runs on POSIX")
+    def test_git_validation_rejects_nonrepository_and_framework_tracked_product(self):
+        shutil.copytree(ROOT / "scripts/core", self.root / "scripts/core")
+        before = self.snapshot()
+        self.assertFalse(self.inspect(self.root, self.product["id"], check_git=True)["valid"])
+        self.assertEqual(self.snapshot(), before)
+        subprocess.run(["git", "init", str(self.root)], check=True, capture_output=True)
+        subprocess.run(["git", "init", str(self.root / self.project)], check=True, capture_output=True)
+        self.assertTrue(self.inspect(self.root, self.product["id"], check_git=True)["valid"])
+        import fcntl
+        with (self.root / ".auto-company/project-registry.lock").open("wb") as writer:
+            fcntl.flock(writer, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            before = self.snapshot()
+            self.assertFalse(self.inspect(self.root, self.product["id"], check_git=True)["valid"])
+            self.assertEqual(self.snapshot(), before)
+        (self.root / self.project / "source.txt").write_text("fixture")
+        blob = subprocess.check_output(["git", "-C", str(self.root), "hash-object", "-w", str(self.root / self.project / "source.txt")], text=True).strip()
+        subprocess.run(["git", "-C", str(self.root), "update-index", "--add", "--cacheinfo", "100644," + blob + ",projects/registered/source.txt"], check=True, capture_output=True)
+        self.assertFalse(self.inspect(self.root, self.product["id"], check_git=True)["valid"])
 
 
 @unittest.skipUnless(sys.platform == "linux", "POSIX owner integration runs under Linux/WSL")
@@ -677,6 +816,42 @@ if [ "$count" -ge "${STOP_AFTER:-2}" ]; then touch "$AUTO_COMPANY_ROOT/.auto-loo
         self.assertEqual(result.returncode, 78)
         self.assertIn("preview_owner_unconfirmed", result.stderr)
         self.assertFalse((self.root / ".auto-company-center.json").exists())
+
+    def test_runner_and_takeover_reject_missing_registration_before_loop_but_release_still_works(self):
+        sys.path.insert(0, str(ROOT / "scripts/core"))
+        from product_identity import register_project, transaction
+        project = "projects/registered"
+        (self.root / project).mkdir(parents=True)
+        subprocess.run(["git", "init", str(self.root / project)], check=True, capture_output=True)
+        product = register_project(self.root, project)
+        with transaction(self.root) as state:
+            state["continuationProductId"] = product["id"]
+        (self.root / "projects/registry.tsv").write_text("name\tpath\tlifecycle\tcreated_at_utc\n")
+        self.manifest["productId"] = product["id"]
+        atomic_json(self.manifest_path, self.manifest)
+        process = self.launch()
+        process.wait(timeout=15)
+        self.assertNotEqual(process.returncode, 0)
+        receipt = json.loads((self.control / "receipt.json").read_text())
+        self.assertEqual((receipt["state"], receipt["reason"], receipt["launched"]), ("terminal", "product_registration_invalid", False))
+        self.assertTrue(receipt["cleanupConfirmed"])
+        self.assertFalse((self.root / "invocations").exists())
+        self.assertFalse((self.root / ".auto-loop-paused").exists())
+        marker_path = self.root / ".auto-company-center.json"
+        marker = json.loads(marker_path.read_text())
+        marker_path.unlink()
+        binding = self.control / "binding.json"
+        manifest = {"root": str(self.root), "marker": marker, "productId": product["id"]}
+        atomic_json(binding, {**manifest, "action": "takeover", "oldMarker": None})
+        denied = subprocess.run([sys.executable, str(self.runner), "bind", "--manifest", str(binding)], env=self.env, capture_output=True, text=True, timeout=10)
+        self.assertEqual(denied.returncode, 78)
+        self.assertIn("product_registration_invalid", denied.stderr)
+        self.assertFalse(marker_path.exists())
+        atomic_json(marker_path, marker)
+        atomic_json(binding, {**manifest, "action": "release", "oldMarker": marker})
+        released = subprocess.run([sys.executable, str(self.runner), "bind", "--manifest", str(binding)], env=self.env, capture_output=True, text=True, timeout=10)
+        self.assertEqual(released.returncode, 0, released.stderr)
+        self.assertFalse(marker_path.exists())
 
 
 @unittest.skipUnless(os.name == "nt" and os.environ.get("AUTO_COMPANY_TEST_CENTER_WSL") == "1", "Explicit Windows/WSL bridge fixture")

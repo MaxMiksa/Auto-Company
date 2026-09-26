@@ -58,6 +58,10 @@ An imported archive stays read-only until a compatible, unambiguous runtime is e
 
 旧运行根内的多个历史产品不一定各自拥有可恢复的共识与配置。兼容、归属明确的完整上下文才能被明确接管；缺失、冲突或不兼容来源只读。取消归档不增加执行权限，解除登记不删除源码。
 
+Before starting work, the center verifies the selected product identity, registration and independent repository again. If those records no longer agree, restore the source through an explicit reviewed recovery before submitting a new request. The center preserves history and does not silently repair registration, clear protective pauses or replay the failed request. Stopping owned work and releasing control remain separate from permission to start.
+
+开始工作前，中心再次核对所选产品的身份、登记和独立仓库。记录不一致时，需要明确核对并恢复来源，再提交新请求；中心保留历史，不自动补登记、清除保护暂停或重放失败请求。停止所属任务、解除托管与启动资格分别判断。
+
 Source management keeps selection, takeover, release and preview actions explicit. Supported managed static websites can start or stop an owned preview and retry screenshot capture. Release first confirms that owned previews have stopped. Unsupported formats or missing dependencies remain unavailable with a reason. Capture does not create a new model request.
 
 来源管理提供明确的选择、接管、解除接管和预览操作。受管且受支持的静态网页可以启动、停止预览或重新截图；解除接管前须确认所属预览已停止。不支持的格式或缺少依赖会说明原因，截图本身不新建模型请求。

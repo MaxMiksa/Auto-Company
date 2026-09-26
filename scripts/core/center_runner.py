@@ -23,6 +23,7 @@ MARKER = ".auto-company-center.json"
 MAX_JSON = 128 * 1024
 HEARTBEAT_TIMEOUT = 15
 CONTROL_FILES = ("scripts/core/auto-loop.sh", "scripts/core/center_runner.py", "scripts/core/stop-loop.sh",
+                 "scripts/core/project-context.py", "scripts/core/product_identity.py",
                  "scripts/core/localization.py", "scripts/core/runtime_artifacts.py", "dashboard/server.py", "Makefile",
                  "scripts/macos/start-daemon.sh", "scripts/macos/install-daemon.sh", "scripts/wsl/dashboard-wsl.sh",
                  "scripts/wsl/install-wsl-daemon.sh", "scripts/windows/start-win.ps1", "scripts/windows/stop-win.ps1")
@@ -95,6 +96,23 @@ def lock_free(path):
         return False
     os.close(descriptor)
     return True
+
+
+def existing_lock_free(path):
+    """Observe a project writer lock without creating a source-side inode."""
+    import fcntl
+    try:
+        descriptor = os.open(path, os.O_RDONLY | os.O_NOFOLLOW)
+    except FileNotFoundError:
+        return True
+    try:
+        try:
+            fcntl.flock(descriptor, fcntl.LOCK_SH | fcntl.LOCK_NB)
+            return True
+        except BlockingIOError:
+            return False
+    finally:
+        os.close(descriptor)
 
 
 def identity(pid):
@@ -226,7 +244,63 @@ def compatible(root):
         return False
 
 
-def preflight(root, center_id=None, allow_protected=False):
+def execution_context(root, expected_product_id=None, check_git=False):
+    """Read the original effective target without recovering or writing state."""
+    from localization import read_settings
+    from product_identity import read_state, get_identity, project_value, safe_path
+    root = Path(root).resolve()
+    result = {"valid": False, "reason": "context_unavailable", "project": None, "productId": None}
+    try:
+        for relative in (".auto-company/product-state.transaction.json", ".auto-company/product-state.lock", ".auto-company.local.language-update"):
+            if safe_path(root, relative).exists():
+                return result
+        if check_git and not existing_lock_free(safe_path(root, ".auto-company/project-registry.lock")):
+            return result
+        _, settings = read_settings(root)
+        state = read_state(root)
+        selected = settings.get("ACTIVE_PROJECT")
+        if selected is not None:
+            if not selected.startswith("projects/") or project_value(selected) != selected:
+                return result
+            project = selected
+        else:
+            continuation = state.get("continuationProductId")
+            item = state["identities"].get(continuation) if continuation else None
+            if continuation and (not item or item.get("kind") != "product"):
+                return result
+            project = item["project"] if item else ""
+        if not project:
+            if expected_product_id:
+                return result
+            return {**result, "valid": True, "reason": None}
+        product = get_identity(root, project, create=False)
+        if not product or product.get("kind") != "product" or expected_product_id and product["id"] != expected_product_id:
+            return result
+        result.update(project=project, productId=product["id"], reason="product_registration_invalid")
+        registry = safe_path(root, "projects/registry.tsv")
+        if registry.stat().st_size > 2 * 1024 * 1024:
+            return result
+        rows = [line.split("\t") for line in registry.read_text(encoding="utf-8").splitlines()[1:]]
+        matching = [row for row in rows if row and row[0] == project.split("/")[1]]
+        if len(matching) != 1 or len(matching[0]) != 4 or matching[0][1] != project:
+            return result
+        result["reason"] = "context_unavailable"
+        if not safe_path(root, project + "/.git").is_dir():
+            return result
+        if check_git:
+            # The original validator runs in the execution domain. Its validate
+            # branch checks independent Git ownership and never takes config locks.
+            checked = subprocess.run([sys.executable, "-B", str(root / "scripts/core/project-context.py"), "validate",
+                                      "--root", str(root), "--project", project], stdin=subprocess.DEVNULL,
+                                     capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=10)
+            if checked.returncode:
+                return result
+        return {**result, "valid": True, "reason": None}
+    except (OSError, ValueError, KeyError, TypeError, subprocess.SubprocessError):
+        return result
+
+
+def preflight(root, center_id=None, allow_protected=False, require_context=True, expected_product_id=None):
     root = Path(root).resolve()
     result = {"compatible": compatible(root), "quiescent": False, "reason": None}
     if not result["compatible"]:
@@ -238,6 +312,11 @@ def preflight(root, center_id=None, allow_protected=False):
     if (reason := protective_reason(root)) and not allow_protected:
         result["reason"] = reason
         return result
+    if require_context:
+        context = execution_context(root, expected_product_id, check_git=True)
+        if not context["valid"]:
+            result["reason"] = context["reason"]
+            return result
     if not lock_free(root / ".auto-loop.pid"):
         result["reason"] = "external_loop_active"
         return result
@@ -371,7 +450,7 @@ def run(manifest_path):
             raise OSError(ctypes.get_errno(), "Cannot establish center child subreaper")
     try:
         control_for(manifest)
-        check = preflight(root)
+        check = preflight(root, expected_product_id=manifest.get("productId"))
         if not check["quiescent"]:
             raise ValueError(check["reason"])
         env = dict(os.environ)
@@ -605,7 +684,8 @@ def media(manifest_path):
             previous = read_json(owner_path)
             if previous.get("state") != "terminal" or not previous.get("cleanupConfirmed"):
                 raise ValueError("previous_owner_requires_recovery")
-        context = preflight(root, allow_protected=manifest["action"] == "preview_stop")
+        context = preflight(root, allow_protected=manifest["action"] == "preview_stop",
+                            require_context=manifest["action"] != "preview_stop", expected_product_id=manifest.get("productId"))
         if not context["quiescent"]:
             raise ValueError(context.get("reason") or "context_busy")
         from product_identity import get_identity
@@ -663,7 +743,8 @@ def bind(manifest_path):
     domain_lock = lock_file(domain_dir(marker["centerId"]) / "slot.lock")
     root_lock = None
     try:
-        check = preflight(root, allow_protected=manifest["action"] == "release")
+        check = preflight(root, allow_protected=manifest["action"] == "release", require_context=manifest["action"] != "release",
+                          expected_product_id=manifest.get("productId"))
         if not check["quiescent"]:
             raise ValueError(check["reason"])
         root_lock = lock_file(root / ".auto-loop.pid")
@@ -697,6 +778,8 @@ def main():
     parser.add_argument("--root")
     parser.add_argument("--center-id")
     parser.add_argument("--allow-protected", choices=("0", "1"), default="0")
+    parser.add_argument("--require-context", choices=("0", "1"), default="1")
+    parser.add_argument("--expected-product-id")
     args = parser.parse_args()
     try:
         if args.action == "run":
@@ -705,7 +788,7 @@ def main():
             admission(args.root)
             return 0
         if args.action == "preflight":
-            result = preflight(args.root, args.center_id, args.allow_protected == "1")
+            result = preflight(args.root, args.center_id, args.allow_protected == "1", args.require_context == "1", args.expected_product_id)
         elif args.action == "media":
             result = media(args.manifest)
         elif args.action == "media-status":

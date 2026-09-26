@@ -75,7 +75,8 @@
       GOVERNANCE_PAUSED: "governancePaused", BUDGET_PAUSED: "budgetPaused", CURSOR_EXPIRED: "cursorExpired",
       REVISION_CONFLICT: "revisionConflict", UNSUPPORTED: "unsupported", INVALID_RESPONSE: "invalidResponse",
       EXECUTION_DOMAIN_UNCONFIGURED: "executionUnavailable", OPEN_REQUEST_EXISTS: "openRequestExists",
-      PRODUCT_LANGUAGE_LOCKED: "productLanguageLocked", RECOVERY_REQUIRED: "recoveryRequired", INVALID_CONFIG: "invalidConfig",
+      PRODUCT_LANGUAGE_LOCKED: "productLanguageLocked", PRODUCT_REGISTRATION_INVALID: "productRegistrationInvalid",
+      RECOVERY_REQUIRED: "recoveryRequired", INVALID_CONFIG: "invalidConfig",
     };
     const key = map[error?.code] || (error?.messageKey && window.CENTER_MESSAGES.en[error.messageKey] ? error.messageKey : null);
     return key ? message(key, error.params) : text(error?.message) || message("unknownError");
@@ -122,9 +123,17 @@
 
   function capabilityReason(reason, fallback = "capabilityUnavailable") {
     if (!reason) return message(fallback);
-    const known = { unmanaged_source: "unmanagedSource", read_only_source: "readOnlySource", execution_domain_unconfigured: "executionUnavailable", runtime_incompatible: "runtimeIncompatible", slot_busy: "slotBusy", open_request_exists: "openRequestExists", source_unavailable: "sourceUnavailableReason", entry_archived: "archiveBlocked", SOURCE_UNAVAILABLE: "sourceUnavailableReason", ENTRY_ARCHIVED: "archiveBlocked" };
+    const known = { unmanaged_source: "unmanagedSource", read_only_source: "readOnlySource", execution_domain_unconfigured: "executionUnavailable", runtime_incompatible: "runtimeIncompatible", slot_busy: "slotBusy", open_request_exists: "openRequestExists", source_unavailable: "sourceUnavailableReason", entry_archived: "archiveBlocked", product_registration_invalid: "productRegistrationInvalid", context_unavailable: "contextUnavailable", governance_pause: "governancePaused", budget_pause: "budgetPaused", stop_unconfirmed: "stopUnconfirmed" };
     if (window.CENTER_MESSAGES[state.language][reason]) return message(reason);
-    return known[reason] ? message(known[reason]) : errorText({ code: reason });
+    const key = known[reason] || known[String(reason).toLowerCase()];
+    return key ? message(key) : errorText({ code: reason });
+  }
+
+  function requestReason(reason) {
+    const value = text(reason);
+    if (value === "user_stop") return message("requestedStop");
+    if (value === "user_cancel") return message("requestedCancel");
+    return /^(?:PRODUCT_REGISTRATION_INVALID|CONTEXT_UNAVAILABLE|GOVERNANCE_PAUSE|BUDGET_PAUSE|STOP_UNCONFIRMED)$/i.test(value) ? capabilityReason(value) : value || message("unknownError");
   }
 
   async function allEntries() {
@@ -265,7 +274,7 @@
       const content = element("div", "menu-content");
       if (["product", "exploration"].includes(entry.kind) && !entry.archived) {
         const continueMenu = element("button", "", message("continue")); continueMenu.type = "button"; continueMenu.disabled = !execute.enabled; continueMenu.addEventListener("click", () => openContinue(entry)); content.append(continueMenu);
-        if (!execute.enabled) content.append(element("div", "menu-reason", execute.reason ? message("unavailableReason", { reason: execute.reason }) : message("capabilityUnavailable")));
+        if (!execute.enabled) content.append(element("div", "menu-reason", execute.reason ? message("unavailableReason", { reason: capabilityReason(execute.reason) }) : message("capabilityUnavailable")));
       }
       const manageButton = element("button", "", message("manageSources")); manageButton.type = "button";
       manageButton.addEventListener("click", () => openSourceManager(entry)); content.append(manageButton);
@@ -365,7 +374,7 @@
     const config = request.config || {};
     if (config.model || config.effort) body.append(element("p", "", message("plannedConfig", { model: config.model || message("notRecorded"), effort: config.effort || message("notRecorded") })));
     if (config.productLanguage) body.append(element("p", "", message("languageConfig", { language: languageLabel(config.productLanguage) })));
-    if (request.attentionReason || request.reasonDetail || request.terminalReason) body.append(element("p", "", message("attentionReason", { reason: request.reasonDetail || request.attentionReason || request.terminalReason })));
+    if (request.attentionReason || request.reasonDetail || request.terminalReason) body.append(element("p", "", message("attentionReason", { reason: requestReason(request.reasonDetail || request.attentionReason || request.terminalReason) })));
     const actions = element("div", "queue-actions");
     if (["running", "starting", "stopping"].includes(value)) {
       const stop = element("button", "text-button danger", message("stopItem")); stop.type = "button"; stop.disabled = value === "stopping" || state.stale; stop.addEventListener("click", () => confirmRequestAction(request, "stop")); actions.append(stop);
@@ -454,7 +463,7 @@
     const form = $("continueForm"); form.reset(); fillDefaults(form, entry.productLanguage || entry.language);
     $("continueProduct").textContent = `${text(entry.displayName) || message("fieldMissing")} · ${text(entry.description) || message("purposeMissing")}`;
     const cap = capability(entry, "execute");
-    $("continueCapability").hidden = cap.enabled; $("continueCapability").textContent = cap.reason ? message("unavailableReason", { reason: cap.reason }) : message("capabilityUnavailable");
+    $("continueCapability").hidden = cap.enabled; $("continueCapability").textContent = cap.reason ? message("unavailableReason", { reason: capabilityReason(cap.reason) }) : message("capabilityUnavailable");
     form.querySelector('[type="submit"]').disabled = !cap.enabled || state.stale;
     setFormStatus(form, ""); openDialog($("continueDialog"));
   }
@@ -581,7 +590,7 @@
     }
     const reconnect = element("label", "reconnect-field"); reconnect.append(element("span", "", message("reconnectPath")));
     const root = document.createElement("input"); root.type = "text"; root.autocomplete = "off"; root.spellcheck = false; root.placeholder = message("folderPlaceholder"); reconnect.append(root, element("small", "", message("reconnectHint"))); body.append(reconnect);
-    const actions = element("div", "management-actions"); const takeover = capability(entry, "takeover"); const release = capability(entry, "release"); const preview = capability(entry, "preview"); const capture = capability(entry, "capture");
+    const actions = element("div", "management-actions"); const takeover = capability(entry, "takeover"); const release = capability(entry, "release"); const preview = capability(entry, "preview"); const previewStop = capability(entry, "previewStop"); const capture = capability(entry, "capture");
     managementAction(actions, "selectSource", !current, current ? "UNSUPPORTED" : "", async () => {
       sourceStatus(message("actionPending")); try { await write(`/entries/${encodeURIComponent(entry.entryId)}/source-selection`, { sourceId: source.sourceId, expectedRevision: entry.revision }); await refreshSourceManager("sourceSelected"); } catch (error) { sourceStatus(message("requestFailed", { detail: errorText(error) }), true); }
     });
@@ -593,7 +602,7 @@
     managementAction(actions, "takeover", current && takeover.enabled, !current ? "selectCurrentFirst" : takeover.reason, () => sourceOperation(`/sources/${encodeURIComponent(source.sourceId)}/takeover`, { expectedRevision: sourceRevision }));
     managementAction(actions, "release", current && release.enabled, !current ? "selectCurrentFirst" : release.reason, () => sourceOperation(`/sources/${encodeURIComponent(source.sourceId)}/release`, { expectedRevision: sourceRevision }));
     managementAction(actions, "previewStart", current && preview.enabled, !current ? "selectCurrentFirst" : preview.reason, () => sourceOperation(`/entries/${encodeURIComponent(entry.entryId)}/preview/start`, { sourceId: source.sourceId, expectedRevision: sourceRevision }));
-    managementAction(actions, "previewStop", current && preview.enabled, !current ? "selectCurrentFirst" : preview.reason, () => sourceOperation(`/entries/${encodeURIComponent(entry.entryId)}/preview/stop`, { sourceId: source.sourceId, expectedRevision: sourceRevision }));
+    managementAction(actions, "previewStop", current && previewStop.enabled, !current ? "selectCurrentFirst" : previewStop.reason, () => sourceOperation(`/entries/${encodeURIComponent(entry.entryId)}/preview/stop`, { sourceId: source.sourceId, expectedRevision: sourceRevision }));
     managementAction(actions, "captureMedia", current && capture.enabled, !current ? "selectCurrentFirst" : capture.reason, () => sourceOperation(`/entries/${encodeURIComponent(entry.entryId)}/media/capture`, { sourceId: source.sourceId, expectedRevision: sourceRevision }));
     managementAction(actions, "detachEntry", current && !release.enabled, !current ? "selectCurrentFirst" : release.enabled ? "releaseFirst" : "", () => { closeDialog($("sourceDialog")); confirmReferenceDetach(entry); }, true);
     body.append(actions);
