@@ -370,7 +370,8 @@
     item.append(element("span", "queue-number", group === "queued" ? String(index + 1).padStart(2, "0") : ""));
     const body = element("div"); body.append(element("h4", "", text(request.displayName) || message(`kind_${request.kind}`)));
     const value = requestState(request);
-    body.append(element("p", "", `${statusLabel(value)}${request.cycleNumber ? ` · ${message("cycleNumber", { number: String(request.cycleNumber).padStart(2, "0") })}` : ""}`));
+    const activeCycle = ["starting", "running", "stopping"].includes(value) && request.cycleNumber;
+    body.append(element("p", "", `${statusLabel(value)}${activeCycle ? ` · ${message("cycleNumber", { number: String(activeCycle).padStart(2, "0") })}` : ""}`));
     const config = request.config || {};
     if (config.model || config.effort) body.append(element("p", "", message("plannedConfig", { model: config.model || message("notRecorded"), effort: config.effort || message("notRecorded") })));
     if (config.productLanguage) body.append(element("p", "", message("languageConfig", { language: languageLabel(config.productLanguage) })));
