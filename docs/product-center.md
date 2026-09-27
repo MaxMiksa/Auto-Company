@@ -70,6 +70,16 @@ A live unresolved-P1 observation also pauses subsequent queue dispatch. Stopping
 
 ## Existing data and capabilities / 旧数据与能力
 
+### Upgrading from v1.x / 从 v1.x 升级
+
+Update a clean framework checkout using your existing Git installation workflow, then start the product center from that checkout. Existing single-runtime launch commands remain available outside center-managed directories. Register older run directories in the center to read their recorded products; registration does not update their code or grant execution permission. New exploration contexts use the center's current committed framework revision.
+
+按原有 Git 安装方式更新干净的框架目录，再从该目录启动产品中心。未被中心接管的目录仍可使用原单运行启动方式。将旧运行目录接入中心后可以阅读其产品记录；接入不会更新旧副本代码，也不会直接授予执行权限。新探索使用中心当前已提交的框架版本创建运行上下文。
+
+Before replacing or rolling back a managed runtime, stop its owned work and confirm cleanup, then preserve the center state, original runtime directory, local configuration and accumulated cycle records. Updating the framework does not automatically upgrade other runtime copies. Incompatible or ambiguous old contexts stay read-only until an explicit compatible takeover is possible.
+
+替换或回退受管运行目录前，应停稳所属工作并确认清理，保留中心状态、原运行目录、本地配置和累计轮次记录。更新框架不会自动升级其他运行副本。不兼容或归属不明确的旧上下文保持只读，只有满足兼容条件后才能明确接管。
+
 An imported archive stays read-only until a compatible, unambiguous runtime is explicitly taken over. A run directory that contains several historical products does not necessarily contain independent resumable contexts for each. Missing, conflicting or unsupported sources cannot execute. The center does not merge diverged ledgers or infer old consensus from the newest report.
 
 旧运行根内的多个历史产品不一定各自拥有可恢复的共识与配置。兼容、归属明确的完整上下文才能被明确接管；缺失、冲突或不兼容来源只读。取消归档不增加执行权限，解除登记不删除源码。
