@@ -180,6 +180,30 @@ class QueueTests(unittest.TestCase):
         self.assertEqual(self.adapter.launched, [])
         self.assertFalse(self.runtime.summary()["dispatchEnabled"])
 
+    def test_pause_and_stop_all_revoke_unclaimed_start_now_without_canceling_history(self):
+        for action in ("pause", "stop-all"):
+            with self.subTest(action=action):
+                request = self.create(key="create-before-" + action, executionMode="start_now")
+                self.runtime.queue_action(action, {"idempotencyKey": "control-before-" + action})
+                self.runtime.tick()
+                observed = self.runtime.get_request(request["requestId"])
+                self.assertEqual(observed["state"], "queued")
+                self.assertFalse(observed["startAuthorized"])
+                self.assertEqual(self.adapter.launched, [])
+                self.assertFalse(self.runtime.summary()["dispatchEnabled"])
+                self.runtime.request_action(request["requestId"], "cancel", {"idempotencyKey": "cancel-after-" + action})
+        self.assertEqual(len(self.runtime.list_requests()["items"]), 2)
+
+    def test_revoked_start_now_requires_new_explicit_queue_resume(self):
+        request = self.create(executionMode="start_now")
+        self.runtime.queue_action("pause", {"idempotencyKey": "pause-start-now"})
+        self.runtime.tick()
+        self.assertEqual(self.adapter.launched, [])
+        self.enable()
+        self.runtime.tick()
+        self.assertEqual(self.runtime.get_request(request["requestId"])["state"], "starting")
+        self.assertEqual(len(self.adapter.launched), 1)
+
     def test_late_running_receipt_does_not_undo_stop_and_cancel_race(self):
         request = self.create(executionMode="start_now")
         self.runtime.tick()
@@ -313,7 +337,8 @@ class QueueTests(unittest.TestCase):
 
     def test_live_p1_block_is_work_state_holds_slot_and_still_allows_owned_stop(self):
         first = self.create(executionMode="start_now")
-        self.create(self.b, "blocked-queued-fixture")
+        second = self.create(self.b, "blocked-queued-fixture")
+        self.enable()
         self.runtime.tick()
         self.adapter.acknowledge("running", executionBlockedReason="unresolved_p1", executionBlockedAt="2026-09-27T00:00:00+00:00")
         self.runtime.tick()
@@ -321,6 +346,9 @@ class QueueTests(unittest.TestCase):
         self.assertEqual((observed["state"], observed["executionBlockedReason"]), ("running", "unresolved_p1"))
         self.assertEqual(self.runtime.summary()["currentRequest"]["executionBlockedReason"], "unresolved_p1")
         self.assertEqual(len(self.adapter.launched), 1)
+        self.assertFalse(self.runtime.summary()["dispatchEnabled"])
+        self.assertEqual(self.runtime.summary()["dispatchReason"], "unresolved_p1")
+        self.assertFalse(observed.get("stopRequested"))
         view = {**self.a, "availability": "available"}
         self.assertEqual(self.runtime.decorate_entry(view)["executionSummary"]["state"], "blocked")
         count = len(observed["events"])
@@ -335,6 +363,28 @@ class QueueTests(unittest.TestCase):
         stopped = self.runtime.request_action(first["requestId"], "stop", {"idempotencyKey": "blocked-owned-stop"})
         self.assertEqual(stopped["state"], "stopping")
         self.assertIsNone(stopped["executionBlockedReason"])
+        self.adapter.acknowledge("terminal", cleanupConfirmed=True, launched=True, reason="user_stop")
+        self.runtime.tick()
+        self.assertEqual(self.runtime.get_request(first["requestId"])["terminalReason"], "user_stop")
+        self.assertEqual(self.runtime.get_request(second["requestId"])["state"], "queued")
+        self.assertEqual(self.runtime.summary()["dispatchReason"], "unresolved_p1")
+        self.assertFalse(self.runtime.summary()["dispatchEnabled"])
+        self.assertEqual(len(self.adapter.launched), 1)
+
+    def test_owned_p1_receipt_after_stop_intent_still_pauses_queue(self):
+        first = self.create(executionMode="start_now")
+        second = self.create(self.b, "late-block-waiter")
+        self.enable()
+        self.runtime.tick()
+        self.runtime.request_action(first["requestId"], "stop", {"idempotencyKey": "late-block-stop"})
+        self.adapter.acknowledge("running", executionBlockedReason="unresolved_p1")
+        self.runtime.tick()
+        self.assertEqual(self.runtime.get_request(first["requestId"])["state"], "stopping")
+        self.assertEqual(self.runtime.summary()["dispatchReason"], "unresolved_p1")
+        self.adapter.acknowledge("terminal", cleanupConfirmed=True, launched=True, reason="user_stop")
+        self.runtime.tick()
+        self.assertEqual(self.runtime.get_request(second["requestId"])["state"], "queued")
+        self.assertEqual(len(self.adapter.launched), 1)
 
     def test_preflight_attention_can_be_confirmed_unstarted_then_replaced(self):
         request = self.create()
@@ -536,6 +586,19 @@ class PreparationTests(unittest.TestCase):
         with self.store.transaction() as tx:
             self.assertEqual(tx.list("requests"), [])
             self.assertEqual(tx.list("entries"), [])
+        revision = self.store.revision
+        listed = self.runtime.list_operations()["items"]
+        self.assertEqual(len(listed), 1)
+        self.assertEqual((listed[0]["operationId"], listed[0]["state"], listed[0]["reason"]),
+                         (initial["operationId"], "failed", "FRAMEWORK_UNVERIFIED"))
+        self.assertEqual(set(listed[0]), {"operationId", "kind", "state", "createdAt", "endedAt", "revision", "reason", "reserved", "result"})
+        self.assertEqual(self.runtime.list_operations({"state": "preparing"}), {"items": []})
+        self.assertEqual(self.runtime.summary()["attentionCount"], 1)
+        self.assertEqual(self.store.revision, revision)
+        restored = CenterRuntime(self.store, FakeCatalog(self.store), self.runtime.framework_root, {"platform": "posix"}, adapter=FakeAdapter())
+        self.assertEqual(restored.list_operations()["items"], listed)
+        self.assertEqual(restored.summary()["attentionCount"], 1)
+        self.assertEqual(restored.adapter.launched, [])
 
     def test_prepare_does_not_reenable_queue_paused_during_clone(self):
         original = self.runtime.adapter.clone
@@ -554,6 +617,50 @@ class PreparationTests(unittest.TestCase):
         request = self.runtime.get_request(operation["reserved"]["requestId"])
         self.assertEqual((request["state"], request["reasonDetail"]), ("attention", "slot_changed"))
         self.assertFalse(self.runtime.summary()["dispatchEnabled"])
+
+    def test_stop_all_during_preparation_revokes_authorization_and_keeps_operation_discoverable(self):
+        original = self.runtime.adapter.clone
+        entered, release = threading.Event(), threading.Event()
+        def controlled(*args):
+            entered.set()
+            release.wait(5)
+            return original(*args)
+        self.runtime.adapter.clone = controlled
+        initial = self.runtime.create_exploration({"idempotencyKey": "prepare-stop-all", "executionMode": "start_now"})
+        try:
+            self.assertTrue(entered.wait(5))
+            listed = self.runtime.list_operations({"state": "preparing"})["items"]
+            self.assertEqual([row["operationId"] for row in listed], [initial["operationId"]])
+            self.assertEqual(self.runtime.summary()["preparationCount"], 1)
+            self.runtime.queue_action("stop-all", {"idempotencyKey": "stop-all-preparing"})
+            self.assertTrue(self.runtime.operation(initial["operationId"])["authorizationRevoked"])
+        finally:
+            release.set()
+        operation = self.wait_operation(initial["operationId"])
+        self.assertEqual(operation["state"], "succeeded", operation)
+        self.assertTrue(operation["authorizationRevoked"])
+        self.assertFalse(self.runtime.get_request(operation["reserved"]["requestId"])["startAuthorized"])
+        self.runtime.adapter = FakeAdapter()
+        self.runtime.tick()
+        self.assertEqual(self.runtime.adapter.launched, [])
+        self.assertEqual(self.runtime.summary()["preparationCount"], 0)
+        self.assertEqual(self.runtime.summary()["attentionCount"], 1)
+
+    def test_restart_revokes_preparing_authorization_and_exposes_recovery(self):
+        with patch.object(self.runtime, "_worker"):
+            initial = self.runtime.create_exploration({"idempotencyKey": "prepare-restart-start", "executionMode": "start_now"})
+        restored = CenterRuntime(self.store, FakeCatalog(self.store), self.runtime.framework_root, {"platform": "posix"}, adapter=FakeAdapter())
+        operation = restored.operation(initial["operationId"])
+        self.assertEqual((operation["state"], operation["reason"], operation["authorizationRevoked"]), ("attention", "recovery_required", True))
+        self.assertEqual(restored.list_operations()["items"][0]["operationId"], initial["operationId"])
+        self.assertEqual(restored.summary()["attentionCount"], 1)
+        restored.adapter = self.runtime.adapter
+        restored._prepare_exploration(initial["operationId"])
+        request = restored.get_request(operation["reserved"]["requestId"])
+        self.assertFalse(request["startAuthorized"])
+        restored.adapter = FakeAdapter()
+        restored.tick()
+        self.assertEqual(restored.adapter.launched, [])
 
     def test_close_keeps_store_owned_until_preparation_audit_finishes(self):
         original = self.runtime.adapter.clone

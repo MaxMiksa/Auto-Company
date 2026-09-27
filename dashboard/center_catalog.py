@@ -442,17 +442,26 @@ class CenterCatalog:
                     available = False
                 data['artifacts'].append({**item, 'kind': 'document', 'available': available,
                                           'url': base + item['id'] + '?sourceId=' + quote(source['sourceId']) if available else None})
-        for row in data['cycles']:
-            row['logUrl'] = base + 'log-' + quote(row['id']) + '?sourceId=' + quote(source['sourceId']) if row.get('logAvailable') else None
-        for item in data['artifacts']:
-            if item.get('id') and not item['id'].startswith('reference-'):
-                item['url'] = base + 'artifact-' + quote(item['id']) + '?sourceId=' + quote(source['sourceId'])
+        self._journal_links(entry_id, source['sourceId'], data['cycles'], data['artifacts'])
         media = data.get('productMedia') or {}
         images = [media.get('icon'), *((media.get('screenshot') or {}).get('latestSuccess') or {}).get('variants', [])]
         for item in images:
             if item and item.get('name'):
                 item['href'] = base + 'media-' + quote(item['name']) + '?sourceId=' + quote(source['sourceId'])
         return data
+
+    def _journal_links(self, entry_id, source_id, cycles, artifacts):
+        base = '/api/center/v1/entries/' + quote(entry_id) + '/resources/'
+        suffix = '?sourceId=' + quote(source_id)
+        items = list(artifacts)
+        for row in cycles:
+            row['logUrl'] = base + 'log-' + quote(row['id']) + suffix if row.get('logAvailable') else None
+            items.extend(row.get('artifacts', []))
+        for item in items:
+            # Preview URLs already passed product ownership and token health
+            # checks. Keep their separate origin; they are not document paths.
+            if item.get('kind') != 'preview' and item.get('id') and not item['id'].startswith('reference-'):
+                item['url'] = base + 'artifact-' + quote(item['id']) + suffix
 
     def usage(self, entry_id, query=None):
         query = query or {}
@@ -499,15 +508,11 @@ class CenterCatalog:
         entry, source, reader = self.resolve_source(entry_id, source_id)
         if not isinstance(record_id, str) or not CYCLE_ID.fullmatch(record_id):
             raise CenterError('RECORD_NOT_FOUND', 'Record is unavailable.', 404)
-        row = next((row for row in reader.snapshot()['cycles'] if row['id'] == record_id), None)
+        row = next((row for row in reader.snapshot(detail_cycle_id=record_id)['cycles'] if row['id'] == record_id), None)
         if not row:
             raise CenterError('RECORD_NOT_FOUND', 'Record does not belong to this entry.', 404)
-        if row.get('detailStatus') == 'limited':
-            from cycle_reports import read_report
-            from observability_data import cycle_events
-            row.update(read_report(reader, row))
-            row.update(cycle_events(reader, row))
-            row['detailStatus'] = 'recorded'
+        self._journal_links(entry_id, source['sourceId'], [row], [])
+        row.update(entryId=entry_id, sourceId=source['sourceId'], sourceRevision=source['sourceRevision'])
         return row
 
     def resource(self, entry_id, resource_id, source_id=None):
@@ -529,7 +534,8 @@ class CenterCatalog:
             return raw.encode('utf-8'), 'text/plain; charset=utf-8'
         if resource_id.startswith('artifact-'):
             artifact_id = resource_id[9:]
-            item = next((item for item in reader.documents() if item.get('id') == artifact_id and item.get('available')), None)
+            item = next((item for item in reader.documents() if item.get('id') == artifact_id
+                         and item.get('kind') != 'preview' and item.get('available')), None)
             if item and item.get('path'):
                 raw, truncated = reader.document(item['path'])
                 return raw.encode('utf-8'), 'text/plain; charset=utf-8'

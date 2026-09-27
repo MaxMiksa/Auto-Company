@@ -215,10 +215,7 @@ class CenterRuntime:
                 language = system_language(os.environ)
                 tx.put("preferences", "main", {"language": language, "productLanguage": language, "engine": "codex", "model": "", "effort": "high", "revision": 1})
             # A single-item authorization also expires at a center restart.
-            for request in tx.list("requests"):
-                if request["state"] == "queued" and request.get("startAuthorized"):
-                    request["startAuthorized"] = False
-                    tx.put("requests", request["requestId"], request)
+            self._revoke_start_authorizations(tx)
             for operation in tx.list("operations"):
                 if operation.get("state") in {"preparing", "running"}:
                     operation.update(state="attention", reason="recovery_required")
@@ -313,7 +310,20 @@ class CenterRuntime:
         self._event(tx, request, old, actor, reason, body)
         return request
 
+    @staticmethod
+    def _revoke_start_authorizations(tx):
+        for request in tx.list("requests"):
+            if request["state"] == "queued" and request.get("startAuthorized"):
+                request.update(startAuthorized=False, revision=request["revision"] + 1)
+                tx.put("requests", request["requestId"], request)
+        for operation in tx.list("operations"):
+            if (operation.get("kind") == "exploration" and operation.get("state") in {"preparing", "attention"}
+                    and operation.get("input", {}).get("executionMode") == "start_now" and not operation.get("authorizationRevoked")):
+                operation.update(authorizationRevoked=True, revision=operation["revision"] + 1)
+                tx.put("operations", operation["operationId"], operation)
+
     def _pause(self, tx, reason):
+        self._revoke_start_authorizations(tx)
         queue = tx.get("controls", "queue")
         if queue.get("dispatchEnabled") or queue.get("reason") != reason:
             queue.update(dispatchEnabled=False, reason=reason, revision=queue["revision"] + 1)
@@ -323,11 +333,14 @@ class CenterRuntime:
         with self.store.transaction() as tx:
             requests, queue = tx.list("requests"), tx.get("controls", "queue")
             entries = [entry for entry in tx.list("entries") if not entry.get("detached")]
+            preparations = [row for row in tx.list("operations") if row.get("kind") == "exploration"]
             current = next((request for request in requests if request["state"] in ACTIVE and request.get("dispatchId")), None)
             current = self._request_view(tx, current) if current else None
             return {"dispatchEnabled": queue["dispatchEnabled"], "queueRevision": queue["revision"], "currentRequest": current,
                     "queuedCount": sum(row["state"] == "queued" for row in requests),
-                    "attentionCount": sum(row["state"] == "attention" for row in requests),
+                    "attentionCount": sum(row["state"] == "attention" for row in requests)
+                                      + sum(row["state"] in {"failed", "attention"} for row in preparations),
+                    "preparationCount": sum(row["state"] == "preparing" for row in preparations),
                     "counts": {kind: sum(row.get("kind") == kind for row in entries) for kind in ("product", "exploration", "legacy", "reference")},
                     "language": tx.get("preferences", "main")["language"], "executionDomain": self.domain,
                     "executionAvailable": self.adapter.available, "dispatchReason": queue.get("reason")}
@@ -564,6 +577,7 @@ class CenterRuntime:
                         raise CenterError("RECOVERY_REQUIRED", "Resolve outstanding ownership or operation issues first", 409)
                     queue.update(dispatchEnabled=True, reason=None)
                 elif action in {"pause", "stop-all"}:
+                    self._revoke_start_authorizations(tx)
                     queue.update(dispatchEnabled=False, reason="user_pause" if action == "pause" else "stop_all")
                     if action == "stop-all":
                         self._stop_media_tx(tx)
@@ -611,6 +625,22 @@ class CenterRuntime:
             tx.put("preferences", "main", candidate)
             self._remember(tx, key, body_hash, candidate)
             return candidate
+
+    def list_operations(self, query=None):
+        query = query or {}
+        with self.store.transaction() as tx:
+            operations = [row for row in tx.list("operations") if row.get("kind") == "exploration"]
+            if query.get("state"):
+                operations = [row for row in operations if row["state"] == query["state"]]
+            operations.sort(key=lambda row: (row["createdAt"], row["operationId"]), reverse=True)
+            items = []
+            for operation in operations:
+                item = {key: operation.get(key) for key in ("operationId", "kind", "state", "createdAt", "endedAt", "revision", "reason")}
+                for field in ("reserved", "result"):
+                    values = operation.get(field)
+                    item[field] = {key: values[key] for key in ("entryId", "sourceId", "runtimeId", "requestId") if key in values} if isinstance(values, dict) else None
+                items.append(item)
+            return {"items": items}
 
     def operation(self, operation_id):
         with self.store.transaction() as tx:
@@ -691,6 +721,7 @@ class CenterRuntime:
                     raise CenterError("RECOVERY_REQUIRED", "Preparation ownership manifest differs", 409)
                 atomic_json(intent, manifest)
                 with self.store.transaction() as tx:
+                    operation = tx.get("operations", operation_id)
                     operation.update(frameworkRevision=revision, state="preparing", reason=None)
                     tx.put("operations", operation_id, operation)
                 prepared = staging / "runtime"
@@ -728,6 +759,7 @@ class CenterRuntime:
                 runtime = {"runtimeId": reserved["runtimeId"], "root": str(target), "entryId": reserved["entryId"], "sourceId": reserved["sourceId"],
                            "centerId": self.store.center_id, "protocolVersion": 1, "managed": True, "executionDomain": self.domain, "frameworkRevision": revision}
                 with self.store.transaction() as tx:
+                    operation = tx.get("operations", operation_id)
                     tx.put("entries", entry["entryId"], entry)
                     tx.put("sources", source["sourceId"], source)
                     tx.put("runtimes", runtime["runtimeId"], runtime)
@@ -741,7 +773,8 @@ class CenterRuntime:
                         if (any(row["requestId"] != request["requestId"] and row["state"] in OPEN for row in tx.list("requests"))
                                 or tx.get("controls", "queue")["revision"] != operation["queueRevision"]):
                             self._transition(tx, request, "attention", "center", "slot_changed", attentionReason="preflight", reasonDetail="slot_changed")
-                        elif operation.get("authorizationSession") == self._session_id and not self._closing.is_set():
+                        elif (operation.get("authorizationSession") == self._session_id and not operation.get("authorizationRevoked")
+                              and not self._closing.is_set()):
                             request.update(startAuthorized=True, executionMode="start_now")
                             tx.put("requests", request["requestId"], request)
                     operation.update(state="succeeded", endedAt=now(), result=reserved, revision=operation["revision"] + 1)
@@ -754,6 +787,7 @@ class CenterRuntime:
                     tx.put("requests", request["requestId"], request)
             except Exception as exc:
                 with self.store.transaction() as tx:
+                    operation = tx.get("operations", operation_id)
                     operation.update(state="attention" if target.exists() or (staging / "runtime").exists() else "failed",
                                      reason=getattr(exc, "code", "preparation_failed"), endedAt=now(), revision=operation["revision"] + 1)
                     tx.put("operations", operation_id, operation)
@@ -1104,8 +1138,10 @@ class CenterRuntime:
                     self._children.pop(current["dispatchId"], None)
             elif receipt and probe.get("ownerAlive") and (probe.get("owner") or {}).get("dispatchId") == current["dispatchId"] and not probe["slotFree"]:
                 current["liveConfirmedAt"] = now()
-                blocked = receipt.get("executionBlockedReason") if receipt.get("state") == "running" and not current.get("stopRequested") else None
-                blocked = blocked if blocked == "unresolved_p1" else None
+                observed_block = receipt.get("executionBlockedReason") if receipt.get("state") == "running" else None
+                if observed_block == "unresolved_p1":
+                    self._pause(tx, "unresolved_p1")
+                blocked = observed_block if observed_block == "unresolved_p1" and not current.get("stopRequested") else None
                 if current.get("executionBlockedReason") != blocked:
                     current.update(executionBlockedReason=blocked, executionBlockedAt=receipt.get("executionBlockedAt") if blocked else None)
                     self._event(tx, current, current["state"], "runner", blocked or "governance_observation_changed")

@@ -221,6 +221,8 @@ class CenterHandler(BaseHTTPRequestHandler):
             self.result(result)
         elif route == "/requests":
             self.result(runtime.list_requests(query))
+        elif route == "/operations":
+            self.result(runtime.list_operations(query))
         elif route == "/preferences":
             self.result(runtime.preferences())
         elif match := re.fullmatch(rf"/requests/({IDENTIFIER})", route):

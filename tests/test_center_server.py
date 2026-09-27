@@ -98,6 +98,22 @@ class CenterHttpTests(unittest.TestCase):
         self.assertEqual(status, 400)
         self.catalog.journal.assert_not_called()
 
+    def test_preparation_operations_are_readable_without_starting_work(self):
+        self.runtime.list_operations.return_value = {"items": [
+            {"operationId": "operation-failed", "kind": "explore", "state": "failed", "reason": "FRAMEWORK_UNVERIFIED"}
+        ]}
+        status, raw, _ = self.request("GET", "/api/center/v1/operations")
+        self.assertEqual(status, 200)
+        self.assertEqual(json.loads(raw)["data"]["items"][0]["reason"], "FRAMEWORK_UNVERIFIED")
+        self.runtime.list_operations.assert_called_once_with({})
+        self.runtime.create_request.assert_not_called()
+        self.runtime.create_exploration.assert_not_called()
+
+    def test_preparation_operations_reject_cross_site_reads(self):
+        status, _, _ = self.request("GET", "/api/center/v1/operations", headers={"Origin": "https://evil.invalid"})
+        self.assertEqual(status, 403)
+        self.runtime.list_operations.assert_not_called()
+
     def test_business_html_cannot_execute_under_center_origin(self):
         status, raw, headers = self.request("GET", "/api/center/v1/entries/product-b/resources/document-a")
         self.assertEqual(status, 200)

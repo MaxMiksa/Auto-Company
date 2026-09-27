@@ -30,7 +30,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
   const DEFAULT_HISTORY_LIMIT = 4;
   const productMatch = (globalThis.location?.pathname || '/journal').match(/^\/products\/([^/]+)\/?$/);
   const scope = { center: Boolean(productMatch), entryId: productMatch ? decodeURIComponent(productMatch[1]) : null, token: 0, contextToken: 0, entries: [] };
-  const state = { data: null, language: 'zh-CN', tab: 'work', expanded: new Set(), older: false, selectedLog: scope.center ? '' : 'runtime', logText: '', logLoadedId: '', logRequest: 0, logPending: null, refreshPending: null, signature: '', statusFailed: true, action: '', languageState: null, languageSaving: false, languageLoading: false, languageRevision: 0, languageError: '', languageSaved: false, timer: null, autoChanged: false, currentCycle: null, receivedAt: 0, elapsedTimer: null, centerSummary: null, mediaIntent: null, exploration: { key: '', token: 0, loading: false, loaded: false, failed: false, total: null, cycles: [] } };
+  const state = { data: null, language: 'zh-CN', tab: 'work', expanded: new Set(), older: false, selectedLog: scope.center ? '' : 'runtime', logText: '', logLoadedId: '', logRequest: 0, logPending: null, refreshPending: null, signature: '', statusFailed: true, action: '', languageState: null, languageSaving: false, languageLoading: false, languageRevision: 0, languageError: '', languageSaved: false, timer: null, autoChanged: false, currentCycle: null, receivedAt: 0, elapsedTimer: null, centerSummary: null, scopedUsage: null, usageToken: 0, detailToken: 0, detailLoads: new Map(), mediaIntent: null, exploration: { key: '', token: 0, loading: false, loaded: false, failed: false, total: null, cycles: [] } };
   const message = (key, values = {}) => {
     const dictionary = window.JOURNAL_MESSAGES[state.language] || window.JOURNAL_MESSAGES.en;
     return Object.entries(values).reduce((result, [name, value]) => result.replaceAll(`{${name}}`, String(value)), dictionary[key] || key);
@@ -147,6 +147,73 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
     try { const url = new URL(value, location.origin); return url.origin === location.origin && url.pathname.startsWith(prefix) ? `${url.pathname}${url.search}` : null; }
     catch (_) { return null; }
   }
+  function safePreviewURL(artifact, data = state.data) {
+    if (!scope.center || artifact?.kind !== 'preview' || artifact.available !== true || typeof artifact.url !== 'string') return null;
+    const productId = data?.project?.stableId || data?.entry?.productId;
+    if (!productId || artifact.productId !== productId) return null;
+    try {
+      const url = new URL(artifact.url);
+      if (url.protocol !== 'http:' || url.hostname !== '127.0.0.1' || url.username || url.password || url.origin === location.origin) return null;
+      return url.href;
+    } catch (_) { return null; }
+  }
+  function journalPageMatches(page, expected) {
+    return Boolean(expected?.entryId && expected?.sourceId && Number.isFinite(expected.sourceRevision)) && page?.entryId === expected.entryId && page?.sourceId === expected.sourceId && page?.sourceRevision === expected.sourceRevision && Array.isArray(page.cycles);
+  }
+  async function fetchFullScopedJournal() {
+    const first = await fetchCenter(`${scopedJournalPath('/journal')}?limit=100`);
+    const expected = { entryId: scope.entryId, sourceId: first?.sourceId, sourceRevision: first?.sourceRevision };
+    if (!journalPageMatches(first, expected)) throw new Error('Invalid scoped journal page');
+    const cycles = [...first.cycles]; const seenCursors = new Set(); const seenCycles = new Set(cycles.map((cycle) => cycle.id));
+    let cursor = first.nextBefore;
+    while (cursor) {
+      if (seenCursors.has(cursor)) throw new Error('Repeated journal cursor');
+      seenCursors.add(cursor);
+      const page = await fetchCenter(`${scopedJournalPath('/journal')}?limit=100&before=${encodeURIComponent(cursor)}&sourceId=${encodeURIComponent(expected.sourceId)}`);
+      if (!journalPageMatches(page, expected)) throw new Error('Journal source changed');
+      for (const cycle of page.cycles) {
+        if (seenCycles.has(cycle.id)) throw new Error('Repeated journal cycle');
+        seenCycles.add(cycle.id); cycles.push(cycle);
+      }
+      cursor = page.nextBefore;
+    }
+    if (Number.isFinite(first.total) && cycles.length !== first.total) throw new Error('Incomplete journal history');
+    return { ...first, cycles, nextBefore: null };
+  }
+  function usageSelection() {
+    const period = $('usagePeriod').value;
+    return { period, date: period === 'all' ? '' : $('usageDate').value };
+  }
+  function usageKey(selection, data = state.data) { return JSON.stringify([data?.entryId, data?.sourceId, data?.sourceRevision, selection.period, selection.date]); }
+  function expectedUsageRange(selection) {
+    if (selection.period === 'all') return { startDate: null, endDate: null };
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(selection.date)) return null;
+    if (selection.period === 'day') return { startDate: selection.date, endDate: selection.date };
+    if (selection.period !== 'week') return null;
+    const start = new Date(`${selection.date}T00:00:00Z`);
+    start.setUTCDate(start.getUTCDate() - (start.getUTCDay() + 6) % 7);
+    const end = new Date(start); end.setUTCDate(end.getUTCDate() + 6);
+    return { startDate: start.toISOString().slice(0, 10), endDate: end.toISOString().slice(0, 10) };
+  }
+  async function fetchScopedUsage(selection, data) {
+    const expectedRange = expectedUsageRange(selection);
+    if (!expectedRange) throw new Error('Invalid usage selection');
+    const date = selection.date ? `&date=${encodeURIComponent(selection.date)}` : '';
+    const result = await fetchCenter(`${scopedJournalPath('/usage')}?period=${encodeURIComponent(selection.period)}${date}&sourceId=${encodeURIComponent(data.sourceId)}`);
+    if (result?.entryId !== data.entryId || result?.sourceId !== data.sourceId || result?.sourceRevision !== data.sourceRevision || result?.period !== selection.period || result?.startDate !== expectedRange.startDate || result?.endDate !== expectedRange.endDate) throw new Error('Out-of-scope usage response');
+    return { key: usageKey(selection, data), data: result };
+  }
+  async function refreshScopedUsage() {
+    if (!scope.center || !state.data) return;
+    const token = ++state.usageToken; const data = state.data; const selection = usageSelection();
+    try {
+      const usage = await fetchScopedUsage(selection, data);
+      if (token !== state.usageToken || data !== state.data || usage.key !== usageKey(usageSelection(), state.data)) return;
+      state.scopedUsage = usage; renderUsage();
+    } catch (_) {
+      if (token === state.usageToken) { state.scopedUsage = null; renderUsage(); }
+    }
+  }
   async function fetchScopedText(value, timeout = 15000) {
     const url = safeScopedResource(value);
     if (!url) throw new Error('Invalid scoped resource');
@@ -164,6 +231,11 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
     return new Intl.DateTimeFormat(state.language, { month: 'long', day: 'numeric' }).format(new Date(value));
   }
   function datePart(value) { return /^\d{4}-\d{2}-\d{2}/.test(value || '') ? value.slice(0, 10) : ''; }
+  function localDatePart(value) {
+    const date = new Date(value);
+    if (!Number.isFinite(date.getTime())) return '';
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  }
   function knownNumber(value) { return typeof value === 'number' && Number.isFinite(value) && value >= 0; }
   function number(value) { return knownNumber(value) ? new Intl.NumberFormat(state.language).format(value) : '—'; }
   function compactNumber(value) { return knownNumber(value) ? new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 }).format(value) : message('unknown'); }
@@ -486,7 +558,31 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
     content.append(cycleRecords(cycle));
     content.append(logButton(cycle));
     row.append(summary, content);
+    if (scope.center && cycle.detailStatus === 'limited') row.addEventListener('toggle', () => { if (row.open) loadCycleDetail(cycle.id); });
     return row;
+  }
+  async function loadCycleDetail(cycleId) {
+    if (!scope.center || !state.data || state.detailLoads.has(cycleId)) return;
+    const expected = { token: state.detailToken, entryId: state.data.entryId, sourceId: state.data.sourceId, sourceRevision: state.data.sourceRevision };
+    const primaryIndex = state.data.cycles.findIndex((cycle) => cycle.id === cycleId && cycle.detailStatus === 'limited');
+    const explorationIndex = state.exploration.cycles.findIndex((cycle) => cycle.id === cycleId && cycle.detailStatus === 'limited');
+    const collection = primaryIndex >= 0 ? state.data.cycles : explorationIndex >= 0 ? state.exploration.cycles : null;
+    const index = primaryIndex >= 0 ? primaryIndex : explorationIndex;
+    if (!collection || index < 0) return;
+    const limited = collection[index];
+    const promise = (async () => {
+      try {
+        const detail = await fetchCenter(`${scopedJournalPath(`/records/${encodeURIComponent(cycleId)}`)}?sourceId=${encodeURIComponent(expected.sourceId)}`);
+        if (expected.token !== state.detailToken || state.data?.entryId !== expected.entryId || state.data?.sourceId !== expected.sourceId || state.data?.sourceRevision !== expected.sourceRevision || detail?.entryId !== expected.entryId || detail?.sourceId !== expected.sourceId || detail?.sourceRevision !== expected.sourceRevision || detail?.id !== cycleId || detail.detailStatus !== 'recorded') return;
+        const currentIndex = collection.findIndex((cycle) => cycle.id === cycleId && cycle.detailStatus === 'limited');
+        if (currentIndex < 0) return;
+        collection[currentIndex] = { ...limited, ...detail };
+        if (collection === state.data.cycles) renderHistory(); else renderExplorationHistory();
+      } catch (_) { /* The limited row remains retryable on its next open. */ }
+      finally { state.detailLoads.delete(cycleId); }
+    })();
+    state.detailLoads.set(cycleId, promise);
+    return promise;
   }
   async function loadLinkedExploration(retry = false) {
     const expected = explorationScope(state.data);
@@ -864,8 +960,9 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
           item.append(element('span', '', `${label} · ${unavailableArtifact(artifact)}`));
         } else {
           const link = element('a', 'artifact-link');
-          link.href = scope.center ? safeScopedResource(artifact.url) : artifact.url || `/api/journal/document?path=${encodeURIComponent(artifact.path)}`;
-          if (!link.href || (scope.center && !safeScopedResource(artifact.url))) { item.replaceChildren(element('span', '', `${label} · ${message('artifactUnavailable')}`)); list.append(item); continue; }
+          const scopedURL = artifact.kind === 'preview' ? safePreviewURL(artifact) : safeScopedResource(artifact.url);
+          link.href = scope.center ? scopedURL : artifact.url || `/api/journal/document?path=${encodeURIComponent(artifact.path)}`;
+          if (!link.href || (scope.center && !scopedURL)) { item.replaceChildren(element('span', '', `${label} · ${message('artifactUnavailable')}`)); list.append(item); continue; }
           link.target = '_blank';
           link.rel = 'noopener';
           link.title = artifact.path || artifact.url;
@@ -970,7 +1067,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
     $('usageDate').hidden = period === 'all';
     $('usageDateLabel').hidden = period === 'all';
     $('usageRange').textContent = '';
-    const recorded = state.data.cycles.filter((cycle) => !cycle.active);
+    const recorded = state.data.cycles.filter((cycle) => scope.center || !cycle.active);
     if (period === 'all') return recorded;
     if (!selected) return [];
     let start = selected;
@@ -984,7 +1081,8 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
       $('usageRange').textContent = `${start} – ${end}`;
     }
     return recorded.filter((cycle) => {
-      const date = datePart(cycle.endedAt);
+      const value = cycle.endedAt || cycle.startedAt || cycle.reservedAt;
+      const date = scope.center ? localDatePart(value) : datePart(value);
       return date && date >= start && date <= end;
     });
   }
@@ -998,7 +1096,9 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
       summary.append(element('p', 'muted', message('noUsage')));
       return;
     }
-    const total = aggregate(cycles);
+    const scoped = scope.center && state.scopedUsage?.key === usageKey(usageSelection()) ? state.scopedUsage.data : null;
+    const total = scoped ? { ...scoped.usage, known: scoped.recorded, count: scoped.recorded + scoped.unknown,
+      partial: Boolean(scoped.unknown || scoped.unknownTime || scoped.truncated || scoped.conflicting || cycles.some((cycle) => cycle.usage?.status === 'partial')) } : aggregate(cycles);
     summary.append(element('span', 'usage-total', number(total.totalTokens)), element('span', 'usage-summary-label', message('knownTotal')));
     summary.append(element('p', 'usage-coverage', message('coverageDescription', total)));
     const amounts = element('p', 'usage-coverage', `${message('input')} ${number(total.inputTokens)} · ${message('output')} ${number(total.outputTokens)}`);
@@ -1175,18 +1275,30 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
     $('refreshButton').disabled = true;
     $('refreshStatus').textContent = message('refreshing');
     const languageRevision = state.languageRevision;
+    const detailToken = ++state.detailToken;
     const promise = (async () => { try {
       const requestEntryId = scope.entryId;
-      const scopedResult = scope.center ? await Promise.all([fetchCenter(scopedJournalPath('/journal')), fetchCenter('/summary')]) : null;
+      const scopedSelection = scope.center ? usageSelection() : null;
+      const scopedResult = scope.center ? await Promise.all([fetchFullScopedJournal(), fetchCenter('/summary')]) : null;
       const data = scope.center ? scopedResult[0] : await fetchJSON('/api/journal');
       if (scope.center) state.centerSummary = scopedResult[1];
-      if (scope.center && (requestEntryId !== scope.entryId || data.entryId !== scope.entryId)) throw new Error('Out-of-scope journal response');
+      if (scope.center && (detailToken !== state.detailToken || requestEntryId !== scope.entryId || data.entryId !== scope.entryId)) throw new Error('Out-of-scope journal response');
       if (!data.ok || !Array.isArray(data.cycles)) throw new Error('invalid journal response');
       const signature = JSON.stringify({ ...data, generatedAt: undefined, status: data.status ? { ...data.status, timestamp: undefined, elapsedMs: undefined } : undefined });
       if (state.data && Number.isFinite(Date.parse(data.generatedAt)) && Date.parse(data.generatedAt) < Date.parse(state.data.generatedAt)) throw new Error('Out-of-order journal snapshot');
       const nextExploration = explorationScope(data);
       if (state.exploration.key !== (nextExploration?.key || '')) resetExploration(nextExploration);
+      let nextScopedUsage = null;
+      if (scope.center) {
+        if (!$('usageDate').value) {
+          const latestRecorded = data.cycles.find((cycle) => !cycle.active);
+          $('usageDate').value = localDatePart(latestRecorded?.endedAt || latestRecorded?.startedAt || latestRecorded?.reservedAt) || localDatePart(new Date());
+        }
+        const selection = scopedSelection.period === 'all' ? scopedSelection : usageSelection();
+        nextScopedUsage = await fetchScopedUsage(selection, data);
+      }
       state.data = data;
+      if (scope.center) state.scopedUsage = nextScopedUsage;
       state.receivedAt = performance.now();
       state.statusFailed = scope.center ? false : data.runtime?.available === false || data.status?.ok === false || !data.runtime || ['unknown', 'unavailable'].includes(data.runtime.state);
       if (languageRevision === state.languageRevision && !state.languageSaving && !state.languageLoading) {
@@ -1207,6 +1319,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
         requestAnimationFrame(() => window.scrollTo({ top: scrollPosition, behavior: 'instant' }));
       }
       renderRuntime();
+      if (scope.center) renderUsage();
       if (scope.center) refreshCenterContext();
       $('refreshStatus').textContent = message('refreshed', { time: formatTime(data.generatedAt || new Date().toISOString()) });
       if (state.tab === 'logs') await loadLog();
@@ -1276,8 +1389,8 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
   $('autoRefresh').addEventListener('change', () => { state.autoChanged = true; scheduleRefresh(); });
   document.addEventListener('visibilitychange', () => { if (!document.hidden && $('autoRefresh').checked && (scope.center || !readOnly()) && !state.action) refresh(); else scheduleRefresh(); });
   $('olderButton').addEventListener('click', () => { state.older = !state.older; renderHistory(); });
-  $('usagePeriod').addEventListener('change', renderUsage);
-  $('usageDate').addEventListener('change', renderUsage);
+  $('usagePeriod').addEventListener('change', () => { renderUsage(); refreshScopedUsage(); });
+  $('usageDate').addEventListener('change', () => { renderUsage(); refreshScopedUsage(); });
   $('logSelect').addEventListener('change', () => { state.selectedLog = $('logSelect').value; loadLog(); });
   $('refreshLogButton').addEventListener('click', loadLog);
   $('copyLogButton').addEventListener('click', async () => {

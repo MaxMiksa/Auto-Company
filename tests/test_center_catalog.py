@@ -8,6 +8,7 @@ import sqlite3
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 ROOT = Path(os.environ.get('AUTO_COMPANY_TEST_SOURCE', Path(__file__).resolve().parents[1]))
 sys.path[:0] = [str(ROOT / 'dashboard'), str(ROOT / 'scripts/core')]
@@ -329,6 +330,169 @@ class CenterCatalogTests(unittest.TestCase):
         with self.assertRaises(CenterError) as context:
             self.catalog.journal(item['entryId'], {'before': page['nextBefore']})
         self.assertEqual(context.exception.code, 'CURSOR_EXPIRED')
+
+    def old_cycle(self):
+        for index in range(32):
+            self.cycle(attempt='history-' + str(index))
+        item, = self.import_root()
+        row = self.catalog.journal(item['entryId'], {'limit': 100})['cycles'][-1]
+        self.assertEqual(row['detailStatus'], 'limited')
+        return item, row
+
+    def work_report(self, cycle_id, project='projects/one'):
+        value = {'version': 2, 'cycle_id': cycle_id, 'project': project,
+                 'recorded_at': '2026-09-26T01:01:00+00:00', 'source': 'model_report',
+                 'final': True, 'phase': 'review', 'title': 'Recorded historical work',
+                 'summary': 'Synthetic historical report', 'blocker': ''}
+        self.write('logs/' + cycle_id + '.work.json', json.dumps(value))
+        return value
+
+    def test_old_record_hydrates_verified_details_and_scoped_links_after_relocation(self):
+        from runtime_artifacts import base_record, save
+        item, old = self.old_cycle()
+        report = self.work_report(old['id'])
+        event = {'version': 1, 'cycleId': old['id'], 'sequence': 1, 'kind': 'report',
+                 'observedAt': '2026-09-26T01:01:00+00:00', 'text': 'Historical event', 'source': 'agent_report'}
+        self.write('logs/' + old['id'] + '.events.jsonl', json.dumps(event) + '\n')
+        records = []
+        for kind in ('document', 'check'):
+            path = 'projects/one/' + kind + '.txt'
+            target = self.write(path, 'Recorded ' + kind)
+            record = base_record('projects/one', kind, self.root)
+            record.update(cycleId=old['id'], path=path, sha256=hashlib.sha256(target.read_bytes()).hexdigest())
+            if kind == 'check':
+                record.update(state='completed', exitCode=0, reportStatus='fresh',
+                              tests={'tests': 2, 'failures': 0, 'errors': 0, 'skipped': 0})
+            save(self.root, record)
+            records.append(record)
+        preview = self.preview(cycle_id=old['id'])
+        (self.root / 'projects/one').rename(self.root / 'projects/moved')
+        products.relocate_identity(self.root, old['stableProductId'], 'projects/moved')
+        before = self.hashes()
+        with patch('observability_data.preview_available', return_value=True):
+            detail = self.catalog.record(item['entryId'], old['id'], item['sourceId'])
+            self.assertEqual(detail['detailStatus'], 'recorded')
+            self.assertEqual(detail['workReport'], report)
+            self.assertEqual(detail['workReportStatus'], 'valid')
+            self.assertEqual(detail['projectId'], 'projects/one')
+            self.assertEqual(detail['projectStatus'], 'current')
+            self.assertEqual(detail['events'][0]['text'], 'Historical event')
+            self.assertEqual(detail['latestCheck']['tests']['tests'], 2)
+            self.assertEqual(detail['checks'][0]['url'], detail['latestCheck']['url'])
+            base = '/api/center/v1/entries/' + item['entryId'] + '/resources/'
+            suffix = '?sourceId=' + item['sourceId']
+            self.assertEqual(detail['logUrl'], base + 'log-' + old['id'] + suffix)
+            self.assertEqual(detail['sourceId'], item['sourceId'])
+            artifacts = {artifact['id']: artifact for artifact in detail['artifacts']}
+            for record in records:
+                artifact = artifacts[record['id']]
+                self.assertEqual(artifact['url'], base + 'artifact-' + record['id'] + suffix)
+                self.assertTrue(artifact['path'].startswith('projects/moved/'))
+                content, _ = self.catalog.resource(item['entryId'], 'artifact-' + record['id'], item['sourceId'])
+                self.assertIn(b'Recorded', content)
+            self.assertEqual(artifacts[preview['id']]['url'], preview['url'])
+        self.assertEqual(self.hashes(), before)
+
+    def test_old_record_rejects_wrong_project_report_like_recent_record(self):
+        item, old = self.old_cycle()
+        recent = self.catalog.journal(item['entryId'])['cycles'][0]
+        for row in (old, recent):
+            self.work_report(row['id'], 'projects/other')
+            detail = self.catalog.record(item['entryId'], row['id'])
+            self.assertIsNone(detail['workReport'])
+            self.assertEqual(detail['workReportStatus'], 'identity_mismatch')
+            self.assertEqual(detail['detailStatus'], 'recorded')
+
+    def test_old_record_rejects_foreign_cycle_and_missing_source_identity(self):
+        item, old = self.old_cycle()
+        foreign = self.cycle('projects/other', 'foreign')
+        with self.assertRaises(CenterError) as context:
+            self.catalog.record(item['entryId'], foreign['cycleId'])
+        self.assertEqual(context.exception.code, 'RECORD_NOT_FOUND')
+        (self.root / '.auto-company/product-state.json').unlink()
+        with self.assertRaises(CenterError) as context:
+            self.catalog.record(item['entryId'], old['id'])
+        self.assertEqual(context.exception.code, 'SOURCE_CONFLICT')
+
+    def preview(self, project='projects/one', cycle_id=None, url='http://127.0.0.1:12345/'):
+        from runtime_artifacts import base_record, save
+        record = base_record(project, 'preview', self.root)
+        record.update(cycleId=cycle_id, state='running', lifetime='cycle' if cycle_id else 'operator',
+                      url=url, token='a' * 32)
+        save(self.root, record)
+        return record
+
+    def test_operator_preview_is_product_bound_and_keeps_verified_url(self):
+        one = self.cycle()
+        two = self.cycle('projects/two', 'second')
+        record = self.preview()
+        with patch('observability_data.preview_available', return_value=True):
+            items = self.import_root()
+            item = next(item for item in items if self.catalog.get_entry(item['entryId'])['productId'] == one['productId'])
+            other = next(item for item in items if self.catalog.get_entry(item['entryId'])['productId'] == two['productId'])
+            before = self.hashes()
+            snapshot = self.catalog.journal(item['entryId'], {'sourceId': item['sourceId']})
+            preview, = snapshot['artifacts']
+            self.assertEqual(preview['associationStatus'], 'product')
+            self.assertEqual(preview['productId'], one['productId'])
+            self.assertIsNone(preview['cycleId'])
+            self.assertTrue(preview['available'])
+            self.assertEqual(preview['url'], record['url'])
+            self.assertEqual(self.catalog.journal(other['entryId'])['artifacts'], [])
+            self.assertEqual(self.hashes(), before)
+        with patch('observability_data.preview_available', return_value=False):
+            preview, = self.catalog.journal(item['entryId'])['artifacts']
+            self.assertFalse(preview['available'])
+            self.assertNotIn('url', preview)
+
+    def test_cycle_preview_never_becomes_center_document_resource(self):
+        row = self.cycle()
+        record = self.preview(cycle_id=row['cycleId'])
+        # Even an extraneous file path cannot turn a preview into a document.
+        self.write('projects/one/app.html', '<script>application()</script>')
+        from runtime_artifacts import save
+        record['path'] = 'projects/one/app.html'
+        save(self.root, record)
+        with patch('observability_data.preview_available', return_value=True):
+            item, = self.import_root()
+            snapshot = self.catalog.journal(item['entryId'])
+            preview, = snapshot['artifacts']
+            self.assertEqual(preview['associationStatus'], 'bound')
+            self.assertEqual(preview['url'], record['url'])
+            self.assertEqual(snapshot['cycles'][0]['artifacts'][0]['url'], record['url'])
+            with self.assertRaises(CenterError) as context:
+                self.catalog.resource(item['entryId'], 'artifact-' + record['id'], item['sourceId'])
+            self.assertEqual(context.exception.code, 'RESOURCE_NOT_FOUND')
+
+    def test_operator_preview_requires_current_identity_marker(self):
+        row = self.cycle()
+        self.preview()
+        with patch('observability_data.preview_available', return_value=True):
+            item, = self.import_root()
+        (self.root / 'projects/one/.auto-company/identity.json').unlink()
+        replacement = products.register_project(self.root, 'projects/one')
+        self.assertNotEqual(replacement['id'], row['productId'])
+        with patch('observability_data.preview_available', return_value=True) as health:
+            self.assertEqual(self.catalog.journal(item['entryId'])['artifacts'], [])
+            health.assert_not_called()
+
+    def test_operator_preview_uses_explicit_source_without_fallback(self):
+        self.cycle()
+        self.preview()
+        with patch('observability_data.preview_available', return_value=True):
+            original, = self.import_root()
+            backup = self.base / 'backup'
+            shutil.copytree(self.root, backup)
+            record_file, = (backup / 'logs/artifacts').glob('*.json')
+            record = json.loads(record_file.read_text())
+            record['url'] = 'http://127.0.0.1:23456/'
+            record_file.write_text(json.dumps(record))
+            copy, = self.import_root(backup)
+            self.assertEqual(copy['entryId'], original['entryId'])
+            original_preview, = self.catalog.journal(original['entryId'], {'sourceId': original['sourceId']})['artifacts']
+            copy_preview, = self.catalog.journal(original['entryId'], {'sourceId': copy['sourceId']})['artifacts']
+            self.assertEqual(original_preview['url'], 'http://127.0.0.1:12345/')
+            self.assertEqual(copy_preview['url'], 'http://127.0.0.1:23456/')
 
     def test_missing_product_directory_keeps_identity_history(self):
         row = self.cycle()

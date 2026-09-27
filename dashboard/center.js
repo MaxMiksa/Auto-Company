@@ -7,7 +7,7 @@
   const TERMINAL_STATES = new Set(["ended", "failed", "canceled"]);
   const state = {
     language: "zh-CN", revision: null, centerId: null, observedAt: null,
-    summary: null, entries: [], requests: [], preferences: null,
+    summary: null, entries: [], requests: [], operations: [], preferences: null,
     query: "", filter: "all", loading: true, stale: false, refreshing: null,
     refreshToken: 0, timer: null, menuEntryId: null, historyVisible: false,
     activeEntry: null, managementEntry: null, selectedSourceId: null, sourceToken: 0, probe: null, confirmAction: null, drawerOpen: false, pendingWrites: new Map(), projectionSignature: "", projectionTimer: null,
@@ -28,6 +28,16 @@
   function clear(node) { node.replaceChildren(); return node; }
   function text(value) { return typeof value === "string" ? value.trim() : ""; }
   function knownNumber(value) { return Number.isFinite(value) && value >= 0; }
+  function focusKey(node, value) { node.dataset.focusKey = value; return node; }
+  function rememberFocus() {
+    const active = document.activeElement;
+    return active && active !== document.body ? text(active.dataset?.focusKey) : "";
+  }
+  function restoreFocus(key) {
+    if (!key) return;
+    const node = [...document.querySelectorAll("[data-focus-key]")].find((item) => item.dataset.focusKey === key);
+    if (node && !node.disabled) node.focus({ preventScroll: true });
+  }
   function idempotencyKey() { return globalThis.crypto?.randomUUID?.() || `center-${Date.now()}-${Math.random().toString(16).slice(2)}`; }
 
   class APIError extends Error {
@@ -149,7 +159,7 @@
 
   function capabilityReason(reason, fallback = "capabilityUnavailable") {
     if (!reason) return message(fallback);
-    const known = { unmanaged_source: "unmanagedSource", read_only_source: "readOnlySource", execution_domain_unconfigured: "executionUnavailable", runtime_incompatible: "runtimeIncompatible", slot_busy: "slotBusy", open_request_exists: "openRequestExists", source_unavailable: "sourceUnavailableReason", entry_archived: "archiveBlocked", product_registration_invalid: "productRegistrationInvalid", context_unavailable: "contextUnavailable", governance_pause: "governancePaused", budget_pause: "budgetPaused", stop_unconfirmed: "stopUnconfirmed", unresolved_p1: "unresolvedP1" };
+    const known = { unmanaged_source: "unmanagedSource", read_only_source: "readOnlySource", execution_domain_unconfigured: "executionUnavailable", runtime_incompatible: "runtimeIncompatible", slot_busy: "slotBusy", open_request_exists: "openRequestExists", source_unavailable: "sourceUnavailableReason", entry_archived: "archiveBlocked", product_registration_invalid: "productRegistrationInvalid", context_unavailable: "contextUnavailable", governance_pause: "governancePaused", budget_pause: "budgetPaused", stop_unconfirmed: "stopUnconfirmed", unresolved_p1: "unresolvedP1", framework_unverified: "frameworkUnverified", preparation_failed: "preparationFailed" };
     if (window.CENTER_MESSAGES[state.language][reason]) return message(reason);
     const key = known[reason] || known[String(reason).toLowerCase()];
     return key ? message(key) : errorText({ code: reason });
@@ -159,7 +169,7 @@
     const value = text(reason);
     if (value === "user_stop") return message("requestedStop");
     if (value === "user_cancel") return message("requestedCancel");
-    return /^(?:PRODUCT_REGISTRATION_INVALID|CONTEXT_UNAVAILABLE|GOVERNANCE_PAUSE|BUDGET_PAUSE|STOP_UNCONFIRMED|UNRESOLVED_P1)$/i.test(value) ? capabilityReason(value) : value || message("unknownError");
+    return /^(?:PRODUCT_REGISTRATION_INVALID|CONTEXT_UNAVAILABLE|GOVERNANCE_PAUSE|BUDGET_PAUSE|STOP_UNCONFIRMED|UNRESOLVED_P1|FRAMEWORK_UNVERIFIED|PREPARATION_FAILED)$/i.test(value) ? capabilityReason(value) : value || message("unknownError");
   }
 
   async function allEntries() {
@@ -283,28 +293,28 @@
     if (entry.lastActivityAt) { activity.dateTime = entry.lastActivityAt; activity.title = formatTime(entry.lastActivityAt); }
 
     const actions = element("div", "row-actions"); actions.setAttribute("role", "cell");
-    if (entry.kind !== "reference") { const view = element("a", "", message("view")); view.href = detailURL(entry); actions.append(view); }
+    if (entry.kind !== "reference") { const view = focusKey(element("a", "", message("view")), `entry:${entry.entryId}:view`); view.href = detailURL(entry); actions.append(view); }
     const execute = capability(entry, "execute");
     if (execute.enabled && !entry.archived && ["product", "exploration"].includes(entry.kind)) {
-      const continueButton = element("button", "text-button continue-inline", message("continue")); continueButton.type = "button";
+      const continueButton = focusKey(element("button", "text-button continue-inline", message("continue")), `entry:${entry.entryId}:continue-inline`); continueButton.type = "button";
       continueButton.addEventListener("click", () => openContinue(entry)); actions.append(continueButton);
     }
     const menu = element("div", "action-menu");
-    const more = element("button", "more-button", "⋮"); more.type = "button"; more.setAttribute("aria-label", message("moreActions")); more.setAttribute("aria-expanded", String(state.menuEntryId === entry.entryId));
+    const more = focusKey(element("button", "more-button", "⋮"), `entry:${entry.entryId}:more`); more.type = "button"; more.setAttribute("aria-label", message("moreActions")); more.setAttribute("aria-expanded", String(state.menuEntryId === entry.entryId));
     more.addEventListener("click", (event) => { event.stopPropagation(); state.menuEntryId = state.menuEntryId === entry.entryId ? null : entry.entryId; renderEntries(); });
     menu.append(more);
     if (state.menuEntryId === entry.entryId) {
       const content = element("div", "menu-content");
       if (["product", "exploration"].includes(entry.kind) && !entry.archived) {
-        const continueMenu = element("button", "", message("continue")); continueMenu.type = "button"; continueMenu.disabled = !execute.enabled; continueMenu.addEventListener("click", () => openContinue(entry)); content.append(continueMenu);
+        const continueMenu = focusKey(element("button", "", message("continue")), `entry:${entry.entryId}:continue-menu`); continueMenu.type = "button"; continueMenu.disabled = !execute.enabled; continueMenu.addEventListener("click", () => openContinue(entry)); content.append(continueMenu);
         if (!execute.enabled) content.append(element("div", "menu-reason", execute.reason ? message("unavailableReason", { reason: capabilityReason(execute.reason) }) : message("capabilityUnavailable")));
       }
-      const manageButton = element("button", "", message("manageSources")); manageButton.type = "button";
+      const manageButton = focusKey(element("button", "", message("manageSources")), `entry:${entry.entryId}:manage`); manageButton.type = "button";
       manageButton.addEventListener("click", () => openSourceManager(entry)); content.append(manageButton);
-      const archiveButton = element("button", "", message(entry.archived ? "restore" : "archive")); archiveButton.type = "button";
+      const archiveButton = focusKey(element("button", "", message(entry.archived ? "restore" : "archive")), `entry:${entry.entryId}:visibility`); archiveButton.type = "button";
       archiveButton.addEventListener("click", () => confirmEntryVisibility(entry)); content.append(archiveButton);
       if (entry.kind === "reference" && !entry.archived) {
-        const detachButton = element("button", "danger", message("detachReference")); detachButton.type = "button";
+        const detachButton = focusKey(element("button", "danger", message("detachReference")), `entry:${entry.entryId}:detach`); detachButton.type = "button";
         detachButton.addEventListener("click", () => confirmReferenceDetach(entry)); content.append(detachButton);
       }
       menu.append(content);
@@ -352,7 +362,7 @@
     const counts = normalizeCounts();
     for (const key of ["All", "Running", "Queued", "Attention", "Archived"]) $(`count${key}`).textContent = counts[key.toLowerCase()] ? String(counts[key.toLowerCase()]) : "";
     const current = state.summary?.currentRequest;
-    const queueCount = (state.summary?.queuedCount || 0) + (state.summary?.attentionCount || 0) + (current && current.state !== "attention" ? 1 : 0);
+    const queueCount = (state.summary?.queuedCount || 0) + (state.summary?.attentionCount || 0) + (state.summary?.preparationCount || 0) + (current && current.state !== "attention" ? 1 : 0);
     $("queueNavCount").hidden = !queueCount; $("queueNavCount").textContent = String(queueCount);
   }
 
@@ -365,6 +375,7 @@
   }
 
   function renderPage() {
+    const focused = rememberFocus();
     applyLanguage(); renderActivity(); renderCounts(); renderEntries(); renderQueue();
     const executionAvailable = state.summary?.executionAvailable !== false;
     $("newWorkButton").disabled = state.stale || !executionAvailable;
@@ -374,6 +385,7 @@
     $("observedAt").textContent = state.observedAt ? message(state.stale ? "observedStale" : "refreshedAt", { time: formatTime(state.observedAt) }) : "";
     document.querySelectorAll(".filter-button").forEach((button) => button.setAttribute("aria-pressed", String(button.dataset.filter === state.filter)));
     state.projectionSignature = runtimeProjectionSignature();
+    restoreFocus(focused);
   }
 
   function runtimeProjectionSignature(currentTime = Date.now()) {
@@ -388,12 +400,14 @@
   function refreshRuntimeProjection(currentTime = Date.now()) {
     const signature = runtimeProjectionSignature(currentTime);
     if (signature === state.projectionSignature) return;
+    const focused = rememberFocus();
     renderActivity(); renderCounts(); renderEntries(); renderQueue();
     state.projectionSignature = signature;
+    restoreFocus(focused);
   }
 
   function queueGroups() {
-    const groups = { running: [], queued: [], attention: [], history: [] };
+    const groups = { running: [], queued: [], attention: [], history: [], preparing: [], operationAttention: [], operationHistory: [] };
     for (const request of state.requests) {
       const value = requestState(request);
       if (["running", "starting", "stopping"].includes(value)) groups.running.push(request);
@@ -402,8 +416,17 @@
       else if (TERMINAL_STATES.has(value)) groups.history.push(request);
       else if (value === "preparing") groups.attention.push(request);
     }
+    for (const operation of state.operations) {
+      if (operation.state === "preparing") groups.preparing.push(operation);
+      else if (["failed", "attention"].includes(operation.state)) groups.operationAttention.push(operation);
+      else if (operation.state === "succeeded") groups.operationHistory.push(operation);
+    }
     groups.queued.sort((a, b) => (a.queuePosition ?? a.position ?? Infinity) - (b.queuePosition ?? b.position ?? Infinity));
     return groups;
+  }
+
+  function requestOwnsDispatch(request) {
+    return Boolean(text(request?.dispatchId)) && ["starting", "running", "stopping", "attention"].includes(requestState(request));
   }
 
   function queueItem(request, index, group, queued) {
@@ -421,16 +444,42 @@
     if (reason) body.append(element("p", "", message("attentionReason", { reason: requestReason(reason) })));
     const actions = element("div", "queue-actions");
     if (["running", "starting", "stopping"].includes(value)) {
-      const stop = element("button", "text-button danger", message("stopItem")); stop.type = "button"; stop.disabled = value === "stopping" || state.stale; stop.addEventListener("click", () => confirmRequestAction(request, "stop")); actions.append(stop);
+      const stop = focusKey(element("button", "text-button danger", message("stopItem")), `request:${request.requestId}:stop`); stop.type = "button"; stop.disabled = value === "stopping" || state.stale; stop.addEventListener("click", () => confirmRequestAction(request, "stop")); actions.append(stop);
     } else if (group === "queued") {
-      const up = element("button", "text-button", message("moveUp")); up.type = "button"; up.disabled = index === 0 || state.stale; up.addEventListener("click", () => moveRequest(index, -1, queued));
-      const down = element("button", "text-button", message("moveDown")); down.type = "button"; down.disabled = index === queued.length - 1 || state.stale; down.addEventListener("click", () => moveRequest(index, 1, queued));
-      const cancel = element("button", "text-button danger", message("cancelItem")); cancel.type = "button"; cancel.disabled = state.stale; cancel.addEventListener("click", () => confirmRequestAction(request, "cancel"));
+      const up = focusKey(element("button", "text-button", message("moveUp")), `request:${request.requestId}:up`); up.type = "button"; up.disabled = index === 0 || state.stale; up.addEventListener("click", () => moveRequest(index, -1, queued));
+      const down = focusKey(element("button", "text-button", message("moveDown")), `request:${request.requestId}:down`); down.type = "button"; down.disabled = index === queued.length - 1 || state.stale; down.addEventListener("click", () => moveRequest(index, 1, queued));
+      const cancel = focusKey(element("button", "text-button danger", message("cancelItem")), `request:${request.requestId}:cancel`); cancel.type = "button"; cancel.disabled = state.stale; cancel.addEventListener("click", () => confirmRequestAction(request, "cancel"));
       actions.append(up, down, cancel);
     } else if (group === "attention") {
-      const reconcile = element("button", "text-button", message("reconcile")); reconcile.type = "button"; reconcile.disabled = state.stale; reconcile.addEventListener("click", () => runRequestAction(request, "reconcile")); actions.append(reconcile);
+      if (requestOwnsDispatch(request)) {
+        const stop = focusKey(element("button", "text-button danger", message("stopItem")), `request:${request.requestId}:stop`); stop.type = "button"; stop.disabled = state.stale; stop.addEventListener("click", () => confirmRequestAction(request, "stop")); actions.append(stop);
+      }
+      const reconcile = focusKey(element("button", "text-button", message("reconcile")), `request:${request.requestId}:reconcile`); reconcile.type = "button"; reconcile.disabled = state.stale; reconcile.addEventListener("click", () => runRequestAction(request, "reconcile")); actions.append(reconcile);
     }
     item.append(body, actions); return item;
+  }
+
+  function operationItem(operation) {
+    const item = element("article", "queue-item");
+    item.append(element("span", "queue-number", ""));
+    const body = element("div");
+    body.append(element("h4", "", message("preparationItem")));
+    body.append(element("p", "", message(operation.state === "succeeded" ? "preparationSucceeded" : operation.state === "preparing" ? "state_preparing" : operation.state === "attention" ? "state_attention" : "state_failed")));
+    if (operation.reason) body.append(element("p", "", message("attentionReason", { reason: requestReason(operation.reason) })));
+    if (operation.createdAt) body.append(element("p", "", message("createdAt", { time: formatTime(operation.createdAt) })));
+    const actions = element("div", "queue-actions");
+    if (operation.state !== "succeeded") {
+      const check = focusKey(element("button", "text-button", message("recheckPreparation")), `operation:${operation.operationId}:recheck`);
+      check.type = "button"; check.disabled = state.stale; check.addEventListener("click", refresh); actions.append(check);
+    }
+    item.append(body, actions); return item;
+  }
+
+  function operationSection(titleKey, items) {
+    const section = element("section", "queue-section");
+    section.append(element("h3", "", message(titleKey, { count: items.length })));
+    items.forEach((operation) => section.append(operationItem(operation)));
+    return section;
   }
 
   function queueSection(titleKey, items, group, queued) {
@@ -450,12 +499,16 @@
     const content = clear($("queueContent"));
     const groups = queueGroups();
     if (groups.running.length) content.append(queueSection("runningSection", groups.running, "running", groups.queued));
+    if (groups.preparing.length) content.append(operationSection("preparingSection", groups.preparing));
     if (groups.queued.length) content.append(queueSection("queuedSection", groups.queued, "queued", groups.queued));
     if (groups.attention.length) content.append(queueSection("attentionSection", groups.attention, "attention", groups.queued));
+    if (groups.operationAttention.length) content.append(operationSection("preparationAttentionSection", groups.operationAttention));
     if (state.historyVisible && groups.history.length) content.append(queueSection("historySection", groups.history, "history", groups.queued));
-    if (!groups.running.length && !groups.queued.length && !groups.attention.length && !(state.historyVisible && groups.history.length)) content.append(element("p", "list-state", message("queueEmpty")));
+    if (state.historyVisible && groups.operationHistory.length) content.append(operationSection("preparationHistorySection", groups.operationHistory));
+    if (!groups.running.length && !groups.preparing.length && !groups.queued.length && !groups.attention.length && !groups.operationAttention.length && !(state.historyVisible && (groups.history.length || groups.operationHistory.length))) content.append(element("p", "list-state", message("queueEmpty")));
     $("queueHistoryButton").textContent = message(state.historyVisible ? "hideHistory" : "showHistory");
-    $("stopAllButton").disabled = state.stale || (!groups.running.length && !groups.queued.length);
+    const ownedAttention = groups.attention.some(requestOwnsDispatch);
+    $("stopAllButton").disabled = state.stale || (!groups.running.length && !groups.preparing.length && !groups.queued.length && !ownedAttention);
   }
 
   async function refresh() {
@@ -463,12 +516,12 @@
     const token = ++state.refreshToken;
     const promise = (async () => {
       try {
-        const [summary, entries, requests, preferences] = await Promise.all([
-          api("/summary"), allEntries(), api("/requests?limit=100"), api("/preferences"),
+        const [summary, entries, requests, operations, preferences] = await Promise.all([
+          api("/summary"), allEntries(), api("/requests?limit=100"), api("/operations"), api("/preferences"),
         ]);
         if (token !== state.refreshToken) return;
-        if (!summary || !Array.isArray(entries?.items) || !Array.isArray(requests?.items)) throw new APIError({ code: "INVALID_RESPONSE" }, 200);
-        state.summary = summary; state.entries = entries.items; state.requests = requests.items; state.preferences = preferences; state.loading = false; state.stale = false;
+        if (!summary || !Array.isArray(entries?.items) || !Array.isArray(requests?.items) || !Array.isArray(operations?.items)) throw new APIError({ code: "INVALID_RESPONSE" }, 200);
+        state.summary = summary; state.entries = entries.items; state.requests = requests.items; state.operations = operations.items; state.preferences = preferences; state.loading = false; state.stale = false;
         const language = summary.language || state.preferences?.language;
         if (["en", "zh-CN"].includes(language)) state.language = language;
         renderPage();
@@ -531,7 +584,8 @@
     event.preventDefault(); const form = event.currentTarget;
     setFormStatus(form, message("actionPending")); form.querySelector('[type="submit"]').disabled = true;
     try {
-      await write("/explorations", { direction: text(form.elements.direction.value) || null, executionMode: form.elements.executionMode.value, config: formConfig(form) }, 60000);
+      const operation = await write("/explorations", { direction: text(form.elements.direction.value), executionMode: form.elements.executionMode.value, config: formConfig(form) }, 60000);
+      if (operation?.operationId) state.operations = [operation, ...state.operations.filter((item) => item.operationId !== operation.operationId)];
       closeDialog($("newWorkDialog")); showStatus("explorationPrepared"); await refresh(); openQueue();
     } catch (error) { setFormStatus(form, message("requestFailed", { detail: errorText(error) }), true); }
     finally { form.querySelector('[type="submit"]').disabled = state.stale; }

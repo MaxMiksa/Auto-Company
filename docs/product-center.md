@@ -52,9 +52,21 @@ Windows需要明确的WSL发行版与用户才能运行任务；未配置时仍�
 
 一次请求持续占用执行位置直到整个循环停止并清理完成，不会在每轮结束时自动切换产品。队列不设置隐含的轮数上限或商业完成条件。重启默认暂停派发；无法确认的启动或停止需要核对，不自动重放。已有预算和人类约束保护继续生效。
 
+Pause and Stop all also revoke earlier Start now authorizations that have not launched, including work still being prepared. Preparation may finish, but it cannot silently restore that authorization. An owned request in an attention state keeps its Stop action; an unlaunched request does not claim a process to stop.
+
+暂停队列和全部停止也会撤销尚未启动的“立即开始”授权，包括仍在准备中的工作。准备过程可以完成，但不会重新获得旧启动授权。已经拥有执行进程的待核对请求仍提供停止操作，未启动的请求不会被当作运行中进程。
+
+The direction for new work can be left empty for autonomous exploration. Preparation and any preparation failure remain visible in the queue after a page reload, separately from model execution requests. Checking that record does not retry or start a model.
+
+新建工作的方向可以留空，由原流程自主探索。准备状态和准备失败原因会保留在队列中，重新打开页面仍可查看，并与模型执行请求区分。核对准备记录不会重试或启动模型。
+
 An unresolved P1 in the original consensus prevents a new start. If the original guard pauses a loop that is already alive, the center shows a protection pause while retaining that request's slot and Stop action. It does not clear P1, resolve the decision or stop the loop automatically. Expired live observations become unknown.
 
 原共识中存在未解决的 P1 时，中心拒绝新启动。如果原保护规则让已启动的循环暂停，中心显示保护暂停，但该请求仍持有执行位置，停止按钮仍可用。中心不会清除 P1、代做决定或自动停止循环；实时证据过期后显示未知。
+
+A live unresolved-P1 observation also pauses subsequent queue dispatch. Stopping the current request does not resume that queue; resuming dispatch remains an explicit operator action.
+
+运行中观察到未解决的 P1 时，后续队列派发也会暂停。停止当前请求不会恢复队列，恢复派发仍需明确操作。
 
 ## Existing data and capabilities / 旧数据与能力
 
@@ -73,6 +85,10 @@ Source management keeps selection, takeover, release and preview actions explici
 Reported titles, summaries and phases remain model-authored records. The center parses them deterministically without a second AI summarizer. Checks, screenshots and process results are evidence with limited scope, not automatic certification that a product is complete or commercially successful. Unknown usage is not zero usage.
 
 标题、摘要和阶段仍是模型填写的结构化记录；程序直接解析，不加第二个AI解释器。检查、实拍与进程结果各有适用范围，不等于产品已完成或商业化成功。缺失用量保持未知。
+
+The journal initially shows the latest round and four earlier rows. Earlier history remains accessible, and retained details load when an older round is opened. Usage covers the selected product and period independently of which history rows are expanded. Verified previews open on their own loopback origin, separately from read-only document resources.
+
+工作记录默认显示最新一轮和此前四轮，更早记录仍可展开查看；打开较早轮次时会读取其保留的详细记录。用量按所选产品和时间范围汇总，不受当前展开的轮次影响。核验后的产品预览使用独立本地地址打开，与只读文档资源分开。
 
 Product language is attributed from program-recorded configuration for an actual product cycle. Older archives without that evidence remain unknown, even if their current root language preference is available. Changing the center language translates interface labels, not recorded reports or product pages.
 

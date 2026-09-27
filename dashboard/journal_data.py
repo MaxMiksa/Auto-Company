@@ -286,8 +286,11 @@ class JournalSource:
         registered = registered_artifacts(self) if registered is None else registered
         if self.scope:
             allowed = self.scoped_cycle_ids()
-            return [item for item in registered if item.get("associationStatus") == "bound"
-                    and (allowed is None or item.get("cycleId") in allowed)]
+            return [item for item in registered
+                    if (item.get("associationStatus") == "bound"
+                        and (allowed is None or item.get("cycleId") in allowed))
+                    or (item.get("kind") == "preview" and item.get("associationStatus") == "product"
+                        and self.scope.product_id and item.get("productId") == self.scope.product_id)]
         # Root DELIVERY.md was the legacy archive convention. Once a product is
         # explicitly selected, only identity-bound runner records may surface.
         if self.project()["id"]:
@@ -517,7 +520,8 @@ class JournalSource:
             return ""
 
     def snapshot(self, *, status: dict[str, Any] | None = None,
-                 language_state: dict[str, Any] | None = None) -> dict[str, Any]:
+                 language_state: dict[str, Any] | None = None,
+                 detail_cycle_id: str | None = None) -> dict[str, Any]:
         generated = datetime.now(timezone.utc)
         generated_at = generated.isoformat()
         records, warnings = self.ledger()
@@ -625,7 +629,11 @@ class JournalSource:
             current = next((cycle for cycle in cycles if cycle["id"] == runtime["currentCycleId"]), None)
             if current:
                 runtime["currentCycleNumber"] = current["number"]
-        for cycle in cycles[:30]:
+        # On-demand history uses the same identity and artifact checks as the
+        # initial detail window, before limited rows receive placeholder data.
+        for index, cycle in enumerate(cycles):
+            if index >= 30 and cycle["id"] != detail_cycle_id:
+                continue
             cycle["detailStatus"] = "recorded"
             cycle.update(read_report(self, cycle))
             cycle.update(cycle_events(self, cycle))
@@ -684,6 +692,8 @@ class JournalSource:
         if len(cycles) > 30:
             warnings.append("cycle_details_truncated")
         for cycle in cycles[30:]:
+            if cycle["id"] == detail_cycle_id:
+                continue
             recorded_project = cycle.get("projectId")
             cycle.update({"detailStatus": "limited", "projectIdentity": {
                               "project": recorded_project, "status": "recorded" if recorded_project else "not_loaded",

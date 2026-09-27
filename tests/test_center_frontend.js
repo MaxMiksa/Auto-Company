@@ -20,7 +20,7 @@ function helpers() {
   vm.runInContext(i18n, context);
   const binding = app.lastIndexOf("\n  applyLanguage(); wire(); renderPage(); refresh();");
   assert.ok(binding > 0, "Center event wiring must follow helper declarations");
-  vm.runInContext(app.slice(0, binding) + "\n globalThis.center = { state, message, entryState, capability, capabilityReason, errorText, requestReason, requestIsFresh, executionBlockReason, requestDisplayState, normalizeCounts, renderCounts, filteredEntries, emptyListState, requestState, statusLabel, write };\n})();", context);
+  vm.runInContext(app.slice(0, binding) + "\n globalThis.center = { state, message, entryState, capability, capabilityReason, errorText, requestReason, requestIsFresh, executionBlockReason, requestDisplayState, requestOwnsDispatch, normalizeCounts, renderCounts, filteredEntries, emptyListState, requestState, statusLabel, write };\n})();", context);
   context.center.state.language = "en";
   return { ...context.center, messages: context.window.CENTER_MESSAGES, context };
 }
@@ -33,7 +33,7 @@ function journalHelpers() {
   vm.runInContext(fs.readFileSync(path.join(dashboard, "i18n.js"), "utf8"), context);
   const binding = journalApp.indexOf("\n  document.querySelectorAll('[data-tab]')");
   assert.ok(binding > 0, "Journal event wiring must follow helper declarations");
-  vm.runInContext(journalApp.slice(0, binding) + "\n globalThis.journal = { state, scope, freshCenterRequest, centerRequestDisplayState, scopedCenterRuntimeState, scopedRecordedRuntimeState, runtimeStateValue, runtimeStatusLabel, runtimeLabel, requestContextLabel, centerRuntimeContextValue, historyGroups, explorationScope, explorationPageMatches, resetExploration, explorationRequestMatches };\n})();", context);
+  vm.runInContext(journalApp.slice(0, binding) + "\n globalThis.journal = { state, scope, freshCenterRequest, centerRequestDisplayState, scopedCenterRuntimeState, scopedRecordedRuntimeState, runtimeStateValue, runtimeStatusLabel, runtimeLabel, requestContextLabel, centerRuntimeContextValue, historyGroups, explorationScope, explorationPageMatches, resetExploration, explorationRequestMatches, journalPageMatches, safePreviewURL };\n})();", context);
   context.journal.state.language = "en";
   return context.journal;
 }
@@ -309,7 +309,7 @@ test("standalone exploration keeps its own cycles in the main journal", () => {
 });
 
 test("center actions use the versioned envelope routes and explicit write preconditions", () => {
-  for (const route of ["/summary", "/entries?filter=all&sort=activity&limit=100", "/requests?limit=100", "/imports/probe", "/imports/commit", "/explorations", "/queue/order", "/queue/stop-all", "/preferences"]) {
+  for (const route of ["/summary", "/entries?filter=all&sort=activity&limit=100", "/requests?limit=100", "/operations", "/imports/probe", "/imports/commit", "/explorations", "/queue/order", "/queue/stop-all", "/preferences"]) {
     assert.ok(app.includes(route), `Missing route ${route}`);
   }
   assert.match(app, /expectedSourceRevision: entry\.sourceRevision/);
@@ -343,15 +343,71 @@ test("uncertain transport retries reuse an intent key until success", async () =
 test("product detail routes are entry scoped while the legacy journal stays unchanged", () => {
   assert.match(journalHTML, /id="productSwitcherDialog"/);
   assert.match(journalApp, /\^\\\/products\\\/\(\[\^\/\]\+\)/);
-  assert.match(journalApp, /fetchCenter\(scopedJournalPath\('\/journal'\)\)/);
+  assert.match(journalApp, /fetchFullScopedJournal\(\)/);
+  assert.match(journalApp, /scopedJournalPath\('\/journal'\).*limit=100/);
+  assert.match(journalApp, /scopedJournalPath\('\/usage'\).*period=/);
   assert.match(journalApp, /fetchScopedText\(id === 'runtime' \? state\.data\.runtimeLogUrl : cycle\?\.logUrl/);
   assert.match(journalApp, /else await fetchJSON\('\/api\/product-media\/capture'/);
   assert.ok(journalApp.includes("else await fetchJSON('/api/product-media/capture'"));
-  assert.ok(journalApp.includes("scope.center ? await Promise.all([fetchCenter(scopedJournalPath('/journal')), fetchCenter('/summary')]) : null"));
+  assert.ok(journalApp.includes("scope.center ? await Promise.all([fetchFullScopedJournal(), fetchCenter('/summary')]) : null"));
   assert.match(journalApp, /fetchAllCenterEntries\(\)/);
   assert.match(journalApp, /engine: recordedCycle\?\.engine \|\| 'unknown'/);
   assert.match(journalApp, /reasoning: recordedCycle\?\.observedConfig\?\.reasoning \|\| 'unknown'/);
   assert.match(journalApp, /state\.data\?\.entry\?\.sourceRecordRevision/);
+});
+
+test("blank exploration direction stays a string and preparations survive refresh", () => {
+  assert.match(app, /direction: text\(form\.elements\.direction\.value\)/);
+  assert.doesNotMatch(app, /direction: text\(form\.elements\.direction\.value\) \|\| null/);
+  assert.match(app, /state\.operations = operations\.items/);
+  assert.match(app, /groups\.operationAttention/);
+  assert.match(app, /preparationAttentionSection/);
+});
+
+test("owned attention dispatches retain stop controls", () => {
+  const { requestOwnsDispatch } = helpers();
+  assert.equal(requestOwnsDispatch({ state: "attention", dispatchId: "dispatch-a" }), true);
+  assert.equal(requestOwnsDispatch({ state: "attention", dispatchId: null }), false);
+  assert.equal(requestOwnsDispatch({ state: "queued", dispatchId: "dispatch-a" }), false);
+  assert.match(app, /groups\.attention\.some\(requestOwnsDispatch\)/);
+});
+
+test("refreshable product and queue controls have stable focus identities", () => {
+  for (const value of ["entry:${entry.entryId}:view", "entry:${entry.entryId}:continue-inline", "entry:${entry.entryId}:continue-menu", "request:${request.requestId}:cancel", "request:${request.requestId}:stop"]) {
+    assert.ok(app.includes(value), `Missing stable focus key ${value}`);
+  }
+  assert.match(app, /const focused = rememberFocus\(\);[\s\S]*restoreFocus\(focused\)/);
+});
+
+test("preview links require exact product ownership and a separate loopback origin", () => {
+  const { state, safePreviewURL } = journalHelpers();
+  const id = "a".repeat(32);
+  state.data = { project: { stableId: id } };
+  const artifact = { kind: "preview", available: true, productId: id, url: "http://127.0.0.1:8765/" };
+  assert.equal(safePreviewURL(artifact), artifact.url);
+  for (const invalid of [
+    { ...artifact, productId: "b".repeat(32) },
+    { ...artifact, available: false },
+    { ...artifact, url: "http://127.0.0.1:8843/" },
+    { ...artifact, url: "https://127.0.0.1:8765/" },
+    { ...artifact, url: "http://localhost:8765/" },
+  ]) assert.equal(safePreviewURL(invalid), null);
+});
+
+test("journal page identity includes source revision and cycle list", () => {
+  const { journalPageMatches } = journalHelpers();
+  const expected = { entryId: "entry-a", sourceId: "source-a", sourceRevision: 7 };
+  assert.equal(journalPageMatches({ ...expected, cycles: [] }, expected), true);
+  assert.equal(journalPageMatches({ ...expected, sourceRevision: 8, cycles: [] }, expected), false);
+  assert.equal(journalPageMatches({ ...expected, cycles: null }, expected), false);
+});
+
+test("limited journal rows load detail within the same source snapshot", () => {
+  assert.match(journalApp, /detailStatus === 'limited'/);
+  assert.match(journalApp, /scopedJournalPath\(`\/records\/\$\{encodeURIComponent\(cycleId\)\}`\)/);
+  assert.match(journalApp, /expected\.token !== state\.detailToken/);
+  assert.match(journalApp, /detail\?\.entryId !== expected\.entryId/);
+  assert.match(journalApp, /detail\?\.sourceRevision !== expected\.sourceRevision/);
 });
 
 test("center markup uses native dialogs and keeps the queue drawer initially off-canvas", () => {
