@@ -184,6 +184,8 @@ jobs:
         run: python3 scripts/ci/run.py shell-contracts-5 bash tests/test_auto_loop_integration.sh
       - name: Verify real frontend script against deterministic API fixtures
         run: python3 scripts/ci/run.py shell-contracts-6 node tests/test_dashboard_frontend.js
+      - name: Verify product center frontend contracts
+        run: python3 scripts/ci/run.py center-frontend node tests/test_center_frontend.js
       - name: Verify published example logic and syntax
         run: |
           python3 scripts/ci/run.py showcase-core node --test projects/scopefence/tests/scopefence-core.test.mjs projects/text-meter/tests/counts.test.js

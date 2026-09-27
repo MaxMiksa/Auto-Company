@@ -62,6 +62,32 @@ daemon (launchd / systemd --user, auto-restart on crash)
 
 Each cycle is an independent CLI call. `memories/consensus.md` is the main work summary loaded for the next cycle. Product files, repositories, configuration, identity records, logs, and usage data also persist across cycles.
 
+## 🗂️ Product Center
+
+The local Product Center brings explicitly connected product runs into one catalog. Switching products changes only what you are viewing; importing an existing run starts as read-only and never starts a model by itself.
+
+| Capability | What it does |
+|---|---|
+| Product catalog | Search and open connected products while keeping each product's identity, history, usage and recorded outcomes separate. |
+| Safe import | Connect an existing run or source for read-only review first; incompatible or incomplete sources stay unavailable for execution. |
+| Explicit work requests | Continue a product or prepare a new exploration only after you submit a request. Viewing and refreshing do not create work. |
+| One ordered queue | One managed slot runs requests in order. A request keeps the slot for its full continuous loop and cleanup, rather than switching products after each cycle. |
+| Visible recovery | Preparation, failures, protective pauses and uncertain states remain visible after reload so you can review them before retrying or resuming the queue. |
+
+Start it from the repository, then open `http://127.0.0.1:8810/center`:
+
+```bash
+# macOS / WSL
+make center
+```
+
+```powershell
+# Windows PowerShell
+.\scripts\windows\center-win.ps1
+```
+
+See the [Product Center guide](docs/product-center.md) for source registration, execution-domain setup, queue controls and recovery behavior.
+
 ## Generated Applications
 
 These three local products come from actual runs and appear in both README languages. ScopeFence and Scope Sheet chose their directions through the default workflow; Text Meter came from an ordinary text-counting request. Humans set permissions, language and external run boundaries, then reviewed and made necessary publication fixes documented in each project. Product images show the actual default interfaces of the published source; the Dashboards above retain the original reports and failures.
@@ -194,6 +220,7 @@ For monitoring, dashboard, and autostart commands, see the [Windows + WSL Setup 
 | Cycle summary | `make cycles` | `.\scripts\windows\cycles-win.ps1` |
 | Stop | Foreground: `make stop`; daemon: `make pause` | `.\scripts\windows\stop-win.ps1` |
 | Web dashboard | `make dashboard` | `.\scripts\windows\dashboard-win.ps1` |
+| [Product center](docs/product-center.md) | `make center` | `.\scripts\windows\center-win.ps1` |
 | Install daemon | `make install` | Auto-installed/started by `start-win.ps1` |
 | Uninstall daemon | `make uninstall` | `wsl -d Ubuntu --cd <repo_wsl_path> bash -lc 'make uninstall'` |
 | Pause daemon | `make pause` | `wsl -d Ubuntu --cd <repo_wsl_path> bash -lc 'make pause'` |

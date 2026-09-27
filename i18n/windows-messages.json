@@ -7,6 +7,10 @@
     "en": "Failed to convert repository path to WSL path.",
     "zh-CN": "无法将仓库路径转换为 WSL 路径。"
   },
+  "This runtime is managed by the product center. Use the center controls.": {
+    "en": "This runtime is managed by the product center. Use the center controls.",
+    "zh-CN": "此运行目录由产品中心管理，请在产品中心操作。"
+  },
   "WSL command failed ({0}): {1}": {
     "en": "WSL command failed ({0}): {1}",
     "zh-CN": "WSL 命令失败（{0}）：{1}"

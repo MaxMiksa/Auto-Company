@@ -713,6 +713,17 @@ button:focus:not(:focus-visible), main:focus {
   margin-top: 4px;
 }
 
+.exploration-message {
+  margin: 8px 0 12px var(--body-start);
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.exploration-retry {
+  margin: 0 0 16px var(--body-start);
+  font-size: 12px;
+}
+
 .exploration-list .history-number {
   font-size: 13px;
   letter-spacing: 0;
@@ -1580,7 +1591,7 @@ dialog .runtime-details {
   color: #356448;
 }
 
-.runtime-state[data-state=unavailable], .runtime-state[data-state=failed], .runtime-state[data-state=circuit_break] {
+.runtime-state[data-state=unavailable], .runtime-state[data-state=failed], .runtime-state[data-state=attention], .runtime-state[data-state=circuit_break] {
   color: var(--danger);
 }
 
@@ -1824,4 +1835,42 @@ dialog .runtime-details {
 /* Keep the journal connected when the media sidebar is taller than its records. */
 @media(min-width:761px) {
   .journal-layout { grid-template-rows: min-content minmax(0, 1fr); }
+}
+
+/* Product Center detail context. The journal itself keeps its established layout. */
+.center-context-nav {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  margin-right: auto;
+}
+.center-context-nav[hidden] { display: none; }
+.center-back-link { color: var(--accent); font-size: 13px; font-weight: 650; text-decoration: none; }
+.center-back-link::after { content: "/"; margin-left: 13px; color: var(--line-strong); }
+.product-switcher-button { min-width: 0; max-width: 260px; display: inline-flex; align-items: center; gap: 7px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 3px; background: #fff; color: var(--ink); font-weight: 650; cursor: pointer; }
+.product-switcher-button span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.center-runtime-context { overflow: hidden; max-width: 360px; color: var(--muted); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.product-switcher-dialog { width: min(520px, calc(100vw - 32px)); padding: 24px; }
+.product-switcher-dialog .dialog-header { margin-bottom: 17px; }
+.switcher-search { display: block; margin-bottom: 10px; }
+.switcher-search input { width: 100%; min-height: 43px; padding: 9px 12px; border: 1px solid var(--line); border-radius: 3px; }
+.product-switcher-list { max-height: min(56vh, 480px); overflow-y: auto; border-top: 1px solid var(--line); }
+.product-switcher-option { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 13px 4px; border-bottom: 1px solid var(--line); color: var(--ink); text-decoration: none; }
+.product-switcher-option:hover, .product-switcher-option:focus { background: var(--surface); }
+.product-switcher-option > span:first-child { min-width: 0; display: grid; gap: 3px; }
+.product-switcher-option strong, .product-switcher-option small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.product-switcher-option small { color: var(--muted); }
+.switcher-current { flex: 0 0 auto; color: var(--accent); font-size: 12px; font-weight: 650; }
+
+@media(max-width:760px) {
+  .topbar { flex-wrap: wrap; }
+  .center-context-nav { order: 3; width: 100%; padding: 0 0 10px; }
+  .center-runtime-context { margin-left: auto; }
+  .product-switcher-button { max-width: min(52vw, 230px); }
+}
+
+@media(max-width:420px) {
+  .center-runtime-context { display: none; }
+  .product-switcher-button { max-width: 58vw; }
 }

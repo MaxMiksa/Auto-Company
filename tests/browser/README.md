@@ -23,6 +23,13 @@ cycle/log identity, incomplete usage, untrusted reports, keyboard navigation and
 narrow layouts. Failure scenarios are deliberately injected at the host or HTTP
 boundary; normal requests use the real server.
 
+Product-center regressions also cover six-round history and usage, older recorded
+details, optional exploration directions, preparation failures after reload,
+owned attention stop controls, and refresh focus. Their isolated center uses real
+catalog and HTTP handlers with a fake execution adapter; the clone worker and
+preview health are injected. These fixtures do not verify a live model or preview
+process and are not product showcase screenshots.
+
 Python defaults to `python` on Windows and `python3` elsewhere. Set
 `AUTO_COMPANY_BROWSER_PYTHON` to an executable path if needed. Tests run serially
 without automatic retries. Failures retain screenshots, traces and server logs

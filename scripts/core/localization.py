@@ -333,6 +333,9 @@ def _start_product(root, environ=None):
 
 
 def interactive_team(root, engine):
+    center_marker = Path(root) / ".auto-company-center.json"
+    if center_marker.exists() or center_marker.is_symlink():
+        raise LanguageLockedError("This runtime is managed by the product center. Use the center controls.")
     if engine not in ("claude", "codex"):
         raise ValueError("interactive engine must be claude or codex")
     executable = shutil.which(engine)

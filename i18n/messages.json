@@ -227,6 +227,10 @@
     "en": "No log file yet. Start the loop first: make start",
     "zh-CN": "尚无日志文件。请先运行 make start 启动循环。"
   },
+  "center.managed": {
+    "en": "This runtime is managed by the product center. Use the center controls.",
+    "zh-CN": "此运行目录由产品中心管理，请在产品中心操作。"
+  },
   "make.paused": {
     "en": "auto-company.service paused (stopped).",
     "zh-CN": "auto-company.service 已暂停（已停止）。"
@@ -286,6 +290,10 @@
   "help.dashboard": {
     "en": "Start local dashboard server (Windows, Linux/WSL, or macOS)",
     "zh-CN": "启动本地 Dashboard（Windows、Linux/WSL 或 macOS）"
+  },
+  "help.center": {
+    "en": "Open the local multi-product center",
+    "zh-CN": "打开本地多产品管理中心"
   },
   "help.test-process-supervisor": {
     "en": "Test cycle-owned process-tree cleanup with fake engines",

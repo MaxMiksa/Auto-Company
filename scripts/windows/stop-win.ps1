@@ -5,6 +5,10 @@ param(
 $ErrorActionPreference = "Stop"
 . (Join-Path $PSScriptRoot "messages-win.ps1")
 
+if (Get-Item -LiteralPath (Join-Path $PSScriptRoot '../../.auto-company-center.json') -Force -ErrorAction SilentlyContinue) {
+    throw (Get-AutoCompanyMessage -Key 'This runtime is managed by the product center. Use the center controls.')
+}
+
 function Assert-WslAvailable {
     if (-not (Get-Command wsl.exe -ErrorAction SilentlyContinue)) {
         throw (Get-AutoCompanyMessage -Key 'wsl.exe not found. Enable WSL first.')

@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light">
+    <title>Auto Company · 产品</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="/center.css">
+    <script src="/center-i18n.js" defer></script>
+    <script src="/center.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#centerMain" data-i18n="skip">跳至产品列表</a>
+    <header class="center-header">
+      <div class="header-inner">
+        <a class="brand" href="/center">AUTO COMPANY</a>
+        <nav class="primary-nav" aria-label="主导航" data-i18n-aria="primaryNav">
+          <a href="/center" aria-current="page" data-i18n="products">产品</a>
+          <button id="queueNavButton" class="nav-button" type="button" aria-controls="queueDrawer" aria-expanded="false">
+            <span data-i18n="queue">工作队列</span><span id="queueNavCount" class="nav-count" hidden></span>
+          </button>
+        </nav>
+        <button id="settingsButton" class="header-button" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.83 2.83-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6 1.7 1.7 0 0 0-.4 1.1V21H9.6v-.09A1.7 1.7 0 0 0 8.5 19.4a1.7 1.7 0 0 0-1.88.34l-.06.06-2.83-2.83.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-.6-1 1.7 1.7 0 0 0-1.1-.4H3V9.6h.09A1.7 1.7 0 0 0 4.6 8.5a1.7 1.7 0 0 0-.34-1.88l-.06-.06 2.83-2.83.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-.6 1.7 1.7 0 0 0 .4-1.1V3h4v.09A1.7 1.7 0 0 0 15.5 4.6a1.7 1.7 0 0 0 1.88-.34l.06-.06 2.83 2.83-.06.06A1.7 1.7 0 0 0 19.4 9c.14.38.35.72.6 1 .29.31.68.49 1.1.5h.09v4h-.09A1.7 1.7 0 0 0 19.4 15Z"></path></svg><span data-i18n="settings">设置</span></button>
+      </div>
+    </header>
+
+    <main id="centerMain" class="center-main" tabindex="-1">
+      <div id="connectionNotice" class="connection-notice" role="alert" hidden></div>
+      <section class="page-intro" aria-labelledby="pageTitle">
+        <div>
+          <p class="eyebrow" data-i18n="workspace">本机产品中心</p>
+          <h1 id="pageTitle" data-i18n="products">产品</h1>
+          <p data-i18n="subtitle">查看产品进展与成果</p>
+        </div>
+        <div class="intro-actions">
+          <button id="importButton" class="button secondary" type="button" data-i18n="importProduct">接入已有产品</button>
+          <button id="newWorkButton" class="button primary" type="button" data-i18n="newWork">新建工作</button>
+        </div>
+      </section>
+
+      <section id="activityStrip" class="activity-strip" aria-labelledby="activityHeading">
+        <div id="activityIcon" class="activity-icon" aria-hidden="true"></div>
+        <div class="activity-copy">
+          <span id="activityHeading" class="activity-label" data-i18n="currentWork">当前工作</span>
+          <strong id="activityTitle" data-i18n="noCurrentWork">当前没有正在执行的工作</strong>
+          <span id="activityDetail"></span>
+        </div>
+        <a id="activityLink" class="text-link" href="#" hidden data-i18n="viewWork">查看工作记录</a>
+      </section>
+
+      <section class="catalog" aria-labelledby="catalogHeading">
+        <h2 id="catalogHeading" class="visually-hidden" data-i18n="productList">产品列表</h2>
+        <div class="catalog-tools">
+          <label class="search-field" for="productSearch">
+            <span class="visually-hidden" data-i18n="searchProducts">搜索产品</span>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg>
+            <input id="productSearch" type="search" autocomplete="off" data-i18n-placeholder="searchProducts" placeholder="搜索产品">
+          </label>
+          <div id="filters" class="filters" role="group" aria-label="筛选产品" data-i18n-aria="filterProducts">
+            <button type="button" class="filter-button" data-filter="all" aria-pressed="true"><span data-i18n="filterAll">全部</span><span id="countAll"></span></button>
+            <button type="button" class="filter-button" data-filter="running" aria-pressed="false"><span data-i18n="filterRunning">正在工作</span><span id="countRunning"></span></button>
+            <button type="button" class="filter-button" data-filter="queued" aria-pressed="false"><span data-i18n="filterQueued">已排队</span><span id="countQueued"></span></button>
+            <button type="button" class="filter-button" data-filter="attention" aria-pressed="false"><span data-i18n="filterAttention">需要处理</span><span id="countAttention"></span></button>
+            <button type="button" class="filter-button" data-filter="archived" aria-pressed="false"><span data-i18n="filterArchived">归档</span><span id="countArchived"></span></button>
+          </div>
+        </div>
+
+        <div class="product-table" role="table" aria-label="产品" data-i18n-aria="productList">
+          <div class="product-head" role="row">
+            <span role="columnheader" data-i18n="product">产品</span>
+            <span role="columnheader" data-i18n="recentWork">最近工作</span>
+            <span role="columnheader" data-i18n="status">状态</span>
+            <span role="columnheader" data-i18n="recentActivity">最近活动</span>
+            <span role="columnheader" class="visually-hidden" data-i18n="actions">操作</span>
+          </div>
+          <div id="productRows" role="rowgroup"></div>
+        </div>
+        <div id="listState" class="list-state" role="status"></div>
+        <div class="catalog-footer">
+          <button id="explorationLink" class="text-link button-link" type="button" data-filter-target="exploration" data-i18n="unformedExplorations">尚未立项的探索</button>
+          <button id="referenceLink" class="text-link button-link" type="button" data-filter-target="reference" data-i18n="viewReferences">查看参考源码</button>
+          <button id="archiveLink" class="text-link button-link" type="button" data-filter-target="archived" data-i18n="viewArchive">查看归档</button>
+          <span id="observedAt" class="observed-at"></span>
+        </div>
+      </section>
+    </main>
+
+    <div id="drawerBackdrop" class="drawer-backdrop" hidden></div>
+    <aside id="queueDrawer" class="queue-drawer" role="dialog" aria-modal="true" aria-labelledby="queueTitle" aria-hidden="true" tabindex="-1">
+      <div class="drawer-header">
+        <h2 id="queueTitle" data-i18n="queue">工作队列</h2>
+        <button id="closeQueueButton" class="icon-button" type="button" aria-label="关闭" data-i18n-aria="close">×</button>
+      </div>
+      <div class="queue-control">
+        <div>
+          <strong id="dispatchLabel"></strong>
+          <p id="dispatchHint"></p>
+        </div>
+        <button id="dispatchButton" class="button secondary" type="button"></button>
+      </div>
+      <div id="queueContent" class="queue-content"></div>
+      <div class="drawer-footer">
+        <button id="stopAllButton" class="text-button danger" type="button" data-i18n="stopAll">全部停止</button>
+        <button id="queueHistoryButton" class="text-link button-link" type="button" data-i18n="viewHistory">查看历史请求</button>
+      </div>
+    </aside>
+
+    <dialog id="newWorkDialog" aria-labelledby="newWorkTitle">
+      <form id="newWorkForm" method="dialog" class="dialog-form">
+        <header class="dialog-header"><div><p class="eyebrow" data-i18n="newExploration">新探索</p><h2 id="newWorkTitle" data-i18n="newWork">新建工作</h2></div><button class="icon-button dialog-close" type="button" aria-label="关闭" data-i18n-aria="close">×</button></header>
+        <p data-i18n="newWorkIntro">先创建独立探索空间，再按所选方式安排执行。</p>
+        <label><span data-i18n="direction">方向（可选）</span><textarea name="direction" rows="4" maxlength="1000" data-i18n-placeholder="directionPlaceholder" placeholder="描述你希望探索的方向，也可以留空"></textarea></label>
+        <p class="inline-notice" data-i18n="newWorkDispatchNotice">方向留空会采用自主探索；加入队列后，队列开启时可能自动开始。</p>
+        <div class="form-grid">
+          <label><span data-i18n="engine">引擎</span><input name="engine" autocomplete="off"></label>
+          <label><span data-i18n="model">模型</span><input name="model" autocomplete="off"></label>
+          <label><span data-i18n="reasoning">推理强度</span><select name="effort"><option value="low">low</option><option value="medium">medium</option><option value="high">high</option><option value="xhigh">xhigh</option></select></label>
+          <label><span data-i18n="productLanguage">产品语言</span><select name="productLanguage"><option value="zh-CN">简体中文</option><option value="en">English</option></select></label>
+        </div>
+        <fieldset><legend data-i18n="executionChoice">提交方式</legend><label class="radio-row"><input type="radio" name="executionMode" value="enqueue" checked><span><strong data-i18n="addToQueue">加入队列</strong><small data-i18n="addToQueueHint">队列开启时按顺序执行</small></span></label><label class="radio-row"><input type="radio" name="executionMode" value="start_now"><span><strong data-i18n="startNow">空闲时立即开始</strong><small data-i18n="startNowHint">仅在没有活动任务或更早等待项时可用</small></span></label></fieldset>
+        <p class="form-status" role="status" aria-live="polite"></p>
+        <footer class="dialog-actions"><button class="button secondary dialog-close" type="button" data-i18n="cancel">取消</button><button class="button primary" type="submit" data-i18n="prepareWork">准备工作</button></footer>
+      </form>
+    </dialog>
+
+    <dialog id="continueDialog" aria-labelledby="continueTitle">
+      <form id="continueForm" method="dialog" class="dialog-form">
+        <header class="dialog-header"><div><p class="eyebrow" data-i18n="existingProduct">已有产品</p><h2 id="continueTitle" data-i18n="continueWork">继续工作</h2></div><button class="icon-button dialog-close" type="button" aria-label="关闭" data-i18n-aria="close">×</button></header>
+        <p id="continueProduct"></p>
+        <div id="continueCapability" class="inline-notice" hidden></div>
+        <div class="form-grid">
+          <label><span data-i18n="engine">引擎</span><input name="engine" autocomplete="off"></label>
+          <label><span data-i18n="model">模型</span><input name="model" autocomplete="off"></label>
+          <label><span data-i18n="reasoning">推理强度</span><select name="effort"><option value="low">low</option><option value="medium">medium</option><option value="high">high</option><option value="xhigh">xhigh</option></select></label>
+          <label><span data-i18n="productLanguage">产品语言</span><input name="productLanguage" readonly></label>
+        </div>
+        <fieldset><legend data-i18n="executionChoice">提交方式</legend><label class="radio-row"><input type="radio" name="executionMode" value="enqueue" checked><span><strong data-i18n="addToQueue">加入队列</strong><small data-i18n="addToQueueHint">队列开启时按顺序执行</small></span></label><label class="radio-row"><input type="radio" name="executionMode" value="start_now"><span><strong data-i18n="startNow">空闲时立即开始</strong><small data-i18n="startNowHint">仅在没有活动任务或更早等待项时可用</small></span></label></fieldset>
+        <p class="form-status" role="status" aria-live="polite"></p>
+        <footer class="dialog-actions"><button class="button secondary dialog-close" type="button" data-i18n="cancel">取消</button><button class="button primary" type="submit" data-i18n="createRequest">安排工作</button></footer>
+      </form>
+    </dialog>
+
+    <dialog id="importDialog" aria-labelledby="importTitle">
+      <form id="importForm" method="dialog" class="dialog-form">
+        <header class="dialog-header"><div><p class="eyebrow" data-i18n="readOnlyProbe">只读探测</p><h2 id="importTitle" data-i18n="importProduct">接入已有产品</h2></div><button class="icon-button dialog-close" type="button" aria-label="关闭" data-i18n-aria="close">×</button></header>
+        <p data-i18n="importIntro">先读取目录身份与能力；不会执行目录中的脚本或启动产品。</p>
+        <label><span data-i18n="folderPath">目录</span><input name="root" required autocomplete="off" spellcheck="false" data-i18n-placeholder="folderPlaceholder" placeholder="输入本机目录路径"></label>
+        <fieldset><legend data-i18n="connectionType">登记方式</legend><label class="radio-row"><input type="radio" name="mode" value="readonly" checked><span><strong data-i18n="readOnlyProduct">只读产品档案</strong><small data-i18n="readOnlyProductHint">保留已有产品身份与工作记录，不自动接管执行。</small></span></label><label class="radio-row"><input type="radio" name="mode" value="reference"><span><strong data-i18n="referenceOnly">仅参考源码</strong><small data-i18n="referenceOnlyHint">只登记源码与 README 摘要，不计入产品，也不可执行。</small></span></label></fieldset>
+        <div id="probeResult" class="probe-result" hidden></div>
+        <p class="form-status" role="status" aria-live="polite"></p>
+        <footer class="dialog-actions"><button class="button secondary dialog-close" type="button" data-i18n="cancel">取消</button><button id="probeButton" class="button primary" type="submit" data-i18n="probe">检查目录</button><button id="commitImportButton" class="button primary" type="button" hidden data-i18n="confirmImport">确认接入</button></footer>
+      </form>
+    </dialog>
+
+    <dialog id="sourceDialog" aria-labelledby="sourceTitle">
+      <div class="dialog-form source-dialog">
+        <header class="dialog-header"><div><p class="eyebrow" data-i18n="sourceManagement">来源管理</p><h2 id="sourceTitle" data-i18n="manageSources">管理来源</h2></div><button class="icon-button dialog-close" type="button" aria-label="关闭" data-i18n-aria="close">×</button></header>
+        <p id="sourceProduct"></p>
+        <div id="sourceManagerBody"></div>
+        <p id="sourceManagerStatus" class="form-status" role="status" aria-live="polite"></p>
+        <footer class="dialog-actions"><button class="button secondary dialog-close" type="button" data-i18n="close">关闭</button></footer>
+      </div>
+    </dialog>
+
+    <dialog id="settingsDialog" aria-labelledby="settingsTitle">
+      <form id="settingsForm" method="dialog" class="dialog-form">
+        <header class="dialog-header"><div><p class="eyebrow" data-i18n="centerSettings">中心设置</p><h2 id="settingsTitle" data-i18n="settings">设置</h2></div><button class="icon-button dialog-close" type="button" aria-label="关闭" data-i18n-aria="close">×</button></header>
+        <label><span data-i18n="centerLanguage">中心界面语言</span><select name="language"><option value="zh-CN">简体中文</option><option value="en">English</option></select><small data-i18n="centerLanguageHint">只改变产品中心固定文字，不翻译产品记录。</small></label>
+        <hr>
+        <h3 data-i18n="newWorkDefaults">新工作的默认值</h3>
+        <div class="form-grid"><label><span data-i18n="engine">引擎</span><input name="engine" autocomplete="off"></label><label><span data-i18n="model">模型</span><input name="model" autocomplete="off"></label><label><span data-i18n="reasoning">推理强度</span><select name="effort"><option value="low">low</option><option value="medium">medium</option><option value="high">high</option><option value="xhigh">xhigh</option></select></label><label><span data-i18n="productLanguage">新产品语言</span><select name="productLanguage"><option value="zh-CN">简体中文</option><option value="en">English</option></select></label></div>
+        <p class="form-status" role="status" aria-live="polite"></p>
+        <footer class="dialog-actions"><button class="button secondary dialog-close" type="button" data-i18n="cancel">取消</button><button class="button primary" type="submit" data-i18n="save">保存</button></footer>
+      </form>
+    </dialog>
+
+    <dialog id="confirmDialog" aria-labelledby="confirmTitle">
+      <form id="confirmForm" method="dialog" class="dialog-form compact-dialog">
+        <header class="dialog-header"><h2 id="confirmTitle"></h2><button class="icon-button dialog-close" type="button" aria-label="关闭" data-i18n-aria="close">×</button></header>
+        <p id="confirmMessage"></p>
+        <p class="form-status" role="status" aria-live="polite"></p>
+        <footer class="dialog-actions"><button class="button secondary dialog-close" type="button" data-i18n="cancel">取消</button><button id="confirmActionButton" class="button primary" type="submit" data-i18n="confirm">确认</button></footer>
+      </form>
+    </dialog>
+    <p id="globalStatus" class="global-status" role="status" aria-live="polite" hidden></p>
+  </body>
+</html>

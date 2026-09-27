@@ -63,6 +63,10 @@ monitor: ## Tail live logs (Ctrl+C to exit)
 dashboard: ## Start local dashboard server (Windows, Linux/WSL, or macOS)
 	python3 dashboard/server.py
 
+.PHONY: center
+center: ## Open the multi-product center (explicitly register sources in its UI)
+	python3 dashboard/center_server.py
+
 test-process-supervisor: ## Test cycle-owned process-tree cleanup with fake engines
 	bash tests/test_process_supervisor.sh
 
@@ -96,6 +100,7 @@ else
 endif
 
 resume: ## Resume paused daemon
+	@test ! -e .auto-company-center.json -a ! -L .auto-company-center.json || (bash scripts/core/ui-messages.sh center.managed; exit 1)
 ifeq ($(UNAME_S),Darwin)
 	python3 ./scripts/core/usage.py resume
 	./scripts/core/stop-loop.sh --resume-daemon

@@ -29,6 +29,10 @@ param(
 $ErrorActionPreference = "Stop"
 . (Join-Path $PSScriptRoot "messages-win.ps1")
 
+if (Get-Item -LiteralPath (Join-Path $PSScriptRoot '../../.auto-company-center.json') -Force -ErrorAction SilentlyContinue) {
+    throw (Get-AutoCompanyMessage -Key 'This runtime is managed by the product center. Use the center controls.')
+}
+
 function ConvertTo-RuntimeLanguage {
     param([ValidateSet("zh-CN", "en")][string]$Value)
     # PowerShell ValidateSet accepts case variants; the runtime uses canonical tags.

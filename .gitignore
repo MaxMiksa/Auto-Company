@@ -218,6 +218,8 @@ docs/*/*
 !docs/runtime-observability.md
 !docs/product-media.md
 !docs/product-cycles.md
+!docs/product-center.md
+.auto-company-center.json
 # Ignore all memories (keep folder marker only)
 memories/*
 !memories/.gitkeep

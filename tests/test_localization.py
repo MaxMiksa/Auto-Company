@@ -160,6 +160,18 @@ class LocalizationTests(unittest.TestCase):
         self.assertEqual(state["language"], initial["language"])
         self.assertEqual(LOCALIZATION.start_product(self.root), state)
 
+    def test_managed_root_blocks_interactive_team_before_config_or_engine(self):
+        (self.root / ".auto-company-center.json").write_text("{}")
+        before = {str(path.relative_to(self.root)): path.read_bytes() for path in self.root.rglob("*") if path.is_file()}
+        with mock.patch.object(LOCALIZATION.shutil, "which") as executable, \
+                mock.patch.object(LOCALIZATION.subprocess, "run") as run:
+            with self.assertRaises(LOCALIZATION.LanguageLockedError):
+                LOCALIZATION.interactive_team(self.root, "claude")
+            executable.assert_not_called()
+            run.assert_not_called()
+        after = {str(path.relative_to(self.root)): path.read_bytes() for path in self.root.rglob("*") if path.is_file()}
+        self.assertEqual(after, before)
+
     def test_interactive_session_blocks_transition_and_inherits_pin(self):
         LOCALIZATION.set_language(self.root, "en")
 

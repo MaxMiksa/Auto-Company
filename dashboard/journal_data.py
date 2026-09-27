@@ -7,6 +7,7 @@ work report, not proof of a running process or a stream of agent activity.
 from __future__ import annotations
 
 import ctypes
+from dataclasses import dataclass
 from datetime import date, datetime, timedelta, timezone
 import json
 import locale
@@ -23,6 +24,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts" / "core")
 from cycle_reports import read_report  # noqa: E402
 from project_metadata import read_metadata  # noqa: E402
 from product_identity import continuation_project, cycle_projects, get_identity, list_cycle_projections  # noqa: E402
+from product_identity import validate_state  # noqa: E402
 from product_media import media_projection, read_resource  # noqa: E402
 
 
@@ -81,14 +83,41 @@ def system_language() -> str:
     return "zh-CN" if value.lower().startswith("zh") else "en"
 
 
+@dataclass(frozen=True)
+class ProductScope:
+    """Explicit immutable identity, independent of root selection/configuration."""
+    kind: str
+    product_id: str | None = None
+    exploration_id: str | None = None
+    project: str | None = None
+
+
 class JournalSource:
-    def __init__(self, root: Path, language: str | None = None):
+    def __init__(self, root: Path, language: str | None = None, *, scope: ProductScope | None = None):
         self.root = root.resolve(strict=True)
         if not self.root.is_dir():
             raise ValueError("Source must be a repository directory")
         if language is not None and language not in LANGUAGES:
             raise ValueError("Invalid preview language")
         self.preview_language = language
+        self.scope = scope
+
+    def identity_state(self):
+        try:
+            raw, truncated = self.read(".auto-company/product-state.json", MAX_LEDGER_BYTES)
+        except FileNotFoundError:
+            return {"identities": {}, "paths": {}, "cycles": {}}
+        if truncated:
+            raise ValueError("Product identity ledger exceeds supported read limit")
+        return validate_state(json.loads(raw))
+
+    def scoped_cycle_ids(self):
+        if self.scope is None or self.scope.kind in {"legacy", "reference"}:
+            return None
+        state = self.identity_state()
+        identity = self.scope.product_id or self.scope.exploration_id
+        return {key for key, row in state["cycles"].items() if row["identityId"] == identity
+                or (self.scope.product_id and state["identities"][row["identityId"]].get("linkedProductId") == identity)}
 
     def safe_path(self, relative: str) -> Path:
         if not relative or "\\" in relative or ":" in relative:
@@ -138,6 +167,18 @@ class JournalSource:
             r"^([A-Z][A-Z0-9_]*)=(.*)$", self.optional(relative, 32 * 1024), re.M)}
 
     def language(self) -> dict[str, Any]:
+        if self.scope:
+            # UI language is a view preference. A root-global language lock is
+            # not evidence of an older identity's recorded product language.
+            language = self.preview_language or system_language()
+            evidence = self.product_language_evidence()
+            return {"ok": True, "readOnly": True, "language": language,
+                    "source": "view", "locked": False, "nextLanguage": language,
+                    "nextSource": "view", "pending": False, "productId": self.scope.product_id,
+                    "productLanguage": evidence["language"] if evidence else None,
+                    "productLanguageStatus": "recorded" if evidence else "unknown",
+                    "languagePeriodId": evidence["languagePeriodId"] if evidence else None,
+                    "languageEvidence": evidence}
         settings = self.pairs(".auto-company.local")
         preference = settings.get("AUTO_COMPANY_LANGUAGE")
         preference = preference if preference in LANGUAGES else system_language()
@@ -150,6 +191,34 @@ class JournalSource:
                 "source": "preview" if self.preview_language else "archive",
                 "locked": locked, "nextLanguage": preference, "nextSource": "archive",
                 "pending": current != preference, "productId": None}
+
+    def product_language_evidence(self):
+        """Actual cycle evidence, never a current root lock or queued plan."""
+        if not self.scope or not self.scope.product_id:
+            return None
+        try:
+            state = self.identity_state()
+            cycles = [row for row in state['cycles'].values() if row['identityId'] == self.scope.product_id]
+            cycles.sort(key=lambda row: row['productCycleNumber'], reverse=True)
+            for cycle in cycles[:MAX_CYCLES]:
+                try:
+                    raw, truncated = self.read(f"logs/{cycle['cycleId']}.context.json", 4096)
+                    context = json.loads(raw)
+                    evidence = context.get('languageEvidence')
+                    if (truncated or context.get('version') != 1 or context.get('source') != 'runtime_context'
+                            or context.get('cycleId') != cycle['cycleId'] or context.get('project') != cycle['project']
+                            or not timestamp(context.get('recordedAt')) or not isinstance(evidence, dict)
+                            or evidence.get('schemaVersion') != 1 or evidence.get('productId') != self.scope.product_id
+                            or evidence.get('cycleId') != cycle['cycleId'] or evidence.get('language') not in LANGUAGES
+                            or not re.fullmatch(r'[0-9a-f]{32}', str(evidence.get('languagePeriodId', '')))
+                            or not timestamp(evidence.get('recordedAt'))):
+                        continue
+                    return {key: evidence[key] for key in ('schemaVersion', 'productId', 'cycleId', 'language', 'languagePeriodId', 'recordedAt')}
+                except (OSError, ValueError, TypeError, AttributeError, KeyError, RecursionError):
+                    continue
+        except (OSError, ValueError, TypeError, KeyError, RecursionError):
+            pass
+        return None
 
     def ledger(self) -> tuple[list[dict[str, Any]], list[str]]:
         warnings: list[str] = []
@@ -166,6 +235,7 @@ class JournalSource:
         seen: dict[str, dict[str, Any]] = {}
         invalid = 0
         conflicting = 0
+        conflict_ids = set()
         for line in raw.splitlines():
             if not line.strip():
                 continue
@@ -187,6 +257,7 @@ class JournalSource:
             if identity in seen:
                 if record != seen[identity]:
                     conflicting += 1
+                    conflict_ids.add(identity)
                 continue
             seen[identity] = record
         if invalid:
@@ -194,6 +265,14 @@ class JournalSource:
         if conflicting:
             warnings.append(f"ledger_conflicting_ids:{conflicting}")
         records = list(seen.values())
+        if self.scope:
+            allowed = self.scoped_cycle_ids()
+            if allowed is not None:
+                records = [record for record in records if record["cycle_id"] in allowed and record["cycle_id"] not in conflict_ids]
+                warnings = [warning for warning in warnings if not warning.startswith('ledger_conflicting_ids:')]
+                scoped_conflicts = len(conflict_ids & allowed)
+                if scoped_conflicts:
+                    warnings.append(f'ledger_conflicting_ids:{scoped_conflicts}')
         def order(record: dict[str, Any]) -> float:
             value = timestamp(record.get("started_at")) or timestamp(record.get("ended_at"))
             return datetime.fromisoformat(value).timestamp() if value else float("-inf")
@@ -205,6 +284,13 @@ class JournalSource:
     def documents(self, registered: list[dict[str, Any]] | None = None) -> list[dict[str, Any]]:
         delivery = self.optional("DELIVERY.md")
         registered = registered_artifacts(self) if registered is None else registered
+        if self.scope:
+            allowed = self.scoped_cycle_ids()
+            return [item for item in registered
+                    if (item.get("associationStatus") == "bound"
+                        and (allowed is None or item.get("cycleId") in allowed))
+                    or (item.get("kind") == "preview" and item.get("associationStatus") == "product"
+                        and self.scope.product_id and item.get("productId") == self.scope.product_id)]
         # Root DELIVERY.md was the legacy archive convention. Once a product is
         # explicitly selected, only identity-bound runner records may surface.
         if self.project()["id"]:
@@ -222,12 +308,22 @@ class JournalSource:
 
     def project(self) -> dict[str, Any]:
         """Return only selection-bound metadata; consensus is never identity."""
-        selected = self.pairs(".auto-company.local").get("ACTIVE_PROJECT", "")
-        if not selected:
+        selected = self.scope.project or "" if self.scope else self.pairs(".auto-company.local").get("ACTIVE_PROJECT", "")
+        if not selected and not self.scope:
             try:
                 selected = continuation_project(self.root)
             except (OSError, ValueError, TypeError):
                 selected = ""
+        if self.scope and self.scope.product_id:
+            state = self.identity_state()
+            try:
+                current = get_identity(self.root, selected, create=False) if state["paths"].get(selected) == self.scope.product_id else None
+            except (OSError, ValueError, TypeError):
+                current = None
+            if not current or current['id'] != self.scope.product_id:
+                return {"id": selected or None, "name": selected.split("/")[-1] or "Auto Company",
+                        "displayName": selected.split("/")[-1] or "Auto Company", "description": "",
+                        "source": "identity_ledger", "status": "historical", "recordedAt": None}
         if not re.fullmatch(r"projects/[a-z0-9](?:[a-z0-9-]*[a-z0-9])?", selected):
             return {"id": None, "name": "Auto Company", "displayName": "Auto Company",
                     "description": "", "source": "workspace", "status": "unselected",
@@ -249,6 +345,8 @@ class JournalSource:
                 "recordedAt": timestamp(metadata["recordedAt"])}
 
     def media_resource(self, product_id: str, name: str) -> tuple[bytes, str]:
+        if self.scope and product_id != self.scope.product_id:
+            raise FileNotFoundError("Media does not belong to this scope")
         result = read_resource(self.root, product_id, name)
         if result is None:
             raise FileNotFoundError("Registered media resource is unavailable")
@@ -258,17 +356,23 @@ class JournalSource:
         """Merge identity-owned attempts without rewriting old usage records."""
         try:
             identity = get_identity(self.root, project["id"], create=False) if project["id"] else None
+            if self.scope:
+                identity = self.identity_state()["identities"].get(self.scope.product_id or self.scope.exploration_id)
         except (OSError, ValueError, TypeError, KeyError):
             warnings.append("product_cycle_identity_unavailable")
             identity = None
         projection_available = True
         try:
             projections = list_cycle_projections(self.root, limit=MAX_CYCLES)
+            if self.scope:
+                allowed = self.scoped_cycle_ids()
+                if allowed is not None:
+                    projections = list_cycle_projections(self.root, product_id=self.scope.product_id or self.scope.exploration_id, limit=MAX_CYCLES)
         except (OSError, ValueError, TypeError, KeyError):
             warnings.append("product_cycle_ledger_unavailable")
             projection_available = False
             projections = {"cycles": [], "total": 0}
-        project["stableId"] = identity["id"] if identity else None
+        project["stableId"] = (self.scope.product_id if self.scope else identity["id"] if identity else None)
         rows = {row["cycleId"]: row for row in projections["cycles"]}
         known = {cycle["id"] for cycle in cycles}
         for row in rows.values():
@@ -307,7 +411,7 @@ class JournalSource:
             raw, truncated = self.read(f"logs/{identity}.context.json", 4096)
             value = json.loads(raw)
             expected = {"version", "cycleId", "project", "recordedAt", "source"}
-            if (truncated or not isinstance(value, dict) or set(value) != expected
+            if (truncated or not isinstance(value, dict) or not expected <= set(value) or set(value) - expected - {'languageEvidence'}
                     or value.get("version") != 1 or value.get("cycleId") != identity
                     or value.get("source") != "runtime_context" or not timestamp(value.get("recordedAt"))
                     or not isinstance(value.get("project"), str)
@@ -321,15 +425,18 @@ class JournalSource:
             return {"project": None, "status": "invalid", "recordedAt": None, "source": "runtime_context"}
 
     def document(self, relative: str) -> tuple[str, bool]:
-        allowed = {"memories/consensus.md", *(item["path"] for item in self.documents() if item.get("path") and item.get("available", True))}
+        allowed = {*(item["path"] for item in self.documents() if item.get("path") and item.get("available", True))}
+        if not self.scope:
+            allowed.add("memories/consensus.md")
         if relative not in allowed:
             raise ValueError("Document is not an advertised artifact")
         return self.read(relative)
 
-    @staticmethod
-    def project_status(cycle, project, recorded_project):
+    def project_status(self, cycle, project, recorded_project):
         # Paths describe historical locations; only the ledger can establish
         # continuity across a move or distinguish a replacement at that path.
+        if self.scope and self.scope.kind == 'exploration' and cycle.get('identityKind') == 'exploration':
+            return 'current'
         stable_id = cycle.get("stableProductId")
         if cycle.get("identityKind") == "exploration":
             stable_id = cycle.get("linkedProductId")
@@ -413,13 +520,16 @@ class JournalSource:
             return ""
 
     def snapshot(self, *, status: dict[str, Any] | None = None,
-                 language_state: dict[str, Any] | None = None) -> dict[str, Any]:
+                 language_state: dict[str, Any] | None = None,
+                 detail_cycle_id: str | None = None) -> dict[str, Any]:
         generated = datetime.now(timezone.utc)
         generated_at = generated.isoformat()
         records, warnings = self.ledger()
         project = self.project()
         artifact_data = artifact_projection(self, project["id"] or "")
         registered = artifact_data["items"]
+        if self.scope:
+            registered = self.documents(registered)
         raw = ""
         updated_at = None
         try:
@@ -508,11 +618,22 @@ class JournalSource:
             if not available:
                 warnings.append("runtime_unavailable")
         numbering = self.persistent_cycles(cycles, project, warnings)
+        if self.scope:
+            # A root-global consensus, runtime config or budget cannot establish
+            # ownership for a selected historical identity.
+            raw, updated_at, parts, progress_lines = "", None, {}, []
+            warnings.append("unscoped_consensus_omitted")
+            runtime.update(state="unknown", processState="unknown", available=False,
+                           engine="unknown", model="unknown", reasoning="unknown")
         if runtime["currentCycleId"]:
             current = next((cycle for cycle in cycles if cycle["id"] == runtime["currentCycleId"]), None)
             if current:
                 runtime["currentCycleNumber"] = current["number"]
-        for cycle in cycles[:30]:
+        # On-demand history uses the same identity and artifact checks as the
+        # initial detail window, before limited rows receive placeholder data.
+        for index, cycle in enumerate(cycles):
+            if index >= 30 and cycle["id"] != detail_cycle_id:
+                continue
             cycle["detailStatus"] = "recorded"
             cycle.update(read_report(self, cycle))
             cycle.update(cycle_events(self, cycle))
@@ -571,6 +692,8 @@ class JournalSource:
         if len(cycles) > 30:
             warnings.append("cycle_details_truncated")
         for cycle in cycles[30:]:
+            if cycle["id"] == detail_cycle_id:
+                continue
             recorded_project = cycle.get("projectId")
             cycle.update({"detailStatus": "limited", "projectIdentity": {
                               "project": recorded_project, "status": "recorded" if recorded_project else "not_loaded",
@@ -593,7 +716,8 @@ class JournalSource:
         latest_check = next((item for item in registered if item["kind"] == "check" and item.get("cycleId") and item.get("associationStatus") == "bound"), None)
         latest_project_cycle = next((cycle for cycle in cycles if cycle.get("projectStatus") == "current"), None)
         try:
-            product_media = media_projection(self.root, selected_project, readonly=status is None) if selected_project else None
+            media_owned = not self.scope or (self.scope.product_id and self.identity_state()["paths"].get(selected_project) == self.scope.product_id)
+            product_media = media_projection(self.root, selected_project, readonly=status is None) if selected_project and media_owned else None
         except (OSError, ValueError, TypeError, KeyError):
             product_media = None
             warnings.append("product_media_unavailable")
