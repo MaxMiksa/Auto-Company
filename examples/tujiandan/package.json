@@ -1,0 +1,10 @@
+{
+  "name": "tujiandan",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node serve.cjs 8000",
+    "test": "node --test tests/*.test.js"
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "language": "zh-CN",
+  "productId": "8afe69a9dd254abcb61ef82b3ffab923",
+  "viewLabel": "真实工作记录 · 经审校的翻译视图",
+  "project": {
+    "displayName": "COI Chase Desk · 保险证明追催台",
+    "description": "帮助小型总承包商追催在建项目缺失保险证明的专注工作台。"
+  },
+  "documents": {
+    "projects/coi-chase-desk/design/logo-selection-2026-09-30.md": "标识方案记录",
+    "projects/coi-chase-desk/DELIVERY.md": "交付说明"
+  },
+  "cycles": {
+    "cycle-6621082f677d4a759d24652f48a47272": {
+      "sourceSha256": "fd941046558ef89f52cbb146fb4d855eb6782e5216fdbf740bc789e9f845e7f1",
+      "title": "交接首次付费试点材料",
+      "summary": "已制作第 5 轮的首次试点材料，以及四份角色审查，覆盖资格筛选、执行、对账、证据完整性和停止规则。没有声称已有客户、外联、付款、收据或结果；产品 MVP 和此前的登记表变更均未改动。",
+      "blocker": ""
+    },
+    "cycle-8385f74fd9c74ab9b471b01bdb722dc6": {
+      "sourceSha256": "7ddf99112a9c32fbb2b9e4ae8a81e0b47edee0b9aabcd06f7072def52d885e84",
+      "title": "准备首次付费试点",
+      "summary": "已完成运营、销售、产品和 QA 的本地试点准备材料。在保留独立证据日志的前提下，MVP 有条件地可用于一次受控试点；目前没有外联、客户、付款或结果证据。",
+      "blocker": ""
+    },
+    "cycle-25744e9d2c81491baf8e7ee9834faa0f": {
+      "sourceSha256": "82f24684e66a94e2a27e6e508b20087653de824e7a4127fef4ab3815f247b32f",
+      "title": "交付 COI Chase Desk 最小可用版本",
+      "summary": "独立的 COI Chase Desk 仓库已包含适配不同屏幕的单个在建项目付费试点流程：请求跟踪、状态筛选、追催记录、证据反馈和 CSV 报告。Delivery.md 已登记，预览首页返回 HTTP 200，程序管理的 Node 检查记录为 3 项通过、0 项失败。",
+      "blocker": ""
+    },
+    "cycle-d9225e029ef04699bf27ee0e75ae9f2b": {
+      "sourceSha256": "a10f5085adc1ef494564ba6a9f66d57263a0adb6e61009083c7cc13319b2ec2e",
+      "title": "完成 COI 追催台立项决定",
+      "summary": "第 2 轮已完成：团队审查产出失败预判、市场核验、单位经济模型及有条件 GO 决定。下一轮将创建独立 MVP 仓库，并依据明确的客户、利润率和交付门槛检验付费试点流程。",
+      "blocker": ""
+    },
+    "cycle-44db5a97a9fe42c3be453347ad49d27c": {
+      "sourceSha256": "cd6db8f9e02f681c07e410775f43ff52a35103ab3a6113bcc9905fb234dace13",
+      "title": "筛选首轮产品机会",
+      "summary": "已完成五角色备用方案头脑风暴，记录全部提案，排出前三，保留治理部分，并将下一步设为先验证保险证明跟踪工具，再决定是否开发。",
+      "blocker": ""
+    }
+  }
+}

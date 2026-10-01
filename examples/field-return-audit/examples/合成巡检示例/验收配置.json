@@ -1,0 +1,33 @@
+{
+  "job_name": "合成演示：北侧点位巡检返回验收",
+  "tables": [
+    {
+      "name": "sites",
+      "key": [
+        "uid"
+      ]
+    },
+    {
+      "name": "inspections",
+      "key": [
+        "uid"
+      ]
+    }
+  ],
+  "relations": [
+    {
+      "table": "inspections",
+      "column": "site_uid",
+      "parent_table": "sites",
+      "parent_column": "uid"
+    }
+  ],
+  "attachment_columns": [
+    {
+      "table": "inspections",
+      "column": "photo"
+    }
+  ],
+  "attachment_policy": "required",
+  "evidence_complete": true
+}

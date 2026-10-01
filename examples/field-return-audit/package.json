@@ -1,0 +1,9 @@
+{
+  "name": "field-return-audit",
+  "private": true,
+  "version": "1.0.0",
+  "description": "本地离线采集往返结果验收",
+  "devDependencies": {
+    "playwright": "1.58.2"
+  }
+}

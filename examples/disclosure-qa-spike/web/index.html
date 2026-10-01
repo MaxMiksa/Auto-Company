@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <meta name="description" content="在本机完成披露 PDF 的删除与保留规则检查、人工复核和批次交接。">
+  <title>披露双检 · 审校工作台</title>
+  <link rel="icon" type="image/svg+xml" href="/auto-company-icon.svg">
+  <link rel="stylesheet" href="/style.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <header class="masthead">
+    <a class="brand" href="#" aria-label="披露双检首页"><img src="/auto-company-icon.svg" width="38" height="38" alt=""><span>披露双检<small>双向批次验收 · 本机工作台</small></span></a>
+    <span class="local-seal"><span aria-hidden="true">●</span> 文件仅在本机处理</span>
+  </header>
+  <main>
+    <section class="intro" aria-labelledby="page-title">
+      <div><p class="eyebrow">披露前的最后一道交接</p><h1 id="page-title">该删的查漏，<br>该留的查全。</h1><p class="intro-copy">把批准规则、逐件检查与人工复核放在同一份批次记录里。<br>检查提供定位线索；发布判断始终由你完成。</p></div>
+      <div class="index-mark" aria-hidden="true"><span>删</span><span>留</span><small>双向核对 / 同批留痕</small></div>
+    </section>
+    <div id="notice" class="notice" role="status" aria-live="polite" hidden></div>
+    <div class="workspace">
+      <section class="setup" aria-labelledby="setup-title">
+        <div class="section-heading"><span class="step">01</span><h2 id="setup-title">建立审校批次</h2></div>
+        <form id="check-form" novalidate>
+          <label for="batch-name">批次名称</label><input id="batch-name" name="batch_name" maxlength="160" placeholder="例如：十月信息披露 · 第一批" required>
+          <div class="split"><div><label for="rule-version">规则版本</label><input id="rule-version" maxlength="120" placeholder="例如：2026-10 / v1" required></div><div><label for="approved-by">规则批准人</label><input id="approved-by" maxlength="120" placeholder="填写实际批准记录" required></div></div>
+          <div class="rule-heading"><h3>双向检查规则</h3><div class="quiet-actions"><button type="button" id="import-rules" class="text-button">导入</button><button type="button" id="export-rules" class="text-button">导出规则</button></div></div>
+          <input type="file" id="rule-file" accept=".json,application/json" hidden>
+          <label for="remove-rules" class="direction-label"><span class="rule-dot remove"></span>必须删除 <span>每行一个词或完整短语</span></label>
+          <textarea id="remove-rules" rows="4" placeholder="例如：内部编号 AB-102\n私人手机号码" required></textarea>
+          <label for="retain-rules" class="direction-label"><span class="rule-dot retain"></span>必须保留 <span>每份文件均须包含</span></label>
+          <textarea id="retain-rules" rows="4" placeholder="例如：项目名称\n批准披露日期" required></textarea>
+          <p class="field-hint">两组规则各至少一项；适用于同一批准规则的文件放在一批。此处检查文字匹配，扫描件和复杂排版需要额外复核。</p>
+          <label for="pdf-files" class="upload-zone"><span class="upload-sign" aria-hidden="true">↥</span><strong>选择待披露 PDF</strong><span>可多选或拖入；同名新文件替换原文件</span><input id="pdf-files" type="file" accept="application/pdf,.pdf" multiple></label>
+          <div class="file-list-head"><span id="file-count">尚未选择文件</span><button type="button" id="clear-files" class="text-button" hidden>移除全部</button></div>
+          <ul id="file-list" class="file-list" aria-label="待检查文件"></ul>
+          <label class="consent"><input id="remember-session" type="checkbox"><span>在当前浏览器标签页临时保存规则和报告<small>便于刷新后恢复；不保存 PDF。内容可能敏感，关闭标签页即清除。</small></span></label>
+          <button id="run-check" class="primary-button" type="submit"><span>开始双向检查</span><span aria-hidden="true">→</span></button>
+          <button id="load-demo" type="button" class="demo-button">用四份合成文件体验流程</button>
+          <p class="privacy-note">无需账号，也不上传至外部服务。演示为构造材料，不代表真实用户或安全认证。</p>
+        </form>
+      </section>
+      <section class="review-desk" aria-labelledby="results-title">
+        <div class="section-heading"><span class="step">02</span><h2 id="results-title">逐件审校与交接</h2><span id="result-stamp" class="stamp">尚未检查</span></div>
+        <div id="empty-state" class="empty-state"><div class="document-graphic" aria-hidden="true"><span></span><span></span><span></span><i>待校</i></div><h3>给每一份文件，一个明确结论。</h3><p>左侧建立规则并选择 PDF。检查结束后，在这里查看问题定位、确认覆盖边界，并导出交接记录。</p><ol class="journey"><li><span>1</span> 检查漏删与过删</li><li><span>2</span> 逐项人工复核</li><li><span>3</span> 导出批次交接</li></ol></div>
+        <div id="result-panel" hidden>
+          <div class="report-heading"><div><p class="eyebrow">本批次审校记录</p><h3 id="report-title"></h3><p id="report-meta" class="muted"></p></div><button type="button" id="forget-report" class="text-button">清除报告</button></div>
+          <div id="summary" class="summary-grid"></div>
+          <div id="handoff-status" class="handoff-banner" role="status" aria-live="polite"></div>
+          <p class="coverage-note">本工具不能认证文件安全。文字层、元数据、注释和附件检查均有覆盖边界；图片、扫描件、视觉遮盖与上下文必须人工核对。</p>
+          <div class="review-toolbar"><label for="review-filter">显示复核项</label><select id="review-filter"><option value="all">全部项目</option><option value="pending">待复核</option><option value="rework">需返工</option><option value="confirmed">已确认</option></select><span id="review-progress"></span></div>
+          <div id="file-results"></div>
+          <div class="export-bar"><div><strong>保留本次交接记录</strong><p>报告包含规则、文件指纹、问题和人工备注。</p></div><div><button type="button" id="export-json" class="secondary-button">导出 JSON</button><button type="button" id="export-html" class="primary-button compact">导出可打印报告</button></div></div>
+        </div>
+      </section>
+    </div>
+    <section class="method-note"><span class="step">03</span><div><h2>把检查结果与发布决定分开记录。</h2><p>明确的漏删、过删或脱敏错误，需要修复 PDF 后重新检查，人工确认不能消除。扫描件无法检索的保留内容需要实际视觉核对；完整复核仅代表交接流程完成，不代表安全认证。</p></div><span class="method-mark" aria-hidden="true">核 / 交</span></section>
+  </main>
+  <footer><span>披露双检</span><span>本地处理 · 规则留痕 · 人工负责</span></footer>
+  <dialog id="preview-dialog"><div class="dialog-heading"><h2 id="preview-title">原文件预览</h2><button id="close-preview" type="button" class="secondary-button">关闭预览</button></div><p>这是待检查的原 PDF，仅供核对。浏览器可能不支持内嵌预览，可下载后用本机 PDF 阅读器打开。</p><a id="preview-download" class="text-button" download>下载原文件</a><iframe id="pdf-preview" title="原 PDF 文件预览"></iframe></dialog>
+</body>
+</html>

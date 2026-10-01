@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#263b2f">
+  <title>参途 · 活动参与路径指挥台</title>
+  <link rel="icon" href="./icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">跳到工作区</a>
+  <aside class="sidebar">
+    <a class="brand" href="#overview"><img src="./icon.svg" alt="" width="36" height="36"><span>参途<small>参与路径指挥台</small></span></a>
+    <div class="rail-label">一场活动，一条完整参与路径</div>
+    <nav aria-label="工作步骤">
+      <a href="#overview"><span>01</span>活动与时段</a>
+      <a href="#resources"><span>02</span>服务与演练</a>
+      <a href="#paths"><span>03</span>路径与确认</a>
+      <a href="#handoff"><span>04</span>交接与备份</a>
+    </nav>
+    <div class="rail-note"><span class="rail-mark">↳</span><p>从入口走到最终端。<br>变更发生后，重新走一遍。</p><small>软件记录人工演练与确认；实际字幕、资料与现场服务仍由负责人核验。</small></div>
+    <button class="quiet light" id="help-button">使用说明</button>
+  </aside>
+  <main id="main">
+    <header class="topbar"><span>本地工作台 <span class="local-dot" aria-hidden="true"></span></span><span id="save-status" role="status">正在读取本地记录…</span></header>
+    <div id="notice" class="notice" role="status" aria-live="polite" hidden></div>
+    <section id="overview" class="overview">
+      <div class="eyebrow">活动参与 · 演练 / 变更 / 恢复</div>
+      <div class="heading-row"><div><h1 id="event-heading">未命名活动</h1><p class="lead">把“应该能参加”，变成有证据的参与路径。</p></div><span class="chapter">参<br>与</span></div>
+      <div class="event-editor"><label>活动名称<input id="event-name" maxlength="120" placeholder="例如：秋季混合研讨会"></label><label>活动日期<input id="event-date" type="date"></label><button id="save-event">保存活动</button></div>
+      <div class="overview-strip"><div><strong id="session-count">0</strong><span>活动时段</span></div><div><strong id="resource-count">0</strong><span>服务资源</span></div><div><strong id="ready-count">0 / 0</strong><span>完整就绪路径</span></div><p id="overview-message">先添加一个时段，再建立参与者要走的路径。</p></div>
+      <div class="section-heading small"><h2>活动时段</h2><button class="quiet" id="add-session">＋ 添加时段</button></div>
+      <div id="session-list" class="session-list"></div>
+    </section>
+    <section id="resources" class="work-section">
+      <div class="section-heading"><div><div class="eyebrow">02 / 服务与演练</div><h2>每项承诺，都有最终端证据</h2></div><button id="add-resource">＋ 添加服务</button></div>
+      <p class="section-description">为入口、字幕与资料指定负责人。请实际走到参加者最终使用的页面或设备，再记录观察。</p>
+      <div class="table-wrap"><table><caption class="sr-only">活动服务与演练状态</caption><thead><tr><th>服务 / 版本</th><th>时段与负责人</th><th>入口 / 提前截止</th><th>演练状态</th><th>操作</th></tr></thead><tbody id="resource-rows"></tbody></table></div>
+    </section>
+    <section id="paths" class="work-section">
+      <div class="section-heading"><div><div class="eyebrow">03 / 路径与确认</div><h2>让每个人，知道下一步</h2></div><button id="add-path">＋ 建立路径</button></div>
+      <p class="section-description">按参加者实际需要组合任意多项服务，由组织者确认已完整覆盖需要。演练通过后，负责人和参加者分别确认；相关变更会撤销旧版就绪状态。</p>
+      <div id="path-list" class="path-list"></div>
+    </section>
+    <section id="handoff" class="handoff-section">
+      <div><div class="eyebrow">04 / 交接与备份</div><h2>交接给人，也留住证据。</h2><p>中文交接包汇总当前路径、缺口与变更记录。完整备份可恢复全部活动数据。</p></div>
+      <div class="handoff-actions"><button id="export-markdown">导出中文交接包</button><button class="quiet" id="export-json">下载完整备份</button><button class="quiet" id="import-json">导入备份</button></div>
+    </section>
+    <footer><span>数据保存在本浏览器，不会自动上传。建议每次交接前下载备份。</span><div><button class="text-button" id="load-demo">加载合成演示</button><button class="text-button" id="new-event">新建空白活动</button></div></footer>
+  </main>
+  <dialog id="editor-dialog" aria-labelledby="dialog-title"><form id="editor-form"><div class="dialog-heading"><div><span class="eyebrow" id="dialog-kicker">参途工作台</span><h2 id="dialog-title"></h2></div><button type="button" class="close-button" id="close-dialog" aria-label="关闭">×</button></div><div id="dialog-fields"></div><p id="dialog-error" class="form-error" role="alert" hidden></p><div class="dialog-actions"><button type="button" class="quiet" id="cancel-dialog">取消</button><button type="submit" id="dialog-submit">保存</button></div></form></dialog>
+  <script type="module" src="app.js"></script>
+</body>
+</html>

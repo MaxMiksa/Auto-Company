@@ -1,10 +1,10 @@
 :root {
-  font-family: Inter,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  font-family: var(--font-ui);
   color: #242933;
   background: #fcfcfb;
   font-synthesis: none;
-  font-size: 15px;
-  --muted: #727b89;
+  font-size: 100%;
+  --muted: #626d7d;
   --ink: #242933;
   --blue: #275878;
   --line: #dfe2e5;
@@ -107,8 +107,8 @@ button:focus:not(:focus-visible), main:focus {
 }
 
 .project-heading h1 {
-  font-size: 22px;
-  font-weight: 600;
+  font-size: var(--text-title);
+  font-weight: var(--weight-medium);
   margin: 0;
   white-space: nowrap;
   letter-spacing: -.35px;
@@ -116,7 +116,7 @@ button:focus:not(:focus-visible), main:focus {
 
 .project-heading p {
   color: var(--muted);
-  font-size: 14px;
+  font-size: var(--text-caption);
   margin: 0;
   line-height: 1.5;
   max-width: 310px;
@@ -136,7 +136,7 @@ button:focus:not(:focus-visible), main:focus {
 }
 
 .runtime-state {
-  font-size: 13px;
+  font-size: var(--text-caption);
   color: var(--muted);
 }
 
@@ -145,7 +145,7 @@ button:focus:not(:focus-visible), main:focus {
   border-radius: 3px;
   background: transparent;
   padding: 8px 13px;
-  font-size: 14px;
+  font-size: var(--text-body);
   min-height: 36px;
 }
 
@@ -160,7 +160,7 @@ button:focus:not(:focus-visible), main:focus {
 }
 
 .quiet-link, .text-button {
-  font-size: 14px;
+  font-size: var(--text-body);
   color: var(--blue);
 }
 
@@ -197,14 +197,14 @@ button:focus:not(:focus-visible), main:focus {
   background: transparent;
   padding: 10px 3px 13px;
   color: #737b86;
-  font-weight: 500;
-  font-size: 15px;
+  font-weight: var(--weight-medium);
+  font-size: var(--text-body);
 }
 
 .tab[aria-selected="true"] {
   border-bottom-color: var(--blue);
   color: #243b4e;
-  font-weight: 600;
+  font-weight: var(--weight-medium);
 }
 
 .tab:hover {
@@ -216,7 +216,7 @@ button:focus:not(:focus-visible), main:focus {
   gap: 14px;
   align-items: center;
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--text-caption);
 }
 
 .icon-button {
@@ -258,7 +258,7 @@ button:focus:not(:focus-visible), main:focus {
 }
 
 .section-eyebrow {
-  font-size: 13px;
+  font-size: var(--text-caption);
   color: var(--muted);
   letter-spacing: .5px;
   margin-bottom: 24px;
@@ -278,7 +278,7 @@ button:focus:not(:focus-visible), main:focus {
 }
 
 .cycle-word {
-  font-size: 13px;
+  font-size: var(--text-caption);
   letter-spacing: .8px;
   color: var(--muted);
   display: block;
@@ -286,9 +286,9 @@ button:focus:not(:focus-visible), main:focus {
 }
 
 .cycle-number {
-  font-size: 62px;
+  font-size: var(--text-page);
   line-height: 1.1;
-  font-weight: 650;
+  font-weight: var(--weight-medium);
   letter-spacing: -2.3px;
   font-variant-numeric: tabular-nums;
   display: block;
@@ -299,17 +299,17 @@ button:focus:not(:focus-visible), main:focus {
 }
 
 .cycle-title {
-  font-size: 30px;
+  font-size: var(--text-section);
   line-height: 1.4;
   letter-spacing: -.7px;
-  font-weight: 650;
+  font-weight: var(--weight-medium);
   margin: 0 0 9px;
   overflow-wrap: anywhere;
   text-wrap: balance;
 }
 
 .cycle-meta {
-  font-size: 13px;
+  font-size: var(--text-caption);
   color: var(--muted);
   display: flex;
   flex-wrap: wrap;
@@ -341,20 +341,20 @@ button:focus:not(:focus-visible), main:focus {
 }
 
 .section-heading-row h3, .sidebar-block h2 {
-  font-size: 16px;
-  font-weight: 650;
+  font-size: var(--text-body);
+  font-weight: var(--weight-medium);
   margin: 0;
   line-height: 1.5;
 }
 
 .section-heading-row time {
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--text-caption);
   white-space: nowrap;
 }
 
 .report-intro {
-  font-size: 16px;
+  font-size: var(--text-body);
   line-height: 1.85;
   margin: 0;
   overflow-wrap: anywhere;
@@ -383,23 +383,23 @@ button:focus:not(:focus-visible), main:focus {
 
 .result-label {
   color: var(--muted);
-  font-size: 13px;
+  font-size: var(--text-caption);
   line-height: 1.9;
 }
 
 .result-text {
-  font-size: 14px;
+  font-size: var(--text-body);
   line-height: 1.8;
   margin: 0;
   overflow-wrap: anywhere;
 }
 
 .result-item strong {
-  font-weight: 600;
+  font-weight: var(--weight-medium);
 }
 
 .report-source {
-  font-size: 11px;
+  font-size: var(--text-caption);
   line-height: 1.65;
   color: var(--muted);
   margin: 17px 0 0;
@@ -411,7 +411,7 @@ button:focus:not(:focus-visible), main:focus {
 
 .report-disclosure>summary, .runtime-disclosure>summary {
   color: var(--blue);
-  font-size: 13px;
+  font-size: var(--text-caption);
   cursor: pointer;
   list-style: none;
   line-height: 1.8;
@@ -423,7 +423,7 @@ button:focus:not(:focus-visible), main:focus {
 
 .report-disclosure>summary::after, .runtime-disclosure>summary::after {
   content: "＋";
-  font-size: 13px;
+  font-size: var(--text-caption);
   padding-left: 8px;
 }
 
@@ -432,7 +432,7 @@ button:focus:not(:focus-visible), main:focus {
 }
 
 .full-report {
-  font-size: 13px;
+  font-size: var(--text-body);
   line-height: 1.9;
   color: #535c69;
   margin-top: 14px;
@@ -472,7 +472,7 @@ button:focus:not(:focus-visible), main:focus {
 
 .cycle-log-link {
   margin-top: 23px;
-  font-size: 14px;
+  font-size: var(--text-body);
 }
 
 .project-sidebar {
@@ -491,7 +491,7 @@ button:focus:not(:focus-visible), main:focus {
 }
 
 .sidebar-note {
-  font-size: 11px;
+  font-size: var(--text-caption);
   color: var(--muted);
   line-height: 1.65;
   margin: 12px 0 0;
@@ -510,7 +510,7 @@ button:focus:not(:focus-visible), main:focus {
   align-items: start;
   gap: 11px;
   line-height: 1.7;
-  font-size: 14px;
+  font-size: var(--text-body);
   overflow-wrap: anywhere;
 }
 
@@ -531,7 +531,7 @@ button:focus:not(:focus-visible), main:focus {
   display: grid;
   grid-template-columns: minmax(72px,.8fr) minmax(0,1.25fr);
   gap: 12px 13px;
-  font-size: 13px;
+  font-size: var(--text-caption);
   line-height: 1.6;
   margin: 20px 0 0;
 }
@@ -551,7 +551,7 @@ button:focus:not(:focus-visible), main:focus {
 }
 
 .runtime-disclosure .runtime-details {
-  font-size: 12px;
+  font-size: var(--text-caption);
 }
 
 .history-section {
@@ -569,14 +569,14 @@ button:focus:not(:focus-visible), main:focus {
 }
 
 .history-heading h2 {
-  font-size: 12px;
-  font-weight: 500;
+  font-size: var(--text-caption);
+  font-weight: var(--weight-medium);
   color: var(--muted);
   margin: 0;
 }
 
 .history-heading>span {
-  font-size: 10px;
+  font-size: var(--text-caption);
   color: #9298a1;
 }
 
@@ -604,22 +604,22 @@ button:focus:not(:focus-visible), main:focus {
 }
 
 .history-number {
-  font-size: 25px;
-  font-weight: 600;
+  font-size: var(--text-title);
+  font-weight: var(--weight-medium);
   font-variant-numeric: tabular-nums;
   padding-left: 17px;
   letter-spacing: -.6px;
 }
 
 .history-title {
-  font-size: 14px;
-  font-weight: 550;
+  font-size: var(--text-body);
+  font-weight: var(--weight-medium);
   line-height: 1.6;
   overflow-wrap: anywhere;
 }
 
 .history-meta {
-  font-size: 11px;
+  font-size: var(--text-caption);
   color: var(--muted);
   text-align: right;
   line-height: 1.7;
@@ -627,7 +627,7 @@ button:focus:not(:focus-visible), main:focus {
 }
 
 .history-chevron {
-  font-size: 18px;
+  font-size: var(--text-title);
   color: var(--muted);
   transition: transform .15s;
 }
@@ -638,7 +638,7 @@ button:focus:not(:focus-visible), main:focus {
 
 .history-content {
   padding: 4px 22px 25px 106px;
-  font-size: 14px;
+  font-size: var(--text-body);
   line-height: 1.8;
 }
 
@@ -649,7 +649,7 @@ button:focus:not(:focus-visible), main:focus {
 
 .history-content .cycle-meta {
   margin-bottom: 16px;
-  font-size: 12px;
+  font-size: var(--text-body);
 }
 
 .history-content .result-item {
@@ -660,77 +660,8 @@ button:focus:not(:focus-visible), main:focus {
   margin-top: 15px;
 }
 
-.older-button {
-  margin-top: 15px;
-  font-size: 12px;
-}
-
-.exploration-section {
-  grid-column: 1;
-  grid-row: 3;
-  min-width: 0;
-}
-
-.exploration-disclosure>summary {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-left: var(--body-start);
-  border-top: 1px solid var(--line);
-  padding: 15px 0;
-  color: var(--muted);
-  cursor: pointer;
-  list-style: none;
-}
-
-.exploration-disclosure>summary::-webkit-details-marker {
-  display: none;
-}
-
-.exploration-heading {
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.exploration-note {
-  margin-left: auto;
-  font-size: 10px;
-  color: #9298a1;
-}
-
-.exploration-chevron {
-  width: 14px;
-  height: 14px;
-  flex: 0 0 14px;
-  transition: transform .15s;
-}
-
-.exploration-disclosure[open] .exploration-chevron {
-  transform: rotate(90deg);
-}
-
-.exploration-list {
-  margin-top: 4px;
-}
-
-.exploration-message {
-  margin: 8px 0 12px var(--body-start);
-  color: var(--muted);
-  font-size: 12px;
-}
-
-.exploration-retry {
-  margin: 0 0 16px var(--body-start);
-  font-size: 12px;
-}
-
-.exploration-list .history-number {
-  font-size: 13px;
-  letter-spacing: 0;
-}
-
 .source-notes {
-  font-size: 11px;
+  font-size: var(--text-caption);
   line-height: 1.8;
   color: var(--muted);
   max-width: 960px;
@@ -753,14 +684,14 @@ button:focus:not(:focus-visible), main:focus {
   display: flex;
   justify-content: space-between;
   gap: 20px;
-  font-size: 10px;
+  font-size: var(--text-caption);
   color: #9198a1;
   padding: 28px 0 23px;
   line-height: 1.7;
 }
 
 .notice {
-  font-size: 13px;
+  font-size: var(--text-body);
   line-height: 1.6;
   padding: 13px 17px;
   margin-top: 22px;
@@ -780,13 +711,13 @@ button:focus:not(:focus-visible), main:focus {
 }
 
 .empty-state h2 {
-  font-size: 21px;
-  font-weight: 600;
+  font-size: var(--text-title);
+  font-weight: var(--weight-medium);
   margin: 0 0 13px;
 }
 
 .empty-state p {
-  font-size: 14px;
+  font-size: var(--text-caption);
   color: var(--muted);
   line-height: 1.8;
 }
@@ -808,14 +739,14 @@ button:focus:not(:focus-visible), main:focus {
 }
 
 .panel-heading h2 {
-  font-size: 30px;
-  font-weight: 600;
+  font-size: var(--text-section);
+  font-weight: var(--weight-medium);
   letter-spacing: -.6px;
   margin: 0;
 }
 
 .panel-heading>p {
-  font-size: 13px;
+  font-size: var(--text-caption);
   color: var(--muted);
   line-height: 1.7;
   max-width: 330px;
@@ -827,7 +758,7 @@ button:focus:not(:focus-visible), main:focus {
   gap: 12px;
   align-items: center;
   flex-wrap: wrap;
-  font-size: 13px;
+  font-size: var(--text-body);
 }
 
 .usage-filters>label, .log-toolbar>label {
@@ -840,14 +771,14 @@ select, input[type=date] {
   padding: 8px 10px;
   background: #fff;
   color: var(--ink);
-  font-size: 13px;
+  font-size: var(--text-body);
   min-height: 36px;
   max-width: 100%;
 }
 
 #usageRange {
   margin-left: 4px;
-  font-size: 12px;
+  font-size: var(--text-caption);
 }
 
 .usage-summary {
@@ -859,26 +790,26 @@ select, input[type=date] {
 }
 
 .usage-total {
-  font-size: 40px;
+  font-size: var(--text-page);
   line-height: 1.2;
   letter-spacing: -1.1px;
-  font-weight: 550;
+  font-weight: var(--weight-medium);
   font-variant-numeric: tabular-nums;
 }
 
 .usage-summary-label {
-  font-size: 12px;
+  font-size: var(--text-caption);
   color: var(--muted);
 }
 
 .usage-coverage {
-  font-size: 13px;
+  font-size: var(--text-caption);
   color: var(--muted);
   margin: 0;
 }
 
 .usage-warning {
-  font-size: 12px;
+  font-size: var(--text-caption);
   color: #8a6748;
   margin: 0;
   width: 100%;
@@ -895,19 +826,19 @@ select, input[type=date] {
   border-collapse: collapse;
   white-space: nowrap;
   text-align: left;
-  font-size: 13px;
+  font-size: var(--text-body);
 }
 
 .usage-table caption {
   text-align: left;
   padding: 16px 12px;
-  font-weight: 600;
+  font-weight: var(--weight-medium);
 }
 
 .usage-table th {
-  font-size: 11px;
+  font-size: var(--text-body);
   color: var(--muted);
-  font-weight: 500;
+  font-weight: var(--weight-medium);
   padding: 13px 12px;
   background: #f5f5f3;
 }
@@ -925,7 +856,7 @@ select, input[type=date] {
 
 .fine-print {
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--text-caption);
   line-height: 1.8;
   margin-top: 18px;
 }
@@ -942,7 +873,7 @@ select, input[type=date] {
 }
 
 #logStatus {
-  font-size: 12px;
+  font-size: var(--text-caption);
   margin-top: 22px;
 }
 
@@ -998,17 +929,17 @@ dialog::backdrop {
 }
 
 .dialog-header h2 {
-  font-size: 20px;
+  font-size: var(--text-section);
   margin: 0;
 }
 
 .close-button {
-  font-size: 26px;
+  font-size: var(--text-section);
   line-height: 1;
 }
 
 dialog>p {
-  font-size: 14px;
+  font-size: var(--text-body);
   line-height: 1.85;
 }
 
@@ -1017,7 +948,7 @@ dialog>p {
   flex-direction: column;
   gap: 12px;
   margin-top: 24px;
-  font-size: 13px;
+  font-size: var(--text-body);
 }
 
 dialog .runtime-details {
@@ -1041,20 +972,20 @@ dialog .runtime-details {
     padding-left: 40px;
   }
   .cycle-title {
-    font-size: 34px;
+    font-size: var(--text-section);
   }
   .current-cycle {
     grid-template-columns: 98px minmax(0,1fr);
     gap: 30px;
   }
   .cycle-number {
-    font-size: 68px;
+    font-size: var(--text-page);
   }
   .report-intro {
-    font-size: 17px;
+    font-size: var(--text-body);
   }
   .result-text {
-    font-size: 15px;
+    font-size: var(--text-body);
   }
   .history-row>summary {
     grid-template-columns: 98px minmax(0,1fr) auto 12px;
@@ -1080,7 +1011,7 @@ dialog .runtime-details {
   }
   .project-heading p {
     max-width: 230px;
-    font-size: 12px;
+    font-size: var(--text-caption);
   }
   .header-actions {
     gap: 14px;
@@ -1100,10 +1031,10 @@ dialog .runtime-details {
     gap: 23px;
   }
   .cycle-number {
-    font-size: 54px;
+    font-size: var(--text-page);
   }
   .cycle-title {
-    font-size: 27px;
+    font-size: var(--text-section);
   }
   .history-row>summary {
     grid-template-columns: 68px minmax(0,1fr) auto 9px;
@@ -1116,10 +1047,10 @@ dialog .runtime-details {
     padding-left: 82px;
   }
   .history-meta {
-    font-size: 10px;
+    font-size: var(--text-caption);
   }
   .legacy-link {
-    font-size: 12px;
+    font-size: var(--text-caption);
   }
 }
 
@@ -1152,16 +1083,16 @@ dialog .runtime-details {
     padding-right: 13px;
   }
   .cycle-number {
-    font-size: 45px;
+    font-size: var(--text-page);
   }
   .cycle-word {
-    font-size: 10px;
+    font-size: var(--text-caption);
   }
   .cycle-title {
-    font-size: 24px;
+    font-size: var(--text-section);
   }
   .cycle-meta {
-    font-size: 11px;
+    font-size: var(--text-caption);
     gap: 3px 8px;
   }
   .cycle-meta span+span::before {
@@ -1199,20 +1130,20 @@ dialog .runtime-details {
     gap: 4px;
   }
   .section-heading-row time {
-    font-size: 10px;
+    font-size: var(--text-caption);
   }
   .runtime-details {
     grid-template-columns: 70px minmax(0,1fr);
     gap: 11px 8px;
   }
   .sidebar-block h2 {
-    font-size: 15px;
+    font-size: var(--text-body);
   }
   .report-intro {
-    font-size: 15px;
+    font-size: var(--text-body);
   }
   .result-text {
-    font-size: 13px;
+    font-size: var(--text-body);
   }
 }
 
@@ -1245,10 +1176,10 @@ dialog .runtime-details {
     margin-top: 8px;
   }
   .project-heading h1 {
-    font-size: 19px;
+    font-size: var(--text-title);
   }
   .project-heading p {
-    font-size: 12px;
+    font-size: var(--text-caption);
     max-width: none;
     margin: 0;
   }
@@ -1257,7 +1188,7 @@ dialog .runtime-details {
     align-self: flex-start;
   }
   .legacy-link, .header-actions .text-button {
-    font-size: 12px;
+    font-size: var(--text-body);
   }
   .navline {
     min-height: 47px;
@@ -1266,11 +1197,11 @@ dialog .runtime-details {
     gap: 28px;
   }
   .tab {
-    font-size: 13px;
+    font-size: var(--text-body);
     padding: 12px 0;
   }
   .preview-note {
-    font-size: 10px;
+    font-size: var(--text-caption);
     gap: 7px;
   }
   .preview-note .icon-button {
@@ -1310,29 +1241,29 @@ dialog .runtime-details {
     gap: 19px;
   }
   .cycle-number {
-    font-size: 48px;
+    font-size: var(--text-page);
   }
   .cycle-title {
-    font-size: 26px;
+    font-size: var(--text-section);
   }
   .cycle-meta {
-    font-size: 12px;
+    font-size: var(--text-caption);
   }
   .section-eyebrow {
     margin-bottom: 20px;
-    font-size: 12px;
+    font-size: var(--text-caption);
   }
   .report-section {
     margin-top: 23px;
   }
   .section-heading-row h3 {
-    font-size: 15px;
+    font-size: var(--text-body);
   }
   .report-intro {
-    font-size: 15px;
+    font-size: var(--text-body);
   }
   .result-text {
-    font-size: 14px;
+    font-size: var(--text-body);
   }
   .result-item {
     grid-template-columns: 50px minmax(0,1fr);
@@ -1366,11 +1297,11 @@ dialog .runtime-details {
     padding-left: 22px;
   }
   .runtime-details {
-    font-size: 12px;
+    font-size: var(--text-caption);
     grid-template-columns: 66px minmax(0,1fr);
   }
   .artifact-link {
-    font-size: 13px;
+    font-size: var(--text-body);
   }
   .source-notes {
     margin-top: 22px;
@@ -1385,14 +1316,14 @@ dialog .runtime-details {
     margin-bottom: 25px;
   }
   .panel-heading h2 {
-    font-size: 27px;
+    font-size: var(--text-section);
   }
   .panel-heading>p {
     margin-top: 14px;
     max-width: none;
   }
   .usage-total {
-    font-size: 34px;
+    font-size: var(--text-page);
   }
   .log-toolbar {
     gap: 12px 10px;
@@ -1407,7 +1338,7 @@ dialog .runtime-details {
   }
   .log-text {
     padding: 17px;
-    font-size: 11px;
+    font-size: var(--text-caption);
   }
   .usage-table td {
     padding: 15px 10px;
@@ -1431,10 +1362,10 @@ dialog .runtime-details {
   .project-heading p {
     line-height: 1.5;
     max-width: 180px;
-    font-size: 11px;
+    font-size: var(--text-caption);
   }
   .project-heading h1 {
-    font-size: 18px;
+    font-size: var(--text-title);
   }
   .header-actions {
     gap: 17px;
@@ -1443,58 +1374,58 @@ dialog .runtime-details {
     gap: 21px;
   }
   .preview-note {
-    font-size: 9px;
+    font-size: var(--text-caption);
     gap: 3px;
   }
   .tab {
-    font-size: 12px;
+    font-size: var(--text-body);
   }
   .current-cycle {
     grid-template-columns: 44px minmax(0,1fr);
     gap: 14px;
   }
   .cycle-title {
-    font-size: 23px;
+    font-size: var(--text-section);
     letter-spacing: -.4px;
   }
   .cycle-number {
-    font-size: 40px;
+    font-size: var(--text-page);
     letter-spacing: -1.6px;
   }
   .cycle-gutter {
     padding-right: 10px;
   }
   .cycle-word {
-    font-size: 9px;
+    font-size: var(--text-caption);
   }
   .cycle-meta {
-    font-size: 10px;
+    font-size: var(--text-caption);
     gap: 3px 6px;
   }
   .cycle-meta span+span::before {
     margin-right: 6px;
   }
   .report-intro {
-    font-size: 14px;
+    font-size: var(--text-body);
   }
   .section-heading-row h3 {
-    font-size: 14px;
+    font-size: var(--text-body);
   }
   .result-item {
     grid-template-columns: 35px minmax(0,1fr);
     gap: 10px;
   }
   .result-text {
-    font-size: 13px;
+    font-size: var(--text-body);
   }
   .result-label {
-    font-size: 11px;
+    font-size: var(--text-caption);
   }
   .report-source {
-    font-size: 10px;
+    font-size: var(--text-caption);
   }
   .cycle-log-link {
-    font-size: 13px;
+    font-size: var(--text-body);
   }
   .project-sidebar {
     grid-template-columns: minmax(0,1fr);
@@ -1506,7 +1437,7 @@ dialog .runtime-details {
     padding: 21px 0 0;
   }
   .sidebar-block h2 {
-    font-size: 14px;
+    font-size: var(--text-body);
   }
   .runtime-details {
     grid-template-columns: 100px minmax(0,1fr);
@@ -1516,12 +1447,12 @@ dialog .runtime-details {
     gap: 14px;
   }
   .history-number {
-    font-size: 23px;
+    font-size: var(--text-title);
     padding-left: 5px;
     grid-row: 1 / span 2;
   }
   .history-title {
-    font-size: 12px;
+    font-size: var(--text-body);
   }
   .history-meta {
     grid-column: 2;
@@ -1537,10 +1468,10 @@ dialog .runtime-details {
     padding-right: 0;
   }
   .history-heading>span {
-    font-size: 9px;
+    font-size: var(--text-caption);
   }
   .history-heading h2 {
-    font-size: 11px;
+    font-size: var(--text-caption);
   }
   .history-content .result-item {
     grid-template-columns: 35px minmax(0,1fr);
@@ -1554,7 +1485,7 @@ dialog .runtime-details {
     gap: 10px;
   }
   .usage-filters {
-    font-size: 12px;
+    font-size: var(--text-body);
   }
   .usage-summary {
     gap: 10px;
@@ -1563,7 +1494,7 @@ dialog .runtime-details {
     width: 100%;
   }
   .page-footer {
-    font-size: 9px;
+    font-size: var(--text-caption);
   }
 }
 
@@ -1578,7 +1509,7 @@ dialog .runtime-details {
 .action-status {
   margin: 20px 0 0;
   color: var(--blue);
-  font-size: 13px;
+  font-size: var(--text-caption);
   line-height: 1.7;
   overflow-wrap: anywhere;
 }
@@ -1612,7 +1543,7 @@ dialog .runtime-details {
   margin-top: 25px;
   border-top: 1px solid var(--line);
   padding-top: 18px;
-  font-size: 12px;
+  font-size: var(--text-caption);
   color: var(--muted);
 }
 
@@ -1633,7 +1564,7 @@ dialog .runtime-details {
 
 .budget-summary {
   margin: 0 0 24px;
-  font-size: 12px;
+  font-size: var(--text-caption);
   color: var(--muted);
   line-height: 1.7;
 }
@@ -1645,7 +1576,7 @@ dialog .runtime-details {
 .language-label {
   display: block;
   margin: 24px 0 9px;
-  font-size: 13px;
+  font-size: var(--text-body);
 }
 
 #languageSelect {
@@ -1659,7 +1590,7 @@ dialog .runtime-details {
 @media(max-width:1200px) {
   .runtime-state {
     display: inline;
-    font-size: 12px;
+    font-size: var(--text-caption);
   }
   .project-heading p {
     max-width: 180px;
@@ -1683,7 +1614,7 @@ dialog .runtime-details {
     flex: 1;
   }
   .header-actions .button {
-    font-size: 12px;
+    font-size: var(--text-body);
     padding: 7px 10px;
   }
 }
@@ -1743,28 +1674,27 @@ dialog .runtime-details {
 .cycle-number { line-height: 1; }
 .current-cycle > .progress-node { margin-top: 7px; }
 .progress-node { position: relative; display: inline-flex; align-items: center; justify-content: center; width: var(--node-size, 32px); height: var(--node-size, 32px); border-radius: 50%; background: #fcfcfb; color: #607581; flex: 0 0 auto; }
-.progress-node svg { width: 100%; height: 100%; }
+.progress-node svg { width: 100%; height: 100%; flex: 0 0 100%; }
 .progress-completed, .progress-running { color: var(--blue); }
 .progress-failed { color: var(--danger); }
 .progress-paused, .progress-unknown { color: #7d7568; }
 .cycle-meta .reported-phase { color: #526675; }
 .cycle-records { margin-top: 28px; border-top: 1px solid var(--line); padding-top: 17px; }
-.content-heading { font-size: 16px; line-height: 1.5; font-weight: 650; margin: 0; }
+.content-heading { font-size: var(--text-body); line-height: 1.5; font-weight: var(--weight-medium); margin: 0; }
 .record-list { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 20px; }
 .record-row { display: grid; grid-template-columns: 65px minmax(0, 1fr); gap: 17px; align-items: baseline; }
-.record-row time { font-size: 14px; line-height: 1.65; color: var(--muted); font-variant-numeric: tabular-nums; }
+.record-row time { font-size: var(--text-caption); line-height: 1.65; color: var(--muted); font-variant-numeric: tabular-nums; }
 .record-body { min-width: 0; }
-.record-title { display: flex; align-items: center; gap: 9px; font-size: 15px; font-weight: 600; line-height: 1.6; }
+.record-title { display: flex; align-items: center; gap: 9px; font-size: var(--text-body); font-weight: var(--weight-medium); line-height: 1.6; }
 .record-title .progress-node { width: 23px; height: 23px; }
-.record-detail { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 20px; row-gap: 4px; margin-top: 4px; font-size: 14px; line-height: 1.7; color: var(--muted); overflow-wrap: anywhere; }
+.record-detail { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 20px; row-gap: 4px; margin-top: 4px; font-size: var(--text-body); line-height: 1.7; color: var(--muted); overflow-wrap: anywhere; }
 .record-detail.status-failed { color: var(--danger); }
-.check-report { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; }
-.ui-icon { width: 17px; height: 17px; flex: 0 0 17px; vertical-align: -.15em; }
-.check-report .ui-icon { width: 13px; height: 13px; flex-basis: 13px; }
+.check-report { display: inline-flex; align-items: center; gap: 6px; font-size: var(--text-caption); }
+
 .tab, .header-actions .button, #settingsButton { display: inline-flex; align-items: center; gap: 7px; }
 .cycle-log-link { margin-top: 30px; }
 .history-heading { margin-left: var(--body-start); }
-.history-group-label { position: relative; margin: 15px 0 5px var(--body-start); font-size: 12px; font-weight: 400; color: var(--muted); }
+.history-group-label { position: relative; margin: 15px 0 5px var(--body-start); font-size: var(--text-caption); font-weight: var(--weight-regular); color: var(--muted); }
 .history-row > summary { grid-template-columns: var(--number-width) var(--node-size) minmax(0, 1fr) auto 12px; gap: var(--cycle-gap); }
 .history-number { padding-left: 0; text-align: center; grid-row: 1; }
 .history-title { grid-column: 3; grid-row: 1; }
@@ -1774,8 +1704,8 @@ dialog .runtime-details {
 .history-content { padding-left: var(--body-start); }
 .history-content .record-list { margin-bottom: 20px; }
 .project-sidebar { padding-top: 0; }
-.project-overview h1 { font-size: 22px; font-weight: 650; line-height: 1.5; margin: 0; overflow-wrap: anywhere; }
-.project-description { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: 14px; line-height: 1.75; color: var(--muted); margin: 8px 0 0; }
+.project-overview h1 { font-size: var(--text-title); font-weight: var(--weight-medium); line-height: 1.5; margin: 0; overflow-wrap: anywhere; }
+.project-description { overflow-wrap: anywhere; font-size: var(--text-body); line-height: 1.6; color: var(--muted); margin: 8px 0 0; }
 .project-overview .sidebar-note { margin-top: 14px; }
 .project-identity { display: flex; align-items: center; gap: 12px; }
 .product-icon { flex: 0 0 36px; object-fit: contain; }
@@ -1784,8 +1714,8 @@ dialog .runtime-details {
 .product-screenshot { display: block; width: 100%; height: auto; }
 .screenshot-caption { display: flex; flex-wrap: wrap; gap: 4px 10px; }
 .screenshot-stale { color: #7d7568; }
-.screenshot-links { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 13px; }
-.screenshot-retry { margin-top: 13px; font-size: 13px; }
+.screenshot-links { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: var(--text-caption); }
+.screenshot-retry { margin-top: 13px; font-size: var(--text-caption); }
 .artifact-link .ui-icon { margin-top: 3px; }
 .artifact-link .artifact-arrow { width: 14px; height: 14px; flex-basis: 14px; padding: 0; }
 @media(max-width:1000px) {
@@ -1798,37 +1728,31 @@ dialog .runtime-details {
 @media(max-width:760px) {
   .history-section { grid-row: 2; }
   .project-sidebar { grid-row: 3; padding-top: 23px; }
-  .exploration-section { grid-row: 4; }
   .project-overview { grid-column: 1 / -1; }
   .project-description { max-width: 560px; }
   .header-actions, .preview-note { flex-wrap: wrap; }
 }
 @media(max-width:460px) {
   .journal-layout { --number-width: 37px; --node-size: 27px; --cycle-gap: 8px; }
-  .cycle-number { font-size: 36px; }
+  .cycle-number { font-size: var(--text-page); }
   .current-cycle > .progress-node { margin-top: 1px; }
   .current-column::before { top: 15px; }
-  .cycle-title { font-size: 22px; line-height: 1.45; }
-  .cycle-meta { font-size: 11px; }
+  .cycle-title { font-size: var(--text-section); line-height: 1.45; }
+  .cycle-meta { font-size: var(--text-caption); }
   .section-heading-row { gap: 8px; flex-wrap: wrap; }
-  .section-heading-row time { font-size: 10px; }
+  .section-heading-row time { font-size: var(--text-caption); }
   .record-row { grid-template-columns: 39px minmax(0, 1fr); gap: 8px; }
-  .record-row time { font-size: 11px; }
-  .record-title { font-size: 13px; gap: 5px; }
-  .record-detail { font-size: 12px; gap: 4px 10px; }
-  .content-heading { font-size: 14px; }
-  .check-report { font-size: 12px; }
+  .record-row time { font-size: var(--text-caption); }
+  .record-title { font-size: var(--text-body); gap: 5px; }
+  .record-detail { font-size: var(--text-body); gap: 4px 10px; }
+  .content-heading { font-size: var(--text-body); }
+  .check-report { font-size: var(--text-caption); }
   .history-heading { flex-wrap: wrap; gap: 3px 10px; }
-  .history-title { font-size: 13px; }
-  .history-meta { font-size: 10px; white-space: normal; }
+  .history-title { font-size: var(--text-body); }
+  .history-meta { font-size: var(--text-caption); white-space: normal; }
   .history-content { padding-right: 0; }
-  .exploration-disclosure>summary { margin-left: 0; flex-wrap: wrap; gap: 4px 10px; }
-  .exploration-note { width: 100%; margin-left: 0; }
-  .exploration-chevron { margin-left: auto; }
-  .exploration-list .history-number { font-size: 10px; }
   .tabs { gap: 14px; }
   .tab { gap: 5px; }
-  .tab .ui-icon { width: 15px; height: 15px; flex-basis: 15px; }
   .navline { gap: 0 10px; }
 }
 
@@ -1846,11 +1770,11 @@ dialog .runtime-details {
   margin-right: auto;
 }
 .center-context-nav[hidden] { display: none; }
-.center-back-link { color: var(--accent); font-size: 13px; font-weight: 650; text-decoration: none; }
+.center-back-link { color: var(--accent); font-size: var(--text-body); font-weight: var(--weight-medium); text-decoration: none; }
 .center-back-link::after { content: "/"; margin-left: 13px; color: var(--line-strong); }
-.product-switcher-button { min-width: 0; max-width: 260px; display: inline-flex; align-items: center; gap: 7px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 3px; background: #fff; color: var(--ink); font-weight: 650; cursor: pointer; }
+.product-switcher-button { min-width: 0; max-width: 260px; display: inline-flex; align-items: center; gap: 7px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 3px; background: #fff; color: var(--ink); font-weight: var(--weight-medium); cursor: pointer; }
 .product-switcher-button span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.center-runtime-context { overflow: hidden; max-width: 360px; color: var(--muted); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.center-runtime-context { overflow: hidden; max-width: 360px; color: var(--muted); font-size: var(--text-caption); text-overflow: ellipsis; white-space: nowrap; }
 .product-switcher-dialog { width: min(520px, calc(100vw - 32px)); padding: 24px; }
 .product-switcher-dialog .dialog-header { margin-bottom: 17px; }
 .switcher-search { display: block; margin-bottom: 10px; }
@@ -1861,7 +1785,7 @@ dialog .runtime-details {
 .product-switcher-option > span:first-child { min-width: 0; display: grid; gap: 3px; }
 .product-switcher-option strong, .product-switcher-option small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .product-switcher-option small { color: var(--muted); }
-.switcher-current { flex: 0 0 auto; color: var(--accent); font-size: 12px; font-weight: 650; }
+.switcher-current { flex: 0 0 auto; color: var(--accent); font-size: var(--text-caption); font-weight: var(--weight-medium); }
 
 @media(max-width:760px) {
   .topbar { flex-wrap: wrap; }
@@ -1874,3 +1798,18 @@ dialog .runtime-details {
   .center-runtime-context { display: none; }
   .product-switcher-button { max-width: 58vw; }
 }
+
+/* Typography roles do not shrink on narrow screens. */
+.cycle-title, .panel-heading h2, .dialog-header h2 { line-height: var(--line-heading); letter-spacing: -.02em; }
+.cycle-number, .usage-total { letter-spacing: -.02em; }
+.log-text { font-family: var(--font-code); font-size: var(--text-caption); }
+.report-intro, .result-text, .full-report, .record-detail { line-height: var(--line-body); }
+.center-back-link { display: inline-flex; align-items: center; gap: 8px; }
+.close-button { display: inline-flex; align-items: center; justify-content: center; }
+@media (max-width: 640px) {
+  .topbar { flex-wrap: wrap; }
+  .header-actions { flex-wrap: wrap; }
+  .center-context-nav { flex-wrap: wrap; }
+}
+details.product-media > summary { font-size: 14px; font-weight: 600; cursor: pointer; }
+details.product-media[open] > summary { margin-bottom: 16px; }

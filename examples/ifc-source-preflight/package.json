@@ -1,0 +1,8 @@
+{
+  "name": "ifc-source-preflight",
+  "private": true,
+  "version": "1.0.0",
+  "description": "量源复核本地浏览器工作台的端到端检查",
+  "scripts": {"test:browser": "playwright test"},
+  "devDependencies": {"@playwright/test": "1.63.0"}
+}

@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>交错岛 · 完整纸面包</title>
+  <style>
+    :root { --paper:#f5f0e4; --ink:#213f41; --red:#aa4134; --line:#b9b5a5; --pale:#e8e5d8; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:#deded4; color:var(--ink); font-family:"Noto Serif CJK SC","Songti SC","SimSun",serif; font-size:14px; line-height:1.65; }
+    .toolbar { max-width:900px; margin:24px auto; display:flex; align-items:center; justify-content:space-between; gap:20px; padding:0 20px; }
+    .toolbar p { margin:0; }
+    button,.toolbar a { color:var(--ink); font:inherit; }
+    button { cursor:pointer; border:1px solid var(--ink); background:var(--paper); padding:10px 18px; }
+    button:focus-visible,a:focus-visible { outline:3px solid var(--red); outline-offset:3px; }
+    .sheet { width:210mm; min-height:297mm; margin:20px auto; padding:16mm; background:var(--paper); position:relative; box-shadow:0 6px 22px #203c3d16; }
+    .sheet::before { content:""; position:absolute; inset:7mm; border:1px solid var(--line); pointer-events:none; }
+    .masthead { display:flex; justify-content:space-between; border-bottom:1px solid var(--ink); padding-bottom:10px; font-size:11px; letter-spacing:2px; }
+    .kicker { color:var(--red); letter-spacing:4px; font-size:12px; margin:26px 0 6px; }
+    h1 { font-size:58px; font-weight:500; letter-spacing:12px; margin:0; line-height:1.25; }
+    h2 { font-size:30px; font-weight:500; letter-spacing:3px; margin:18px 0 10px; line-height:1.4; }
+    h3 { font-size:17px; letter-spacing:1px; margin:16px 0 8px; }
+    p { margin:8px 0; }
+    .subtitle { font-size:17px; margin-top:12px; }
+    .deck { font-size:15px; border-left:3px solid var(--red); padding-left:15px; margin:22px 0; }
+    .cols { display:grid; grid-template-columns:1fr 1fr; gap:22px; }
+    .steps { border-top:1px solid var(--line); }
+    .steps section { display:grid; grid-template-columns:36px 1fr; gap:12px; padding:12px 0; border-bottom:1px solid var(--line); }
+    .number { color:var(--red); font-size:26px; line-height:1.3; }
+    .steps h3 { margin:0 0 3px; }
+    .steps p { margin:0; }
+    .note { font-size:12px; color:#506263; }
+    .seal { display:inline-flex; justify-content:center; align-items:center; border:2px solid var(--red); color:var(--red); width:58px; height:58px; font-size:14px; line-height:1.4; transform:rotate(-5deg); flex-shrink:0; }
+    .hero { display:flex; justify-content:space-between; gap:15px; align-items:center; }
+    .map { width:100%; height:105px; margin:8px 0; }
+    .field { margin:14px 0; }
+    .field strong { font-weight:500; font-size:14px; }
+    .write { height:44px; border-bottom:1px solid var(--line); background:repeating-linear-gradient(to bottom,transparent 0,transparent 21px,var(--line) 22px,transparent 23px); }
+    .write.tall { height:66px; }
+    .drawing { height:205px; border:1px solid var(--line); margin-top:9px; position:relative; background:linear-gradient(90deg,transparent 49.8%,#213f4108 50%,transparent 50.2%),linear-gradient(transparent 49.8%,#213f4108 50%,transparent 50.2%); }
+    .drawing span { position:absolute; bottom:7px; right:10px; color:#6d7770; font-size:11px; }
+    .options { border:1px solid var(--line); padding:10px 12px; display:flex; gap:30px; margin:10px 0; }
+    .hidden { border:1px dashed var(--red); padding:12px 14px; margin-top:16px; }
+    .hidden h3 { color:var(--red); margin:0 0 5px; }
+    .role-tag { float:right; font-size:58px; color:var(--red); line-height:1; font-family:Georgia,serif; }
+    .instruction { background:var(--pale); padding:10px 13px; margin:14px 0; }
+    table { width:100%; border-collapse:collapse; font-size:12px; margin:10px 0; }
+    th,td { padding:9px 8px; border-bottom:1px solid var(--line); text-align:left; vertical-align:top; }
+    th { border-top:1px solid var(--ink); font-weight:500; }
+    .ending { margin:11px 0; padding:10px 0 8px; border-top:1px solid var(--line); }
+    .ending h3 { margin:0 0 3px; color:var(--red); }
+    .ending p { font-size:12px; margin:4px 0; }
+    .tokens { display:flex; gap:16px; justify-content:flex-end; margin:15px 0; }
+    .token { width:60px; height:60px; border:1px dashed var(--ink); border-radius:50%; display:flex; align-items:center; justify-content:center; color:var(--red); font-size:14px; }
+    .footer { margin-top:20px; display:flex; justify-content:space-between; gap:15px; font-size:10px; letter-spacing:1px; border-top:1px solid var(--line); padding-top:8px; }
+    .log { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+    .log .write { height:66px; }
+    .small-drawing { height:160px; }
+    .quiet { text-align:center; font-size:13px; margin-top:24px; letter-spacing:2px; }
+    @media (max-width:820px) { .sheet { width:calc(100% - 20px); min-height:auto; padding:32px 25px; } .toolbar { align-items:flex-start; } h1 { font-size:44px; } .cols,.log { gap:15px; } }
+    @media (max-width:520px) { body { font-size:13px; } .cols,.log { grid-template-columns:1fr; } .toolbar { flex-wrap:wrap; } .sheet::before { inset:10px; } h2 { font-size:25px; } th,td { padding:7px 4px; font-size:11px; } }
+    @page { size:A4; margin:0; }
+    @media print { body { background:white; color:#213f41; font-size:12px; -webkit-print-color-adjust:exact; print-color-adjust:exact; } .toolbar { display:none; } .sheet { width:210mm; height:297mm; min-height:0; margin:0; padding:15mm 16mm; box-shadow:none; break-after:page; page-break-after:always; overflow:visible; } .sheet:last-child { break-after:auto; page-break-after:auto; } .cols,.log { grid-template-columns:1fr 1fr; } h1 { font-size:52px; } h2 { font-size:28px; margin:16px 0 8px; } h3 { margin:13px 0 6px; } .kicker { margin-top:22px; } .deck { margin:18px 0; } .steps section { padding:11px 0; } .drawing { height:190px; } .small-drawing { height:148px; } .field { margin:12px 0; } .hidden { margin-top:14px; padding:10px 12px; } .write.tall { height:60px; } .ending { margin:9px 0; padding:8px 0 6px; } .footer { margin-top:16px; } .role-sheet .drawing { height:130px; } .role-sheet .field { margin:8px 0; } .role-sheet .write { height:35px; } .role-sheet .write.tall { height:44px; } .role-sheet .kicker { margin-top:16px; } .role-sheet h2 { margin-top:10px; } .role-sheet .hidden { margin-top:10px; padding:8px 12px; } .role-sheet .hidden p { margin:4px 0; } .role-sheet .instruction { margin:10px 0; padding:8px 12px; } .role-sheet h3 { margin-top:10px; } }
+    @media print {
+      .sheet[aria-labelledby="crossing"] h2 { margin:10px 0 8px; }
+      .sheet[aria-labelledby="crossing"] th,
+      .sheet[aria-labelledby="crossing"] td { padding:6px 6px; line-height:1.45; }
+      .sheet[aria-labelledby="crossing"] .ending { margin:7px 0; padding:6px 0; }
+      .sheet[aria-labelledby="crossing"] .ending p { line-height:1.55; }
+      .sheet[aria-labelledby="crossing"] .tokens { margin:10px 0; }
+      .sheet[aria-labelledby="crossing"] .token { width:48px; height:48px; }
+      .sheet[aria-labelledby="memory"] .small-drawing { height:120px; }
+      .sheet[aria-labelledby="memory"] .field { margin:9px 0; }
+      .sheet[aria-labelledby="memory"] .log .write { height:56px; }
+      .sheet[aria-labelledby="memory"] .quiet { margin-top:14px; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="toolbar" aria-label="纸面包操作">
+    <p>完整纸面包 · 共 5 页 · 建议 A4 原比例打印<br><span class="note">第 2、3 页分别交给两位旅人；遮盖自己的创作区。</span></p>
+    <div><button type="button" onclick="window.print()">打印 / 保存为 PDF</button>　<a href="index.html">浏览器体验</a></div>
+  </nav>
+
+  <main>
+    <article class="sheet" aria-labelledby="cover-title">
+      <header class="masthead"><span>双人原创叙事 · 完整纸面包</span><span>共同阅读 / 01</span></header>
+      <p class="kicker">潮汐航图 · 第一册</p>
+      <div class="hero"><div><h1 id="cover-title">交错岛</h1><p class="subtitle">两张地图，一次共同取舍</p></div><div class="seal">两位<br>旅人</div></div>
+      <svg class="map" viewBox="0 0 640 110" role="img" aria-label="两处地标之间交错的岛屿潮线"><g fill="none" stroke="#213f41" stroke-width="1"><path d="M20 80C75 20 155 106 225 45S360 30 421 67 536 22 620 70"/><path d="M20 93C85 34 151 118 225 59S361 43 422 81 547 37 620 83" opacity=".45"/><path d="M20 66C80 6 159 93 225 31S353 16 421 53 528 7 620 56" opacity=".45"/><path d="M110 63L130 25L150 63ZM485 57L505 32L525 57L505 76Z"/></g><g fill="#aa4134"><circle cx="130" cy="25" r="4"/><circle cx="505" cy="32" r="4"/></g><text x="117" y="99" font-size="11" fill="#213f41">光</text><text x="492" y="99" font-size="11" fill="#213f41">潮</text></svg>
+      <p class="deck">海图上的这座岛没有固定轮廓。每次潮水退去，它都会留下两块空白。阿岚带来一座纸灯塔，雨生带来一片玻璃花园。修复匣里只剩两枚筹码：今晚，你们只能留下一条离岛通路，或留住这两件原物。</p>
+      <div class="cols"><section><h3>准备</h3><p>两人、笔、用于遮盖的纸。第 2、3 页是独立角色卡，第 4 页有两枚可剪筹码；也可用硬币代替。第 5 页是共同纪念页。</p></section><section><h3>先约定</h3><p>只需虚构素材，不要求真实往事。不评价图画好坏，不用作品推断关系。任何时候可以停，已有作品各自保留。</p></section></div>
+      <div class="steps">
+        <section><span class="number">一</span><div><h3>把空白变成地方</h3><p>分别画地标、命名、写缘由，选择环境规则并封存预测。盖住图、缘由与预测。</p></div></section>
+        <section><span class="number">二</span><div><h3>走进对方的天气</h3><p>只交换环境规则。依照对方的条件写行动，轮流说出打算。双方都说完后，一起揭晓原作与预测。</p></div></section>
+        <section><span class="number">三</span><div><h3>为留下的东西付出</h3><p>先听完双方缘由，再轮流说希望保留与愿意放弃的东西。双方同意才花筹码；没有共同同意就停在这里。</p></div></section>
+      </div>
+      <p class="note">名字、绘图和自由句用于共同讲述；光照与潮汐决定可行行动。这里没有猜中计分，不要求出现惊喜，也没有标准情感答案。你们可以自行安排节奏，无需倒计时。</p>
+      <footer class="footer"><span>今天创造的缘由，也足以让一件东西值得留下。</span><span>交错岛 / 01</span></footer>
+    </article>
+
+    <article class="sheet role-sheet" aria-labelledby="role-a">
+      <header class="masthead"><span>独立阅读 · 不看另一张卡</span><span>角色卡 / 02</span></header>
+      <p class="kicker">第一位绘图人 <span class="role-tag">A</span></p>
+      <h2 id="role-a">阿岚 · 纸灯塔</h2>
+      <p>你在岛的一端坐下。灯塔由一张纸折成，它还没有灯；你可以改变外形，也可以为它另取名字。它遵守的光照规则由你决定。</p>
+      <div class="field"><strong>你的地标叫什么？</strong><div class="write"></div></div>
+      <strong>选择光照规则，只选一个；两种选择没有强弱。</strong>
+      <div class="options"><span>□ 只在月光中照路</span><span>□ 只在日光中照路</span></div>
+      <div class="hidden"><h3>创作区 · 完成后用纸盖住</h3><p class="note">可以画简单轮廓、符号或几笔线，不需要真实回忆。</p><div class="drawing"><span>纸灯塔 · 外形由你创造</span></div>
+        <div class="field"><strong>我希望留住它，因为……（写一句虚构缘由）</strong><div class="write tall"></div></div>
+        <div class="field"><strong>我猜雨生进入我的世界后，会……（先写，揭晓前不改）</strong><div class="write"></div></div>
+      </div>
+      <h3>第二节点 · 先只交换条件</h3>
+      <p>只告诉雨生你的光照规则。图、缘由与预测继续盖住。听雨生说花园在哪种潮汐开放：</p>
+      <div class="instruction">□ 退潮 → 你只能踏浅滩送灯塔，不能使用浮台。<br>□ 涨潮 → 你只能搭潮汐浮台送灯塔，不能走浅滩。</div>
+      <div class="field"><strong>在你的世界里，我打算……（给可行行动添一个细节）</strong><div class="write tall"></div></div>
+      <p class="note">轮流说出打算，双方说完后一起揭晓。你有同等的最终提议位置，也可以选择停止；不用证明自己的缘由更重要。</p>
+      <footer class="footer"><span>保留这张卡：原作与预测不需要擦掉。</span><span>交错岛 / 02</span></footer>
+    </article>
+
+    <article class="sheet role-sheet" aria-labelledby="role-b">
+      <header class="masthead"><span>独立阅读 · 不看另一张卡</span><span>角色卡 / 03</span></header>
+      <p class="kicker">第二位绘图人 <span class="role-tag">B</span></p>
+      <h2 id="role-b">雨生 · 玻璃花园</h2>
+      <p>你在岛的另一端坐下。花园藏在一片玻璃里，它还没有门；你可以改变外形，也可以为它另取名字。它遵守的潮汐规则由你决定。</p>
+      <div class="field"><strong>你的地标叫什么？</strong><div class="write"></div></div>
+      <strong>选择潮汐规则，只选一个；两种选择没有强弱。</strong>
+      <div class="options"><span>□ 只在退潮时开放</span><span>□ 只在涨潮时开放</span></div>
+      <div class="hidden"><h3>创作区 · 完成后用纸盖住</h3><p class="note">可以画简单轮廓、符号或几笔线，不需要真实回忆。</p><div class="drawing"><span>玻璃花园 · 外形由你创造</span></div>
+        <div class="field"><strong>我希望留住它，因为……（写一句虚构缘由）</strong><div class="write tall"></div></div>
+        <div class="field"><strong>我猜阿岚进入我的世界后，会……（先写，揭晓前不改）</strong><div class="write"></div></div>
+      </div>
+      <h3>第二节点 · 先只交换条件</h3>
+      <p>只告诉阿岚你的潮汐规则。图、缘由与预测继续盖住。听阿岚说灯塔在哪种光照中照路：</p>
+      <div class="instruction">□ 月光 → 你只能夜间递灯，不能使用晨间反光。<br>□ 日光 → 你只能晨间反光，不能使用夜间递灯。</div>
+      <div class="field"><strong>在你的世界里，我打算……（给可行行动添一个细节）</strong><div class="write tall"></div></div>
+      <p class="note">轮流说出打算，双方说完后一起揭晓。你有同等的最终提议位置，也可以选择停止；不用证明自己的缘由更重要。</p>
+      <footer class="footer"><span>保留这张卡：原作与预测不需要擦掉。</span><span>交错岛 / 03</span></footer>
+    </article>
+
+    <article class="sheet" aria-labelledby="crossing">
+      <header class="masthead"><span>共同阅读 · 两个人都说完以后</span><span>交叉与取舍 / 04</span></header>
+      <p class="kicker">岛的中央</p><h2 id="crossing">让两张地图相遇</h2>
+      <p>一起移开遮盖纸。轮流看对方的图，读缘由和预测。可以圈出预测与行动不同的一处，也可以写“和预测相同”。不改原预测，没有对错分数。</p>
+      <div class="cols"><div class="field"><strong>阿岚看到的相同／不同</strong><div class="write"></div></div><div class="field"><strong>雨生看到的相同／不同</strong><div class="write"></div></div></div>
+      <h3>候选通路 · 两种条件都留下痕迹</h3>
+      <table><thead><tr><th>阿岚的光 × 雨生的潮</th><th>阿岚的行动</th><th>雨生的行动</th><th>留路时画出</th></tr></thead><tbody>
+        <tr><td>月光 × 退潮</td><td>踏浅滩送灯塔</td><td>夜间递灯</td><td>夜间浅滩通路</td></tr>
+        <tr><td>月光 × 涨潮</td><td>搭潮汐浮台送灯塔</td><td>夜间递灯</td><td>夜间浮台通路</td></tr>
+        <tr><td>日光 × 退潮</td><td>踏浅滩送灯塔</td><td>晨间反光</td><td>清晨浅滩通路</td></tr>
+        <tr><td>日光 × 涨潮</td><td>搭潮汐浮台送灯塔</td><td>晨间反光</td><td>清晨浮台通路</td></tr>
+      </tbody></table>
+      <h3>只剩两枚修复筹码</h3><p>潮线爬到修复匣旁边。岛已无法同时留下原物与离岛的路。各说一次：“我希望保留……，愿意放弃……”。两人都同意才勾选与花筹码；任一方不愿继续，就选停止。</p>
+      <section class="ending"><h3>□ 留路 · 两枚都用于修路</h3><p>把灯塔拆成路灯，把花园拆成路面或浮台材料。划掉两件原物外形，保留名字与缘由，按上表画出通路。<strong>得到共同航图，失去两件原物。</strong></p><p>结束旁白：原来的轮廓从岛上消失了，名字与缘由却留在航图边缘。路仍由你们选择的光与潮决定。你们沿着它离岛，带走的是两件原物变成的方向。</p></section>
+      <section class="ending"><h3>□ 留物 · 每人一枚修复原物</h3><p>圈起两幅地标图，划去候选通路。<strong>得到两件原物，失去离岛的路。</strong></p><p>结束旁白：纸的折痕重新挺起，玻璃的边缘不再开裂。今晚你们不会沿一条共同的路离岛。两件原物都留下了，代价也留在地图上。这次停留是共同作出的选择。</p></section>
+      <section class="ending"><h3>□ 停在这里 · 不花筹码</h3><p>保留独立图、缘由、预测与未同意的选择，不画共同路线。<strong>没有共同结局。</strong></p><p>结束旁白：没有人把筹码放下。岛仍有两处不同的轮廓。停在这里不需要解释，也不抹去刚才创造的东西；两张独立地图都由各自的绘图人带走。</p></section>
+      <div class="tokens" aria-label="两枚可剪筹码"><span class="note">沿虚线剪下，或用硬币代替 →</span><span class="token">修复 · 一</span><span class="token">修复 · 二</span></div>
+      <footer class="footer"><span>两人都同意：阿岚 □　雨生 □　（停止无需共同同意）</span><span>交错岛 / 04</span></footer>
+    </article>
+
+    <article class="sheet" aria-labelledby="memory">
+      <header class="masthead"><span>共同纪念 · 可选填写</span><span>留下这一页 / 05</span></header>
+      <p class="kicker">离开，留下，或停在这里</p><h2 id="memory">我们的岛，曾经这样</h2>
+      <p>这页记录你们实际作出的选择。原图、原句与预测仍在角色卡上，不需要誊写或改成一致的答案。若停在更早节点，写下停在哪一步即可。</p>
+      <div class="cols"><div class="field"><strong>日期 / 岛的名字</strong><div class="write"></div></div><div class="field"><strong>停留的位置 / 选择</strong><div class="write"></div></div></div>
+      <div class="cols"><div><strong>光照：□ 月光　□ 日光</strong></div><div><strong>潮汐：□ 退潮　□ 涨潮</strong></div></div>
+      <div class="field"><strong>地图：留路时画通路；留物时画两个轮廓；停止时保留两处空白或独立标记。</strong><div class="drawing small-drawing"><span>不需要画出一致的风格</span></div></div>
+      <div class="field"><strong>留路：“我们把……变成……，为了……”<br>留物：“我们留下……，愿意放弃……”<br>停止：“我们停在……，尚未同意的是……”（可不写原因）</strong><div class="write tall"></div></div>
+      <div class="log"><section><h3>阿岚留下一句</h3><strong>我原以为……，但你让我看到……</strong><div class="write"></div><p class="note">可以写没有变化，也可以留空。</p></section><section><h3>雨生留下一句</h3><strong>我原以为……，但你让我看到……</strong><div class="write"></div><p class="note">可以写没有变化，也可以留空。</p></section></div>
+      <h3>把作品收好</h3><p>保留两张角色卡、交叉行动、揭晓观察和这一页。留路会改变虚构世界里的原物，纸上的原作仍是你们的创作记录。不要擦掉原句来制造一致。</p>
+      <p>如果重新开始，用新纸；不同的灯与潮、不同的名字，可以成为另一座岛。没有人必须讲出真实经历，也没有谁的沉默需要被解释。</p>
+      <p class="quiet">两张地图，都是自己的。<br>这一页，是你们留下的。</p>
+      <footer class="footer"><span>原创本地体验 · 无计分 · 无关系诊断</span><span>交错岛 / 05</span></footer>
+    </article>
+  </main>
+</body>
+</html>

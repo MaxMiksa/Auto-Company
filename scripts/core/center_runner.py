@@ -260,20 +260,27 @@ def governance_reason(root):
         return "context_unavailable"
 
 
-def execution_blocked_reason(root, since_ns):
+def execution_blocked_reason(root, since_ns, previous=None):
     """Only a guard observation from this live loop establishes a work block."""
     try:
         path = Path(root) / ".auto-loop-state"
         before = path.stat()
         if path.is_symlink() or before.st_size > 16384 or before.st_mtime_ns < since_ns:
-            return None
+            return previous
         state = dict(line.split("=", 1) for line in path.read_text(encoding="utf-8").splitlines() if "=" in line)
         if path.stat().st_mtime_ns != before.st_mtime_ns:
-            return None
-        if state.get("STATUS") == "paused" and state.get("PAUSE_REASON") == "unresolved_p1" and governance_reason(root) == "unresolved_p1":
-            return "unresolved_p1"
+            return previous
+        # An unavailable or incomplete observation is not a confirmed unblock.
+        if not state.get("STATUS") or "PAUSE_REASON" not in state:
+            return previous
+        if state["STATUS"] == "paused" and state["PAUSE_REASON"] == "unresolved_p1":
+            governance = governance_reason(root)
+            if governance == "context_unavailable":
+                return previous
+            if governance == "unresolved_p1":
+                return "unresolved_p1"
     except (OSError, ValueError):
-        pass
+        return previous
     return None
 
 
@@ -535,7 +542,7 @@ def run(manifest_path):
             except OSError:
                 pass
             if not stopping:
-                blocked = execution_blocked_reason(root, launched_at_ns)
+                blocked = execution_blocked_reason(root, launched_at_ns, receipt.get("executionBlockedReason"))
                 if blocked != receipt.get("executionBlockedReason"):
                     # P1_BLOCK keeps the original loop alive and retains the slot.
                     # It is a work fact, not an instruction to stop or clear P1.

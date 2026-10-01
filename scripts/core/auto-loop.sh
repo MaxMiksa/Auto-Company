@@ -201,8 +201,9 @@ wait_while_paused() {
 }
 
 save_state() {
-    local status="$1" pause_reason="${2:-}"
-    cat > "$STATE_FILE" << EOF
+    local status="$1" pause_reason="${2:-}" state_tmp
+    state_tmp="$(mktemp "${STATE_FILE}.XXXXXX")"
+    cat > "$state_tmp" << EOF
 LOOP_COUNT=$loop_count
 ERROR_COUNT=$error_count
 LAST_RUN=$(date '+%Y-%m-%d %H:%M:%S')
@@ -214,6 +215,7 @@ PRODUCT_ID=${PRODUCT_ID:-}
 PRODUCT_CYCLE_NUMBER=${PRODUCT_CYCLE_NUMBER:-}
 PRODUCT_CYCLE_ID=$CURRENT_PRODUCT_CYCLE_ID
 EOF
+    mv "$state_tmp" "$STATE_FILE"
 }
 
 wait_for_budget_resume() {

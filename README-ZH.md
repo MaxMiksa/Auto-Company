@@ -1,4 +1,4 @@
-﻿<div align="center">
+<div align="center">
 
 # Auto Company
 
@@ -21,25 +21,24 @@
 
 ---
 
-## 看板预览
+## 看板与产品实拍
 
-[![Auto Company Dashboard](presentation/dashboard-showcase.png)](presentation/dashboard-showcase.png)
+[![ScopeFence · 七轮连续工作记录](presentation/showcase/scopefence-timeline-zh-CN.png)](presentation/showcase/scopefence-timeline-zh-CN.png)
 
-ScopeFence 的真实四轮产品记录：04 展开，03、02、01 逐项收起且全部可见；立项前探索单独保留。看板展示工作汇报、检查、文档、实拍、用量与日志。标题和摘要仍是模型填写的记录，运行事实与支持的检查结果由程序采集；缺失、失败、过期和部分用量明确标注。支持范围见[运行记录](docs/runtime-observability.md)、[连续轮次](docs/product-cycles.md)和[自动实拍](docs/product-media.md)说明。
+ScopeFence 的 **7 个真实完成轮次：3 轮探索 + 4 轮产品工作**。探索、交付与后续工作在同一条时间轴中连续显示，原有身份、时间、检查与日志保持不变。
+
+时间轴使用经审校的中文翻译视图；产品截图来自经过人工精修和功能验收的公开副本。这些修复不增加历史轮次，也不代表已验证付费需求。点击图片查看原尺寸；[截图来源与复现](presentation/showcase/README.md)。
 
 <table>
-  <tr>
-    <th width="50%">Text Meter · English</th>
-    <th width="50%">范围确认单 / Scope Sheet · 中文</th>
-  </tr>
-  <tr>
-    <td width="50%" valign="top"><a href="presentation/dashboards/text-meter.png"><img src="presentation/dashboards/text-meter.png" alt="Text Meter · English Dashboard" width="100%" /></a></td>
-    <td width="50%" valign="top"><a href="presentation/dashboards/scope-sheet.png"><img src="presentation/dashboards/scope-sheet.png" alt="范围确认单 / Scope Sheet · 中文 Dashboard" width="100%" /></a></td>
-  </tr>
-  <tr>
-    <td width="50%" valign="top">两次启动的两个产品轮次，编号从 01 延续到 02。</td>
-    <td width="50%" valign="top">四个产品尝试；两次模型容量错误保留为失败，后续成功记录照常呈现。</td>
-  </tr>
+<tr><th colspan="2"><a href="examples/scopefence/">范围确认单</a> · 7 轮 · 3 探索 + 4 产品</th></tr>
+<tr><td colspan="2">把范围、费用和交期变化整理成可返回的确认链接。</td></tr>
+<tr><td width="50%" valign="top"><a href="presentation/products/scopefence-zh-result.png"><img src="presentation/products/scopefence-zh-result.png" alt="范围确认单 · 产品页面" width="100%" /></a></td><td width="50%" valign="top"><a href="presentation/showcase/scopefence-timeline-zh-CN.png"><img src="presentation/showcase/scopefence-timeline-zh-CN.png" alt="范围确认单 · 真实工作时间轴" width="100%" /></a></td></tr>
+<tr><th colspan="2"><a href="examples/tujiandan/">图检单</a> · 5 轮 · 3 探索 + 2 产品</th></tr>
+<tr><td colspan="2">在本地核对图片尺寸、体积、格式和文件名，导出检查单。</td></tr>
+<tr><td width="50%" valign="top"><a href="presentation/products/tujiandan-zh.png"><img src="presentation/products/tujiandan-zh.png" alt="图检单 · 产品页面" width="100%" /></a></td><td width="50%" valign="top"><a href="presentation/showcase/tujiandan-timeline-zh-CN.png"><img src="presentation/showcase/tujiandan-timeline-zh-CN.png" alt="图检单 · 真实工作时间轴" width="100%" /></a></td></tr>
+<tr><th colspan="2"><a href="examples/coi-chase-desk/">保单跟进台</a> · 5 轮 · 3 探索 + 2 产品</th></tr>
+<tr><td colspan="2">记录追催和资料收件，查看过程并导出本次工作记录。</td></tr>
+<tr><td width="50%" valign="top"><a href="presentation/products/coi-chase-desk-zh-full.png"><img src="presentation/products/coi-chase-desk-zh-full.png" alt="保单跟进台 · 产品页面" width="100%" /></a></td><td width="50%" valign="top"><a href="presentation/showcase/coi-chase-desk-timeline-zh-CN.png"><img src="presentation/showcase/coi-chase-desk-timeline-zh-CN.png" alt="保单跟进台 · 真实工作时间轴" width="100%" /></a></td></tr>
 </table>
 
 ## 这是什么？
@@ -90,25 +89,11 @@ make center
 
 ## 运行产物示例
 
-以下三个独立产品来自实际运行，中英文 README 展示同一套项目。ScopeFence 与范围确认单由默认流程自主选题；Text Meter 来自一个普通的文本统计需求。人类设置了运行权限、语言与停止边界，发布前进行了定向审查和必要修正，具体来源记录在各项目中。产品截图来自公开源码的实际默认界面；上方 Dashboard 保留原始运行事实，未修改失败或工作汇报。
+[展示目录](examples/README.md)收录 22 个可独立运行的公开案例，包含本次完成的 14 个产品，以及筛选和保留的历史案例。每项提供启动方式、功能边界与来源；本地新运行继续写入 `projects/`。
 
-<table>
-  <tr>
-    <th width="33%">ScopeFence · English</th>
-    <th width="33%">Text Meter · English</th>
-    <th width="33%">范围确认单 / Scope Sheet · 中文</th>
-  </tr>
-  <tr>
-    <td width="33%" valign="top"><a href="presentation/products/scopefence-full.png"><img src="presentation/products/scopefence.png" alt="ScopeFence" width="100%" /></a></td>
-    <td width="33%" valign="top"><a href="presentation/products/text-meter-full.png"><img src="presentation/products/text-meter.png" alt="Text Meter" width="100%" /></a></td>
-    <td width="33%" valign="top"><a href="presentation/products/scope-sheet-full.png"><img src="presentation/products/scope-sheet.png" alt="范围确认单 / Scope Sheet" width="100%" /></a></td>
-  </tr>
-  <tr>
-    <td width="33%" valign="top"><p>将范围变更整理成无需登录的确认链接；返回链接是可编辑的沟通副本，不是经过验证的批准记录。</p><p><a href="projects/scopefence/">查看源码 →</a></p></td>
-    <td width="33%" valign="top"><p>在浏览器本地即时统计字符、非空白字符、以空白分隔的词与行数。</p><p><a href="projects/text-meter/">查看源码 →</a></p></td>
-    <td width="33%" valign="top"><p>填写合作范围、修改、交付与报价，检查必填项后复制或下载中文确认单。</p><p><a href="projects/scope-sheet/">查看源码 →</a></p></td>
-  </tr>
-</table>
+案例覆盖专业数据核验、图片交付、双人饮食、旅行节奏、家庭共同创作等任务。展示副本保留原产品方向，修复真实交互问题并统一组件细节；原始运行报告与失败结论不会随宣传图改写。
+
+前端现采用基于 Anthropic 技能改编、从用户任务出发的设计规则。[三个固定产品的提示词对照](presentation/frontend-study/README.md)中，新规则两胜一平，12 次共同桌面与手机流程全部通过。
 
 ## 你该看哪一节（按平台）
 
@@ -142,7 +127,7 @@ make center
 | | CTO | Werner Vogels | 为失败而设计、API First |
 | | 逆向思考 | Charlie Munger | 逆向思维、Pre-Mortem、心理误判清单 |
 | **产品** | 产品设计 | Don Norman | 可供性、心智模型、以人为本 |
-| | UI 设计 | Matías Duarte | Material 隐喻、Typography 优先 |
+| | UI 设计 | Matías Duarte | 任务布局、字体层级与组件一致性 |
 | | 交互设计 | Alan Cooper | Goal-Directed Design、Persona 驱动 |
 | **工程** | 全栈开发 | DHH | 约定优于配置、Majestic Monolith |
 | | QA | James Bach | 探索性测试、Testing ≠ Checking |

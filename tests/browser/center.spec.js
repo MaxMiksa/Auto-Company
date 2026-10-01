@@ -5,9 +5,10 @@ import { fileURLToPath } from 'node:url';
 
 const test = base.extend({
   centerCycles: [6, { option: true }],
-  center: async ({ centerCycles }, use, testInfo) => {
+  centerExplorationCycles: [0, { option: true }],
+  center: async ({ centerCycles, centerExplorationCycles }, use, testInfo) => {
     const child = spawn(process.env.AUTO_COMPANY_BROWSER_PYTHON || (process.platform === 'win32' ? 'python' : 'python3'),
-      ['-u', fileURLToPath(new URL('center-fixture-server.py', import.meta.url)), '--cycles', String(centerCycles)],
+      ['-u', fileURLToPath(new URL('center-fixture-server.py', import.meta.url)), '--cycles', String(centerCycles), '--exploration-cycles', String(centerExplorationCycles)],
       { stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true });
     let output = '';
     child.stderr.on('data', chunk => { output += chunk; });
@@ -67,9 +68,6 @@ test('default autonomous creation uses empty text and preserves preparation fail
 
 test('six product rounds retain earliest history and complete usage independently of visible rows', async ({ page, center }) => {
   await page.goto(`${center.url}/products/${center.entryId}`);
-  await expect(page.locator('#historyList details')).toHaveCount(4);
-  await expect(page.locator('#olderButton')).toBeVisible();
-  await page.locator('#olderButton').click();
   await expect(page.locator('#historyList details')).toHaveCount(5);
   await page.locator('#tab-usage').click();
   await page.locator('#usagePeriod').selectOption('all');
@@ -144,8 +142,6 @@ test.describe('long product history', () => {
   test.use({ centerCycles: 36 });
   test('limited older rows load their recorded detail and keep scoped logs', async ({ page, center }) => {
     await page.goto(`${center.url}/products/${center.entryId}`);
-    await expect(page.locator('#historyList details')).toHaveCount(4);
-    await page.locator('#olderButton').click();
     await expect(page.locator('#historyList details')).toHaveCount(35);
     const oldest = page.locator('#historyList details').last();
     await oldest.locator('summary').click();
@@ -154,5 +150,29 @@ test.describe('long product history', () => {
     await page.locator('#usagePeriod').selectOption('all');
     await expect(page.locator('#usageSummary')).toContainText('360');
     await expect(page.locator('#usageSummary')).toContainText('36 of 36');
+  });
+});
+
+test.describe('continuous linked exploration history', () => {
+  test.use({ centerExplorationCycles: 3 });
+  test('default product page includes exploration and retains its original scoped log', async ({ page, center }) => {
+    await page.goto(`${center.url}/products/${center.entryId}`);
+    await expect(page.locator('#historyList details')).toHaveCount(8);
+    await expect(page.locator('#cycleNumber')).toHaveText('09');
+    await expect(page.locator('#historyList .history-number')).toHaveText(['08', '07', '06', '05', '04', '03', '02', '01']);
+    const earliest = page.locator('#historyList details').last();
+    await earliest.locator('summary').click();
+    await expect(earliest).toContainText('Recorded exploration detail 1');
+    const endpoint = `${center.url}/api/center/v1/entries/${center.entryId}`;
+    const journal = (await (await page.request.get(`${endpoint}/journal?limit=100`)).json()).data;
+    expect(journal.cycles).toHaveLength(9);
+    expect(journal.cycles.slice(-3).map(row => row.id)).toEqual([...center.explorationCycleIds].reverse());
+    expect(journal.cycles[0].number).toBe(6);
+    expect(journal.cycles[0].sequenceNumber).toBe(9);
+    const selected = (await (await page.request.get(`${endpoint}/journal?section=exploration&limit=100&sourceId=${center.sourceId}`)).json()).data;
+    expect(selected.cycles.map(row => row.id)).toEqual([...center.explorationCycleIds].reverse());
+    const log = await page.request.get(new URL(journal.cycles.at(-1).logUrl, center.url).href);
+    expect(log.ok()).toBeTruthy();
+    expect(await log.text()).toBe(' private log');
   });
 });

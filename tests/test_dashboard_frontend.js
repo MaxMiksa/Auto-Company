@@ -16,14 +16,15 @@ function helpers() {
   const context = vm.createContext({ window: {}, document: {
     getElementById: (id) => { assert.ok(fields.has(id), `Unexpected DOM dependency: ${id}`); return fields.get(id); },
   } });
+  vm.runInContext(fs.readFileSync(path.join(dashboard, "icons.js"), "utf8"), context);
   vm.runInContext(i18n, context);
   // Expose existing closures before event wiring. There is no simulated DOM,
   // copied application logic, network request or production testing hook.
   const binding = app.indexOf("\n  document.querySelectorAll('[data-tab]').forEach");
   assert.ok(binding > 0, "Journal event wiring must follow its helper declarations");
-  vm.runInContext(app.slice(0, binding) + "\n globalThis.journal = { state, message, aggregate, duration, cycleTitle, statusLabel, formatTime, filterUsage, reportRows, liveDuration, checkCounts, checkPresentation, progressState, latestCycle, historyGroups, unavailableArtifact, mediaURL, mediaRetryError, iconPublicationWarning };\n})();", context);
+  vm.runInContext(app.slice(0, binding) + "\n globalThis.journal = { state, message, aggregate, duration, cycleTitle, statusLabel, formatTime, filterUsage, reportRows, liveDuration, checkCounts, checkPresentation, progressState, latestCycle, historyGroups, paddedCycleNumber, unavailableArtifact, mediaURL, mediaRetryError, iconPublicationWarning };\n})();", context);
   context.journal.state.language = "en";
-  return { ...context.journal, messages: context.window.JOURNAL_MESSAGES, fields };
+  return { ...context.journal, messages: context.window.JOURNAL_MESSAGES, vocabulary: context.window.DashboardStatus, fields };
 }
 
 test("both languages cover rendered keys and preserve interpolation fields", () => {
@@ -134,12 +135,12 @@ test("duration and timestamps never imply a reliable end to interrupted work", (
 });
 
 test("runtime status labels distinguish unavailable services from unrecorded usage", () => {
-  const { state, statusLabel, messages } = helpers();
+  const { state, statusLabel, messages, vocabulary } = helpers();
   const states = ["active", "activating", "configured", "deactivating", "failed", "inactive", "idle", "mismatched", "paused", "waiting_limit", "circuit_break", "not_configured", "not_installed", "reloading", "running", "stopped", "unavailable", "unknown", "unsupported"];
   for (const language of ["en", "zh-CN"]) {
     state.language = language;
     for (const value of states) {
-      assert.equal(statusLabel(value), messages[language][value === "unavailable" ? "statusUnavailable" : value]);
+      assert.equal(statusLabel(value), vocabulary.label(value, language) || messages[language][value === "unavailable" ? "statusUnavailable" : value]);
     }
     assert.equal(statusLabel("future_unknown_state"), messages[language].unknown);
     assert.notEqual(statusLabel("unavailable"), messages[language].unavailable);
@@ -206,24 +207,21 @@ test("project selection never promotes unrelated or unknown history into current
   assert.equal(latestCycle({ cycles: [old] }), old);
 });
 
-test("product timelines separate exploration without dropping legacy or unknown records", () => {
+test("product timelines include exploration alongside product, legacy and unknown records", () => {
   const { historyGroups } = helpers();
   const current = { id: "product-5", identityKind: "product" };
   const product = { id: "product-4", identityKind: "product" };
   const exploration = { id: "explore-3", identityKind: "exploration", status: "failed" };
   const legacy = { id: "legacy", numbering: "legacy", status: "unknown" };
   const grouped = historyGroups({ cycles: [current, product, exploration, legacy] }, current);
-  assert.deepEqual(Array.from(grouped.main, (cycle) => cycle.id), ["product-4", "legacy"]);
-  assert.deepEqual(Array.from(grouped.exploration, (cycle) => cycle.id), ["explore-3"]);
+  assert.deepEqual(Array.from(grouped.main, (cycle) => cycle.id), ["product-4", "explore-3", "legacy"]);
 
   const explorationCurrent = { id: "explore-4", identityKind: "exploration" };
   const explorationOnly = historyGroups({ cycles: [explorationCurrent, exploration] }, explorationCurrent);
   assert.deepEqual(Array.from(explorationOnly.main, (cycle) => cycle.id), ["explore-3"]);
-  assert.deepEqual(Array.from(explorationOnly.exploration), []);
 
   const currentExplorationWithProduct = historyGroups({ cycles: [explorationCurrent, product, exploration] }, explorationCurrent);
-  assert.deepEqual(Array.from(currentExplorationWithProduct.main, (cycle) => cycle.id), ["product-4"]);
-  assert.deepEqual(Array.from(currentExplorationWithProduct.exploration, (cycle) => cycle.id), ["explore-3"]);
+  assert.deepEqual(Array.from(currentExplorationWithProduct.main, (cycle) => cycle.id), ["product-4", "explore-3"]);
 });
 
 
@@ -264,4 +262,194 @@ test("unavailable previews use lifecycle labels while documents keep file eviden
     }
     assert.equal(unavailableArtifact({ kind: "document", evidenceStatus: "stale" }), messages[language].artifactStale);
   }
+});
+
+function scopedUsageHarness() {
+  const fields = new Map(['usagePeriod', 'usageDate', 'refreshButton', 'refreshStatus', 'autoRefresh', 'connectionError', 'loadingState'].map((id) => [id, {}]));
+  fields.get('usagePeriod').value = 'all';
+  fields.get('usageDate').value = '2026-10-01';
+  const requests = [];
+  const renders = [];
+  const context = vm.createContext({ window: { scrollY: 0, scrollTo() {} }, location: { pathname: '/products/entry-a' },
+    document: { getElementById(id) { assert.ok(fields.has(id), id); return fields.get(id); } },
+    clearTimeout() {}, performance: { now: () => 0 }, requestAnimationFrame: (callback) => callback(),
+    request: (url) => new Promise((resolve, reject) => requests.push({ url, resolve, reject })),
+    recordUsage: (usage) => renders.push(usage),
+  });
+  vm.runInContext(i18n, context);
+  const binding = app.indexOf("\n  document.querySelectorAll('[data-tab]').forEach");
+  // Keep the real refresh, pagination, usage validation and response guards.
+  // Replace only I/O, rendering and the background timer for deterministic races.
+  vm.runInContext(app.slice(0, binding) + `
+    fetchCenter = globalThis.request;
+    render = renderRuntime = refreshCenterContext = scheduleRefresh = () => {};
+    renderUsage = () => globalThis.recordUsage(state.scopedUsage);
+    globalThis.journal = { state, refresh, refreshScopedUsage };
+  })();`, context);
+  const snapshot = { ok: true, entryId: 'entry-a', sourceId: 'source-a', sourceRevision: 1, cycles: [], total: 0, generatedAt: '2026-10-01T00:00:00Z' };
+  context.journal.state.data = snapshot;
+  const usage = { entryId: 'entry-a', sourceId: 'source-a', sourceRevision: 1, period: 'all', startDate: null, endDate: null, usage: { totalTokens: 42 }, recorded: 1, unknown: 0 };
+  return { ...context.journal, fields, requests, renders, snapshot, usage };
+}
+
+for (const outcome of ['failure', 'success']) {
+  test(`late usage ${outcome} cannot replace a completed journal refresh`, async () => {
+    const h = scopedUsageHarness();
+    const old = h.refreshScopedUsage();
+    const fresh = h.refresh();
+    assert.equal(h.requests.length, 3);
+    h.requests[1].resolve({ ...h.snapshot, generatedAt: '2026-10-01T00:00:05Z' });
+    h.requests[2].resolve({ language: 'en' });
+    // Wait for the real journal refresh to request its scoped ledger.
+    for (let turn = 0; h.requests.length < 4 && turn < 10; turn++) await Promise.resolve();
+    assert.equal(h.requests.length, 4);
+    h.requests[3].resolve(h.usage);
+    await fresh;
+    assert.equal(h.state.statusFailed, false);
+    const installed = h.state.scopedUsage;
+    assert.equal(installed.data.usage.totalTokens, 42);
+    const rendered = h.renders.length;
+    if (outcome === 'failure') h.requests[0].reject(new Error('old request failed'));
+    else h.requests[0].resolve({ ...h.usage, usage: { totalTokens: 7 } });
+    await old;
+    assert.equal(h.state.scopedUsage, installed);
+    assert.equal(h.renders.length, rendered);
+  });
+}
+
+test('current usage failure still clears the unavailable scoped ledger', async () => {
+  const h = scopedUsageHarness();
+  h.state.scopedUsage = { key: 'previous', data: h.usage };
+  const pending = h.refreshScopedUsage();
+  h.requests[0].reject(new Error('current request failed'));
+  await pending;
+  assert.equal(h.state.scopedUsage, null);
+  assert.equal(h.renders.length, 1);
+});
+
+for (const change of ['new request', 'selection']) {
+  test(`late usage failure respects a newer ${change}`, async () => {
+    const h = scopedUsageHarness();
+    const old = h.refreshScopedUsage();
+    h.fields.get('usagePeriod').value = 'day';
+    const retained = { key: 'newer selection', data: h.usage };
+    if (change === 'new request') {
+      const current = h.refreshScopedUsage();
+      h.requests[1].resolve({ ...h.usage, period: 'day', startDate: '2026-10-01', endDate: '2026-10-01' });
+      await current;
+    } else h.state.scopedUsage = retained;
+    const installed = h.state.scopedUsage;
+    const rendered = h.renders.length;
+    h.requests[0].reject(new Error('old filter failed'));
+    await old;
+    assert.equal(h.state.scopedUsage, installed);
+    assert.equal(h.renders.length, rendered);
+  });
+}
+
+function logSourceHarness(center = true) {
+  const fields = new Map(['logText', 'copyLogButton', 'refreshLogButton', 'logStatus'].map((id) => [id, {}]));
+  const reads = [];
+  const context = vm.createContext({ window: {}, location: { pathname: center ? '/products/entry-a' : '/journal' },
+    document: { getElementById(id) { assert.ok(fields.has(id), id); return fields.get(id); } },
+    read: (url) => new Promise((resolve, reject) => reads.push({ url, resolve, reject })),
+  });
+  vm.runInContext(i18n, context);
+  const binding = app.indexOf("\n  document.querySelectorAll('[data-tab]').forEach");
+  vm.runInContext(app.slice(0, binding) + '\n fetchScopedText = fetchJSON = globalThis.read; globalThis.journal = {state, loadLog};\n})();', context);
+  const snapshot = (source, revision = 1, resource = 'log-same-cycle') => ({ entryId: 'entry-a', sourceId: source, sourceRevision: revision,
+    cycles: [{ id: 'same-cycle', logUrl: `/api/center/v1/entries/entry-a/resources/${resource}?sourceId=${source}` }] });
+  context.journal.state.data = snapshot('source-a');
+  context.journal.state.selectedLog = 'same-cycle';
+  return { ...context.journal, fields, reads, snapshot };
+}
+
+for (const outcome of ['success', 'failure']) {
+  test(`source change ignores old log ${outcome} and reads the current source`, async () => {
+    const h = logSourceHarness();
+    const old = h.loadLog();
+    h.state.data = h.snapshot('source-b');
+    const current = h.loadLog();
+    assert.equal(h.reads.length, 1, 'reads remain serialized');
+    if (outcome === 'success') h.reads[0].resolve('SOURCE A');
+    else h.reads[0].reject(new Error('A unavailable'));
+    await old;
+    for (let turn = 0; h.reads.length < 2 && turn < 10; turn++) await Promise.resolve();
+    assert.equal(h.reads.length, 2, 'same cycle in B needs its own read');
+    assert.match(h.reads[1].url, /sourceId=source-b$/);
+    assert.notEqual(h.fields.get('logText').textContent, 'SOURCE A');
+    assert.ok(h.state.logPending, 'old cleanup must not remove B pending');
+    assert.equal(h.fields.get('copyLogButton').disabled, true);
+    h.reads[1].resolve('SOURCE B');
+    await current;
+    assert.equal(h.fields.get('logText').textContent, 'SOURCE B');
+    assert.equal(h.state.logText, 'SOURCE B');
+    assert.equal(h.state.logPending, null);
+  });
+}
+
+for (const change of ['source', 'revision', 'resource']) {
+  test(`loaded log cache is not reused after a ${change} change`, async () => {
+    const h = logSourceHarness();
+    const initial = h.loadLog(); h.reads[0].resolve('SOURCE A'); await initial;
+    h.state.data = h.snapshot(change === 'source' ? 'source-b' : 'source-a', change === 'revision' ? 2 : 1, change === 'resource' ? 'log-new-resource' : 'log-same-cycle');
+    const pending = h.loadLog();
+    assert.equal(h.fields.get('logText').textContent, '');
+    h.reads[1].reject(new Error('new context unavailable'));
+    await pending;
+    assert.equal(h.state.logText, '');
+    assert.equal(h.fields.get('logText').textContent, '');
+  });
+}
+
+test('same log context deduplicates reads and retains its own text on failure', async () => {
+  const h = logSourceHarness();
+  const first = h.loadLog(); const duplicate = h.loadLog();
+  assert.equal(h.reads.length, 1);
+  h.reads[0].resolve('CURRENT'); await Promise.all([first, duplicate]);
+  h.state.data = h.snapshot('source-a'); // Normal poll replaces the object, not its identity fields.
+  const retry = h.loadLog();
+  assert.equal(h.fields.get('logText').textContent, 'CURRENT');
+  h.reads[1].reject(new Error('current failure')); await retry;
+  assert.equal(h.state.logText, 'CURRENT');
+  assert.equal(h.fields.get('logText').textContent, 'CURRENT');
+});
+
+test('source change clears already displayed old text while waiting for the old read', async () => {
+  const h = logSourceHarness();
+  const initial = h.loadLog(); h.reads[0].resolve('SOURCE A'); await initial;
+  const old = h.loadLog();
+  h.state.data = h.snapshot('source-b');
+  const current = h.loadLog();
+  assert.equal(h.fields.get('logText').textContent, '');
+  assert.equal(h.state.logText, '');
+  assert.equal(h.fields.get('copyLogButton').disabled, true);
+  h.reads[1].resolve('OLD A REFRESH'); await old;
+  for (let turn = 0; h.reads.length < 3 && turn < 10; turn++) await Promise.resolve();
+  assert.equal(h.reads.length, 3);
+  h.reads[2].resolve('SOURCE B'); await current;
+  assert.equal(h.state.logText, 'SOURCE B');
+});
+
+for (const id of ['runtime', 'same-cycle']) {
+  test(`standalone ${id} log keeps its existing read and cache behavior`, async () => {
+    const h = logSourceHarness(false); h.state.selectedLog = id;
+    const first = h.loadLog(); const duplicate = h.loadLog();
+    assert.equal(h.reads.length, 1);
+    assert.equal(h.reads[0].url, id === 'runtime' ? '/api/log-tail?lines=180' : '/api/journal/log?id=same-cycle');
+    h.reads[0].resolve({ available: true, logTail: 'LOCAL', text: 'LOCAL' });
+    await Promise.all([first, duplicate]);
+    assert.equal(h.state.logText, 'LOCAL');
+    const retry = h.loadLog(); h.reads[1].reject(new Error('local failed')); await retry;
+    assert.equal(h.state.logText, 'LOCAL');
+    assert.equal(h.fields.get('logText').textContent, 'LOCAL');
+  });
+}
+
+
+test("cycle labels use authoritative continuous numbers and retain legacy fallback", () => {
+  const { paddedCycleNumber } = helpers();
+  assert.equal(paddedCycleNumber({ sequenceNumber: 7, number: 4 }), "07");
+  assert.equal(paddedCycleNumber({ sequenceNumber: null, number: 4 }), "04");
+  assert.equal(paddedCycleNumber({ number: 1 }), "01");
 });

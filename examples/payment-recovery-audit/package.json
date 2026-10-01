@@ -1,0 +1,14 @@
+{
+  "name": "payment-recovery-audit",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Read-only residual-revenue audit for failed Stripe invoices",
+  "scripts": {
+    "audit": "node bin/audit.js",
+    "demo:audit": "node bin/audit.js fixtures/demo.json --pretty",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

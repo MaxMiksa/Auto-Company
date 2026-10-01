@@ -18,6 +18,7 @@ function helpers() {
     crypto: { randomUUID: (() => { let value = 0; return () => `intent-${++value}`; })() },
   });
   vm.runInContext(i18n, context);
+  vm.runInContext(fs.readFileSync(path.join(dashboard, "icons.js"), "utf8"), context);
   const binding = app.lastIndexOf("\n  applyLanguage(); wire(); renderPage(); refresh();");
   assert.ok(binding > 0, "Center event wiring must follow helper declarations");
   vm.runInContext(app.slice(0, binding) + "\n globalThis.center = { state, message, entryState, capability, capabilityReason, errorText, requestReason, requestIsFresh, executionBlockReason, requestDisplayState, requestOwnsDispatch, normalizeCounts, renderCounts, filteredEntries, emptyListState, requestState, statusLabel, write };\n})();", context);
@@ -31,11 +32,12 @@ function journalHelpers() {
     document: {}, URL, Intl, Date, Number, Object, Set, Map, String, Math, AbortController, setTimeout, clearTimeout,
   });
   vm.runInContext(fs.readFileSync(path.join(dashboard, "i18n.js"), "utf8"), context);
+  vm.runInContext(fs.readFileSync(path.join(dashboard, "icons.js"), "utf8"), context);
   const binding = journalApp.indexOf("\n  document.querySelectorAll('[data-tab]')");
   assert.ok(binding > 0, "Journal event wiring must follow helper declarations");
-  vm.runInContext(journalApp.slice(0, binding) + "\n globalThis.journal = { state, scope, freshCenterRequest, centerRequestDisplayState, scopedCenterRuntimeState, scopedRecordedRuntimeState, runtimeStateValue, runtimeStatusLabel, runtimeLabel, requestContextLabel, centerRuntimeContextValue, historyGroups, explorationScope, explorationPageMatches, resetExploration, explorationRequestMatches, journalPageMatches, safePreviewURL };\n})();", context);
+  vm.runInContext(journalApp.slice(0, binding) + "\n globalThis.journal = { state, scope, freshCenterRequest, centerRequestDisplayState, scopedCenterRuntimeState, scopedRecordedRuntimeState, runtimeStateValue, runtimeStatusLabel, runtimeLabel, requestContextLabel, centerRuntimeContextValue, historyGroups, fetchFullScopedJournal, journalPageMatches, safePreviewURL };\n})();", context);
   context.journal.state.language = "en";
-  return context.journal;
+  return { ...context.journal, context };
 }
 
 test("queue badge counts requests without treating read-only unknown products as queued work", () => {
@@ -193,7 +195,7 @@ test("product detail trusts only the confirmed matching center request", () => {
   state.centerSummary = { currentRequest: { ...request, entryId: "entry-b" } };
   assert.equal(scopedCenterRuntimeState(state.data, state.centerSummary, now), null);
   assert.equal(runtimeStateValue(), "unknown");
-  assert.equal(runtimeLabel(), "Unknown");
+  assert.equal(runtimeLabel(), "Status unknown");
   state.centerSummary = { currentRequest: { ...request, liveConfirmedAt: null } };
   assert.equal(scopedCenterRuntimeState(state.data, state.centerSummary, now), null);
 });
@@ -206,20 +208,20 @@ test("product detail drops stale or disconnected running evidence", () => {
   state.data = { entry, runtime: { state: "running" } }; state.centerSummary = { currentRequest }; state.statusFailed = true;
   assert.equal(scopedCenterRuntimeState(state.data, state.centerSummary, now), null);
   assert.equal(runtimeStateValue(), "unknown");
-  assert.equal(runtimeLabel(), "Unknown");
+  assert.equal(runtimeLabel(), "Status unknown");
   assert.equal(centerRuntimeContextValue(state.centerSummary, now), "");
   state.statusFailed = false; state.centerSummary.currentRequest.liveConfirmedAt = new Date(now - 15001).toISOString();
   assert.equal(freshCenterRequest(state.centerSummary, now), null);
   assert.equal(scopedCenterRuntimeState(state.data, state.centerSummary, now), null);
   assert.equal(runtimeStateValue(), "unknown");
-  assert.equal(runtimeLabel(), "Unknown");
+  assert.equal(runtimeLabel(), "Status unknown");
   assert.equal(centerRuntimeContextValue(state.centerSummary, now), "");
 });
 
 test("product detail labels recorded request states without claiming product completion", () => {
   const { state, scopedRecordedRuntimeState, runtimeStateValue, runtimeStatusLabel } = journalHelpers();
   state.statusFailed = false; state.centerSummary = { currentRequest: null };
-  const labels = { ended: "Last work ended", canceled: "Work canceled", failed: "Work failed", queued: "Work queued", attention: "Work needs review" };
+  const labels = { ended: "Last run ended", canceled: "Work canceled", failed: "Work failed", queued: "Work queued", attention: "Work needs review" };
   for (const [value, label] of Object.entries(labels)) {
     state.data = { entry: { entryId: "entry-a", executionSummary: { requestId: `request-${value}`, state: value } } };
     assert.equal(scopedRecordedRuntimeState(), value);
@@ -238,9 +240,9 @@ test("cross-product running context includes the queued-plan identity", () => {
   assert.equal(requestContextLabel({ displayName: "Auto Company", sourceId: "source_1234567890" }), "Auto Company · …34567890");
   const now = Date.now(); state.statusFailed = false;
   state.centerSummary = { currentRequest: { requestId: "other", entryId: "entry-b", state: "starting", liveConfirmedAt: new Date(now - 1000).toISOString(), displayName: "Auto Company", config: { model: "gpt-5.6-luna", effort: "high" } } };
-  assert.equal(centerRuntimeContextValue(state.centerSummary, now), "Other work · Starting…: Auto Company · gpt-5.6-luna · high");
+  assert.equal(centerRuntimeContextValue(state.centerSummary, now), "Other work · Starting: Auto Company · gpt-5.6-luna · high");
   state.centerSummary.currentRequest.state = "stopping";
-  assert.equal(centerRuntimeContextValue(state.centerSummary, now), "Other work · Stopping…: Auto Company · gpt-5.6-luna · high");
+  assert.equal(centerRuntimeContextValue(state.centerSummary, now), "Other work · Stopping: Auto Company · gpt-5.6-luna · high");
 });
 
 test("product detail shows only fresh matching unresolved-P1 protection", () => {
@@ -254,9 +256,9 @@ test("product detail shows only fresh matching unresolved-P1 protection", () => 
   assert.equal(scopedCenterRuntimeState(state.data, state.centerSummary, now), "blocked");
   assert.equal(runtimeStateValue(), "blocked");
   assert.equal(runtimeLabel(), "Protection paused · Waiting for human review");
-  assert.equal(centerRuntimeContextValue(state.centerSummary, now), "Current work · Protection paused · Waiting for human review");
+  assert.equal(centerRuntimeContextValue(state.centerSummary, now), "Current work · Needs attention");
   state.centerSummary = { currentRequest: { ...request, entryId: "entry-b" } };
-  assert.equal(centerRuntimeContextValue(state.centerSummary, now), "Other work · Protection paused · Waiting for human review: Guarded product · gpt-6-sol · high");
+  assert.equal(centerRuntimeContextValue(state.centerSummary, now), "Other work · Needs attention: Guarded product · gpt-6-sol · high");
   state.centerSummary = { currentRequest: { ...request, liveConfirmedAt: new Date(now - 15001).toISOString() } };
   assert.equal(scopedCenterRuntimeState(state.data, state.centerSummary, now), null);
   assert.equal(centerRuntimeContextValue(state.centerSummary, now), "");
@@ -265,47 +267,55 @@ test("product detail shows only fresh matching unresolved-P1 protection", () => 
   assert.equal(centerRuntimeContextValue(state.centerSummary, now), "");
 });
 
-test("linked exploration pages stay separate and match the product source snapshot", () => {
-  const { state, historyGroups, explorationScope, explorationPageMatches, resetExploration, explorationRequestMatches } = journalHelpers();
-  const product = {
-    ok: true, entryId: "entry-a", sourceId: "source-a", sourceRevision: 7, explorationAvailable: true,
-    entry: { entryId: "entry-a", sourceId: "source-a", kind: "product" },
-    cycles: [{ id: "product-2", identityKind: "product" }, { id: "product-1", identityKind: "product" }],
-  };
-  const expected = explorationScope(product);
-  assert.deepEqual({ ...expected }, { entryId: "entry-a", sourceId: "source-a", sourceRevision: 7, key: '["entry-a","source-a",7]' });
-  assert.deepEqual(Array.from(historyGroups(product, product.cycles[0]).main, (cycle) => cycle.id), ["product-1"]);
-  assert.equal(historyGroups(product, product.cycles[0]).exploration.length, 0);
-  const page = { entryId: "entry-a", sourceId: "source-a", sourceRevision: 7, entry: { entryId: "entry-a", sourceId: "source-a" }, cycles: [{ id: "exp-1", identityKind: "exploration" }] };
-  assert.equal(explorationPageMatches(page, expected), true);
-  assert.equal(explorationPageMatches({ ...page, sourceId: "source-b" }, expected), false);
-  assert.equal(explorationPageMatches({ ...page, sourceRevision: 8 }, expected), false);
-  assert.equal(explorationPageMatches({ ...page, cycles: [{ id: "product-1", identityKind: "product" }] }, expected), false);
-  state.exploration.key = expected.key; state.exploration.token = 4; state.exploration.loaded = true; state.exploration.cycles = page.cycles;
-  state.data = product;
-  assert.equal(explorationRequestMatches(4, expected), true);
-  resetExploration({ ...expected, key: '["entry-a","source-b",1]' });
-  assert.equal(explorationRequestMatches(4, expected), false);
-  assert.equal(state.exploration.token, 5);
-  assert.equal(state.exploration.loaded, false);
-  assert.equal(state.exploration.cycles.length, 0);
+test("linked exploration and product cycles stay in one default paginated history", async () => {
+  const { context, fetchFullScopedJournal, historyGroups } = journalHelpers();
+  const product = { id: "product-1", identityKind: "product", number: 1, sequenceNumber: 3, status: "completed" };
+  const explorations = [2, 1].map(number => ({ id: `exp-${number}`, identityKind: "exploration", number, sequenceNumber: number, status: "completed" }));
+  const envelope = { entryId: "entry-a", sourceId: "source-a", sourceRevision: 7, total: 3 };
+  const pages = [{ ...envelope, cycles: [product], nextBefore: "cursor-a" }, { ...envelope, cycles: explorations, nextBefore: null }];
+  const requests = [];
+  context.fetch = async url => { requests.push(url); return { ok: true, json: async () => ({ schemaVersion: 1, data: pages.shift() }) }; };
+  const result = await fetchFullScopedJournal();
+  assert.deepEqual(Array.from(result.cycles, cycle => cycle.id), ["product-1", "exp-2", "exp-1"]);
+  assert.deepEqual(Array.from(result.cycles, cycle => cycle.sequenceNumber), [3, 2, 1]);
+  assert.deepEqual(Array.from(historyGroups(result, product).main, cycle => cycle.id), ["exp-2", "exp-1"]);
+  assert.equal(result.cycles[0].number, 1, "Display numbering must not replace the product cycle number");
+  assert.match(requests[1], /before=cursor-a&sourceId=source-a/);
+  assert.ok(requests.every(url => !url.includes("section=")), "The default API supplies the full linked history");
+});
+
+test("continuous history rejects switched sources, revisions, duplicate cycles and incomplete pages", async () => {
+  const envelope = { entryId: "entry-a", sourceId: "source-a", sourceRevision: 7, total: 2 };
+  const first = { ...envelope, cycles: [{ id: "product-1" }], nextBefore: "cursor-a" };
+  const second = { ...envelope, cycles: [{ id: "exp-1" }], nextBefore: null };
+  for (const [change, error] of [
+    [{ entryId: "entry-b" }, /Journal source changed/],
+    [{ sourceId: "source-b" }, /Journal source changed/],
+    [{ sourceRevision: 8 }, /Journal source changed/],
+    [{ cycles: [{ id: "product-1" }] }, /Repeated journal cycle/],
+    [{ cycles: [] }, /Incomplete journal history/],
+    [{ nextBefore: "cursor-a" }, /Repeated journal cursor/],
+  ]) {
+    const { context, fetchFullScopedJournal } = journalHelpers();
+    const pages = [first, { ...second, ...change }];
+    context.fetch = async () => ({ ok: true, json: async () => ({ schemaVersion: 1, data: pages.shift() }) });
+    await assert.rejects(fetchFullScopedJournal(), error);
+  }
 });
 
 test("standalone exploration keeps its own cycles in the main journal", () => {
-  const { historyGroups, explorationScope } = journalHelpers();
-  const data = {
-    entryId: "entry-exp", sourceId: "source-exp", sourceRevision: 3, explorationAvailable: true,
-    entry: { entryId: "entry-exp", sourceId: "source-exp", kind: "exploration" },
-    cycles: [{ id: "exp-2", identityKind: "exploration" }, { id: "exp-1", identityKind: "exploration" }],
-  };
-  const groups = historyGroups(data, data.cycles[0]);
-  assert.deepEqual(Array.from(groups.main, (cycle) => cycle.id), ["exp-1"]);
-  assert.equal(groups.exploration.length, 0);
-  assert.equal(explorationScope(data), null);
-  assert.match(journalApp, /section=exploration&sourceId=\$\{encodeURIComponent\(expected\.sourceId\)\}&limit=100/);
-  assert.match(journalApp, /nextBefore/);
-  assert.match(journalApp, /state\.exploration\.failed && !retry/);
-  assert.match(journalApp, /loadLinkedExploration\(true\)/);
+  const { historyGroups } = journalHelpers();
+  const data = { entry: { kind: "exploration" }, cycles: [{ id: "exp-2", identityKind: "exploration" }, { id: "exp-1", identityKind: "exploration" }] };
+  assert.deepEqual(Array.from(historyGroups(data, data.cycles[0]).main, cycle => cycle.id), ["exp-1"]);
+});
+
+test("shared idle label describes a live loop waiting for its next cycle", () => {
+  const { context, state, runtimeStatusLabel } = journalHelpers();
+  state.language = "zh-CN";
+  assert.equal(runtimeStatusLabel("idle"), "等待下一轮");
+  state.language = "en";
+  assert.equal(runtimeStatusLabel("idle"), "Waiting for next cycle");
+  assert.equal(context.window.DashboardStatus.visual("idle"), "pending");
 });
 
 test("center actions use the versioned envelope routes and explicit write preconditions", () => {

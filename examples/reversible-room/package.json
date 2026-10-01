@@ -1,0 +1,9 @@
+{
+  "name": "reversible-room",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "租客可逆房间舒适改善的本地规划与验证工作台",
+  "scripts": {"test": "node --test tests/core.test.js", "test:browser": "playwright test", "start": "python -m http.server 8765 --bind 127.0.0.1"},
+  "devDependencies": {"@playwright/test": "1.63.0"}
+}

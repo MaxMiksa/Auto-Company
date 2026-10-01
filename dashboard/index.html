@@ -6,6 +6,8 @@
     <meta name="color-scheme" content="light">
     <title>Auto Company · 工作记录</title>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="/design-system.css">
+    <script src="/icons.js" defer></script>
     <link rel="stylesheet" href="/styles.css">
     <script src="/i18n.js" defer></script>
     <script src="/app.js" defer></script>
@@ -16,9 +18,9 @@
       <div class="topbar page-width">
         <a class="brand" href="/">AUTO COMPANY</a>
         <div id="centerContextNav" class="center-context-nav" hidden>
-          <a href="/center" class="center-back-link" data-i18n="backToProducts">产品</a>
+          <a href="/center" class="center-back-link"><span data-icon="layout-grid"></span><span data-i18n="backToProducts">产品中心</span></a>
           <button id="productSwitcherButton" class="product-switcher-button" type="button" aria-haspopup="dialog" aria-controls="productSwitcherDialog">
-            <span id="productSwitcherName" data-i18n="switchProduct">切换产品</span><span aria-hidden="true">⌄</span>
+            <span id="productSwitcherName" data-i18n="switchProduct">切换产品</span><span data-icon="chevron-down"></span>
           </button>
           <span id="centerRuntimeContext" class="center-runtime-context" role="status"></span>
         </div>
@@ -40,10 +42,7 @@
           <span id="modeNote"></span>
           <label class="auto-refresh"><input id="autoRefresh" type="checkbox" checked><span data-i18n="autoRefresh">自动刷新</span></label>
           <button id="refreshButton" class="icon-button" title="刷新记录" aria-label="刷新记录">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
-              <path d="M20 7v5h-5M4 17v-5h5"/>
-              <path d="M6.1 6a8 8 0 0 1 13.4 5M4.5 13a8 8 0 0 0 13.4 5"/>
-            </svg>
+            <span data-icon="refresh-cw"></span>
           </button>
         </div>
       </div>
@@ -67,9 +66,7 @@
               <span id="historyNote"></span>
             </div>
             <div id="historyList"></div>
-            <button id="olderButton" class="text-button older-button" hidden></button>
           </section>
-          <section id="explorationSection" class="exploration-section" hidden></section>
         </div>
         <div id="sourceNotes" class="source-notes"></div>
       </section>
@@ -143,7 +140,7 @@
     <dialog id="settingsDialog" aria-labelledby="settingsTitle">
       <div class="dialog-header">
         <h2 id="settingsTitle" data-i18n="settings">设置</h2>
-        <button id="closeSettingsButton" class="icon-button close-button" aria-label="关闭">×</button>
+        <button id="closeSettingsButton" class="icon-button close-button" aria-label="关闭"><span data-icon="x"></span></button>
       </div>
       <p id="settingsDescription"></p>
       <dl class="runtime-details">
@@ -168,7 +165,7 @@
     <dialog id="productSwitcherDialog" class="product-switcher-dialog" aria-labelledby="productSwitcherTitle">
       <div class="dialog-header">
         <h2 id="productSwitcherTitle" data-i18n="switchProduct">切换产品</h2>
-        <button id="closeProductSwitcherButton" class="icon-button close-button" aria-label="关闭">×</button>
+        <button id="closeProductSwitcherButton" class="icon-button close-button" aria-label="关闭"><span data-icon="x"></span></button>
       </div>
       <label class="switcher-search" for="productSwitcherSearch">
         <span class="visually-hidden" data-i18n="searchProducts">搜索产品</span>

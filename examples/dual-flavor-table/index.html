@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#f3f0e5">
+  <title>一桌双味 · 一起准备，各自喜欢</title>
+  <link rel="icon" type="image/svg+xml" href="auto-company-icon.svg">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <a class="skip-link" href="#planner">跳到整餐设置</a>
+  <header class="masthead"><a class="brand" href="#top"><img src="auto-company-icon.svg" width="34" height="34" alt=""><span>一桌双味</span></a><span class="edition">厨房手册 / 01</span><a href="#guide">使用说明 ↗</a></header>
+  <main id="top">
+    <section class="intro" aria-labelledby="intro-title">
+      <div><p class="eyebrow">同一份准备 · 两种好滋味</p><h1 id="intro-title">一起做饭，<br>各自喜欢。</h1><p class="intro-copy">选一套晚餐，备料只做一次。清淡与香辣，都在同一桌。</p><div class="equipment"><span>1 人操作</span><span>1 口炒锅</span><span>1 台电饭煲</span></div></div>
+      <div class="table-art" aria-hidden="true"><div class="table-line"></div><div class="plate plate-a"><div class="rice-grain"></div><div class="leaf one"></div><div class="leaf two"></div><div class="leaf three"></div><div class="bean"></div></div><div class="plate plate-b"><div class="rice-grain"></div><div class="leaf one"></div><div class="leaf two"></div><div class="leaf three"></div><div class="bean"></div><div class="spice"></div></div><span class="art-label a">清淡一点</span><span class="art-label b">香辣一点</span><span class="shared-label">备料一次，分味两盘</span></div>
+    </section>
+    <div class="workspace">
+      <aside class="settings">
+        <div class="section-label"><span>01</span><h2>今晚怎么吃</h2></div>
+        <form id="planner">
+          <div class="pair-fields"><fieldset><legend><span class="dot mild"></span>A 组</legend><label for="servings-a">人数</label><input id="servings-a" type="number" min="1" max="4" step="1" value="1" required><label for="flavor-a">口味</label><select id="flavor-a"></select></fieldset><fieldset><legend><span class="dot hot"></span>B 组</legend><label for="servings-b">人数</label><input id="servings-b" type="number" min="1" max="4" step="1" value="1" required><label for="flavor-b">口味</label><select id="flavor-b"></select></fieldset></div>
+          <p class="field-note">每组 1–4 人，合计 2–6 人；大份量会安排分批。</p>
+          <label class="toggle"><input id="vegetarian" type="checkbox">选择素食（蛋奶素）</label>
+          <label class="time-label" for="max-minutes">可用时间 <span>分钟</span></label><input id="max-minutes" type="number" min="20" max="90" step="1" value="60" required>
+          <details class="exclusion-panel"><summary>有不想吃的食材？</summary><fieldset id="exclusion-fields"><legend class="sr-only">排除食材</legend></fieldset><p class="field-note">只排除列出的食材，不保证无过敏原；调料包装和交叉接触需自行确认。</p></details>
+          <fieldset class="menu-field"><legend>选一套完整晚餐</legend><div id="menu-options"></div><p id="menu-empty" class="field-note" hidden>暂时没有符合条件的整餐。增加可用时间、减少排除项或人数后重试。</p></fieldset>
+          <button id="generate" class="primary" type="submit">生成今晚的整餐 <span aria-hidden="true">↗</span></button>
+          <p id="draft-message" class="field-note" hidden>设置已调整，下方仍是上一份方案。生成后应用。</p>
+        </form>
+        <div class="local-note"><span class="dot"></span>进度保存在当前浏览器。无需账号。</div>
+      </aside>
+      <article class="plan-area" aria-label="整餐方案">
+        <div id="message" role="status" aria-live="polite" tabindex="-1"></div>
+        <section class="plan-cover"><div class="cover-top"><p class="eyebrow">今晚的整餐 / 双味共餐</p><span id="duration" class="duration"></span></div><h2 id="plan-title" tabindex="-1"></h2><p id="dishes" class="dishes sr-only"></p><div id="flavor-summary" class="flavor-summary"></div><div id="substitutions"></div><nav class="plan-nav" aria-label="整餐步骤"><a href="#shopping">02 采购与备料</a><a href="#cook">03 开始做饭</a></nav></section>
+        <section id="shopping"><div class="section-label"><span>02</span><h2>只备一份材料</h2><small id="shopping-progress"></small></div><p class="section-copy">勾选已有材料，剩下的就是采购清单。</p><div id="shopping-list"></div></section>
+        <section id="cook"><div class="section-label"><span>03</span><h2>顺着做，一起吃</h2><small id="step-progress"></small></div><p class="section-copy">按顺序推进；电饭煲煮饭期间处理底菜。先完成共用熟菜，再用两套干净盘勺分味。</p><ol id="step-list"></ol></section>
+        <section class="notes-section"><h3>开火前，记住这些</h3><ul id="plan-notes"></ul></section>
+        <div class="export-bar"><div><strong>把今晚的方案带进厨房</strong><p>保存文字、打印纸张，或备份下次接着做。</p></div><div class="export-actions"><button id="export-text" type="button">下载整餐清单 ↓</button><button id="print-plan" type="button">打印方案</button><button id="backup" type="button">备份进度</button><label class="file-button" for="import-backup">导入备份<input id="import-backup" type="file" accept=".json,application/json"></label><button id="reset-progress" class="quiet" type="button">重新开始勾选</button></div></div>
+      </article>
+    </div>
+    <section id="guide" class="guide"><h2>把做饭的决定，留在开火之前。</h2><div class="guide-grid"><div><h3>怎么用</h3><p>先选人数、口味和整餐。勾好已有材料，照步骤做；刷新页面会继续保留勾选。修改设置后重新生成会询问是否清除旧进度。</p></div><div><h3>适用范围</h3><p>面向愿意按现成菜单做饭的同住者。固定 1 炒锅＋1 电饭煲，不生成精确开饭排程；步骤用时是准备参考，实际以火力、锅容量和熟度为准。</p></div><div><h3>内容与数据</h3><p>菜单尚未经过真实厨房试做，不能宣称口味或耗时已验证。所有设置只存本机；使用隐私模式或清理浏览器前，请下载备份。导入损坏文件不会覆盖当前方案。</p></div></div></section>
+  </main>
+  <footer><span>一桌双味</span><span>把共同的准备，变成各自喜欢的一餐。</span><a href="DELIVERY.md">本地交接说明 ↗</a></footer>
+  <noscript><p class="noscript">请启用浏览器 JavaScript 后生成整餐。完整本地启动方法见 DELIVERY.md。</p></noscript>
+  <script type="module" src="app.js"></script>
+</body>
+</html>

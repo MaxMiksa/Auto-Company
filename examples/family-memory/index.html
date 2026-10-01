@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#24473b">
+  <title>家族共忆 · 一起留下的故事</title>
+  <link rel="icon" type="image/svg+xml" href="./icon.svg">
+  <link rel="stylesheet" href="./style.css">
+  <script type="module" src="./app.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#workspace">跳到活动手册</a>
+  <div class="book">
+    <header class="masthead">
+      <a class="brand" href="./" aria-label="家族共忆首页"><img src="./icon.svg" alt="" width="38" height="38"><span>家族共忆<small>一起留下的故事</small></span></a>
+      <div class="local-note"><span class="local-dot" aria-hidden="true"></span>只留在这台设备 · 无需登录</div>
+    </header>
+    <section class="opening" aria-labelledby="activity-heading">
+      <div><p class="eyebrow">家庭故事手册 / 一场自愿的共同回忆</p><h1 id="activity-heading">从一件小事，<br>说起我们。</h1><p class="intro">不必记得一样，也不必全部说出。轮流讲一段，问一句，再一起留下一个有出处的故事。</p></div>
+      <aside class="activity-summary"><p class="summary-label">本次活动</p><h2 id="current-title">还未命名的回忆</h2><p id="current-detail">准备一张照片、一件旧物，或一个问题。</p><dl class="stats"><div><dt>参与者</dt><dd id="count-participants">0</dd></div><div><dt>段原话</dt><dd id="count-memories">0</dd></div><div><dt>共同故事</dt><dd id="count-stories">0</dd></div></dl><p class="save-status" id="save-status" role="status">正在准备本地手册…</p></aside>
+    </section>
+    <div id="recovery" class="recovery" hidden><h2>暂时无法读取上次的手册</h2><p id="recovery-message"></p><p>原始内容尚未被覆盖。请先下载原始缓存，再决定是否重新开始。</p><div class="button-row"><button type="button" id="download-raw">下载原始缓存</button><button type="button" id="restart-recovery" class="danger">确认重新开始</button></div></div>
+    <div class="live-message" id="message" role="status" aria-live="polite" aria-atomic="true"></div>
+    <nav class="chapters" aria-label="活动步骤"><button type="button" data-step="prepare" aria-current="step"><span>01</span>准备</button><button type="button" data-step="memories"><span>02</span>讲述</button><button type="button" data-step="questions"><span>03</span>互问</button><button type="button" data-step="stories"><span>04</span>共同故事</button></nav>
+    <main id="workspace" tabindex="-1">
+      <section class="chapter" id="step-prepare" aria-labelledby="prepare-heading">
+        <div class="chapter-heading"><div><p class="eyebrow">第一章 / 给回忆一个起点</p><h2 id="prepare-heading">先留一点时间，给彼此。</h2></div><span class="page-number">01 — 04</span></div>
+        <div class="chapter-grid"><div class="main-column"><form id="session-form" class="paper-form"><h3>这次想聊什么？</h3><label for="session-title">活动名称</label><input id="session-title" name="title" maxlength="160" required placeholder="例如：外婆家的那张饭桌"><div class="field-pair"><div><label for="session-date">日期（可选）</label><input id="session-date" name="date" type="date"></div><div><label for="session-place">地点（可选）</label><input id="session-place" name="place" maxlength="160" placeholder="例如：家里的客厅"></div></div><label for="session-prompt">共同的起始问题（可选）</label><textarea id="session-prompt" name="prompt" rows="3" maxlength="2000" placeholder="那时候，大家最记得的一道菜是什么？"></textarea><button type="submit" class="primary">保存活动</button></form>
+        <form id="participant-form" class="paper-form"><h3>今天，谁愿意一起讲？</h3><p class="field-note">建议 2–5 位亲属轮流使用同一台设备；也可以先一个人试用。</p><label for="participant-name">署名或称呼</label><input id="participant-name" name="name" maxlength="80" required placeholder="例如：外婆、阿宁"><label class="check-line"><input type="checkbox" id="participant-consent" name="consent" required><span>这位参与者已自愿同意记录与署名，知道可以跳过或撤回。</span></label><button type="submit">添加参与者</button></form><div id="participants-list" class="participant-list" aria-label="已添加的参与者"></div></div>
+        <aside class="margin-note"><span class="note-number">一场活动的约定</span><h3>先听，再补充。</h3><ol><li>挑一个小主题，留出 20–40 分钟。</li><li>每人讲一段；不愿说，可以跳过。</li><li>记忆不同，就把不同并排留下。</li><li>导出前，一起确认署名和公开范围。</li></ol><p>这是本地活动手册，不是远程多人协作。输入不会上传；同一设备上的人可以看到本地内容，包括私密记录。</p><button type="button" id="demo-button" class="text-button">用一份虚构示例熟悉流程 ↗</button></aside></div>
+        <div class="chapter-next"><p>准备好后，把设备交给第一位讲述者。</p><button type="button" data-go="memories" class="primary">开始讲述 <span aria-hidden="true">→</span></button></div>
+      </section>
+      <section class="chapter" id="step-memories" aria-labelledby="memories-heading" hidden>
+        <div class="chapter-heading"><div><p class="eyebrow">第二章 / 每一种记得，都有位置</p><h2 id="memories-heading">把原话留下，把判断放下。</h2></div><span class="page-number">02 — 04</span></div>
+        <div class="chapter-grid"><div class="main-column"><form id="memory-form" class="paper-form"><h3 id="memory-form-heading">留下一段讲述</h3><label for="memory-participant">谁在讲述？</label><select id="memory-participant" name="participantId" required></select><label for="memory-text">这段回忆的原话</label><textarea id="memory-text" name="text" required rows="5" maxlength="6000" placeholder="尽量保留讲述者自己的说法，不必整理得完美。"></textarea><label for="memory-event">时间、物件或情境线索（可选）</label><input id="memory-event" name="eventHint" maxlength="200" placeholder="例如：1998 年春节 / 蓝边瓷碗"><fieldset><legend>这段话的使用范围</legend><label class="check-line"><input type="radio" name="visibility" value="public" checked><span>可用于共同故事和故事导出</span></label><label class="check-line"><input type="radio" name="visibility" value="private"><span>仅本地私密留存，不进入共同故事</span></label></fieldset><div class="button-row"><button type="submit" class="primary" id="memory-submit">保存原话</button><button type="button" id="memory-cancel" hidden>取消编辑</button></div></form><div class="list-heading"><h3>已留下的原话</h3><span id="memory-list-count"></span></div><div id="memories-list" class="entries"></div></div><aside class="margin-note"><span class="note-number">给讲述者</span><h3>小细节，比大结论更动人。</h3><p>那天的味道、一个人的口头禅、一件东西的位置，都可以成为起点。</p><p>私密记录仍会包含在完整 JSON 备份里。下载备份前，请取得参与者同意。</p><p>撤回会移除原话及其故事引用；已下载或打印的副本无法由本手册收回，请自行删除。</p></aside></div><div class="chapter-next"><p>有一点想知道的事，就问问对方。</p><button type="button" data-go="questions" class="primary">一起互问 <span aria-hidden="true">→</span></button></div>
+      </section>
+      <section class="chapter" id="step-questions" aria-labelledby="questions-heading" hidden>
+        <div class="chapter-heading"><div><p class="eyebrow">第三章 / 在彼此的话里再走一步</p><h2 id="questions-heading">我记得这些，你呢？</h2></div><span class="page-number">03 — 04</span></div>
+        <div class="chapter-grid"><div class="main-column"><form id="question-form" class="paper-form"><h3>留一个想听的问题</h3><div class="field-pair"><div><label for="question-from">谁来问？</label><select id="question-from" name="fromId" required></select></div><div><label for="question-to">想问谁？</label><select id="question-to" name="toId" required></select></div></div><fieldset><legend>这句话从哪里说起？（可选，选择公开原话）</legend><div id="question-sources" class="source-options"></div></fieldset><label for="question-text">想问的问题</label><textarea id="question-text" name="text" rows="3" required maxlength="4000" placeholder="例如：你刚说的那道菜，是谁教外婆做的？"></textarea><button type="submit" class="primary">留下问题</button></form><div class="list-heading"><h3>我们的互问</h3><span id="question-list-count"></span></div><div id="questions-list" class="entries"></div></div><aside class="margin-note"><span class="note-number">给倾听者</span><h3>询问，不是核对答案。</h3><p>可以追问一个细节，也可以回应自己的记得。不确定的事，可以留作不确定。</p><p>答复会以答复者署名，新增一段可用于故事的原话。若不愿公开，先跳过，再到“讲述”里添加私密记录。</p><details class="privacy-details"><summary>回应草稿怎样保存？</summary><p>可以同时填写多条回应。未保存回应只保留在本页，刷新或关闭前请逐条保存；跳过、撤回或撤销参与会清理相关草稿。</p></details><p>互问不是必选步骤。任何问题都可以跳过。</p></aside></div><div class="chapter-next"><p>选择愿意共同留下的内容，编成一页故事。</p><button type="button" data-go="stories" class="primary">整理共同故事 <span aria-hidden="true">→</span></button></div>
+      </section>
+      <section class="chapter" id="step-stories" aria-labelledby="stories-heading" hidden>
+        <div class="chapter-heading"><div><p class="eyebrow">第四章 / 共同留存，不必共同定论</p><h2 id="stories-heading">同一段往事，容得下不同的记得。</h2></div><span class="page-number">04 — 04</span></div>
+        <div class="chapter-grid"><div class="main-column"><form id="story-form" class="paper-form"><h3 id="story-form-heading">编一页共同故事</h3><label for="story-title">故事标题</label><input id="story-title" name="title" required maxlength="200" placeholder="例如：那张永远坐得下的饭桌"><fieldset><legend>选入故事的原话（至少一段）</legend><div id="story-sources" class="source-options"></div></fieldset><label for="story-note">一起写下的串联文字（可选）</label><textarea id="story-note" name="note" rows="3" maxlength="6000" placeholder="可补充背景。串联文字不替代下方的署名原话。"></textarea><label for="story-disagreement">不同记得与待确认之处（可选）</label><textarea id="story-disagreement" name="disagreement" rows="3" maxlength="6000" placeholder="例如：有人记得是除夕，也有人记得是初二；暂不下结论。"></textarea><div class="button-row"><button type="submit" class="primary" id="story-submit">保存共同故事</button><button type="button" id="story-cancel" hidden>取消编辑</button></div></form><div class="list-heading"><h3>一起留下的故事</h3><span id="story-list-count"></span></div><div id="stories-list" class="entries story-pages"></div></div><aside class="margin-note"><span class="note-number">导出前，一起确认</span><h3>每句话，都找得到来处。</h3><p>本手册不会自动合并记忆或判断事实。故事保留原话、署名、不同记得。</p><p>只选用参与者愿意公开的原话。最终故事请与参与者一起确认，再由你自行保存。</p><div class="export-actions"><button type="button" id="export-markdown" class="primary">下载共同故事 · Markdown</button><button type="button" id="print-stories">打印共同故事</button></div></aside></div>
+      </section>
+    </main>
+    <section class="archive" aria-labelledby="archive-heading"><div><p class="eyebrow">手册保管</p><h2 id="archive-heading">好好保存，也保留重新开始的自由。</h2><p>浏览器缓存可能被清除。完整备份包含私密原话和互问，请自行妥善保管。</p><details class="privacy-details"><summary>撤回与删除的范围</summary><p>撤回只清理明确关联的内容；手动复制到其他文字里的同内容请自行检查。撤销参与仍保留称呼，彻底移除可在备份后清空重建。</p></details></div><div class="archive-actions"><button type="button" id="export-json">下载完整 JSON 备份</button><button type="button" id="import-button">从备份恢复</button><input type="file" id="import-file" accept=".json,application/json" hidden><button type="button" id="new-session" class="danger">清空并开始新活动</button><button type="button" id="undo-clear" hidden>撤销清空</button></div></section>
+    <footer><span>家族共忆 / 原话有来处，记忆有余地。</span><span>本地手册 · 不上传 · 不判断事实</span></footer>
+  </div>
+  <dialog id="confirmation-dialog" aria-labelledby="confirmation-title" aria-describedby="confirmation-message">
+    <form method="dialog" class="confirmation-form">
+      <p class="eyebrow">家族共忆 · 手册保管</p>
+      <h2 id="confirmation-title">确认这次操作</h2>
+      <p id="confirmation-message"></p>
+      <label id="confirmation-name-field" hidden>署名或称呼<input id="confirmation-name" maxlength="80" autocomplete="off"></label>
+      <div class="button-row"><button id="confirmation-cancel" value="cancel" data-confirm="cancel">取消</button><button id="confirmation-accept" value="accept" data-confirm="accept" class="primary">确认继续</button></div>
+    </form>
+  </dialog>
+  <div id="print-content" aria-hidden="true"></div>
+  <noscript><p class="recovery">请启用浏览器 JavaScript 后使用本地手册。</p></noscript>
+</body>
+</html>

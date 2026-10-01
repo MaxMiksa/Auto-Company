@@ -35,3 +35,9 @@ Python defaults to `python` on Windows and `python3` elsewhere. Set
 without automatic retries. Failures retain screenshots, traces and server logs
 under `test-results/`; the HTML report is in `playwright-report/`. CI should upload
 both directories on failure.
+
+`showcase.spec.js` serves the public snapshots from `examples/`, checks the 22-entry
+catalog and CLI entrypoint, loads every static frontend and exercises the migrated
+CSV/SRT examples, text counter, editable decision link and Chinese scope sheet.
+Backend entrypoints are checked for presence; their domain tests remain in each
+example and are not substituted by this static-browser smoke suite.

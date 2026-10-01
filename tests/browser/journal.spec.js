@@ -344,16 +344,16 @@ test("failed latest cycle never inherits an earlier consensus as its results", a
   await expect(page.locator("#currentCycle")).not.toContainText("已完成当前轮次验证");
 });
 
-test("product timeline keeps five product cycles visible and folds exploration into its own records", async ({ page, journal }) => {
+test("product timeline shows continuous authoritative numbers and exploration by default", async ({ page, journal }) => {
   const data = await (await page.request.get(`${journal.url}/api/journal`)).json();
   const template = data.cycles[0];
   const cycle = (id, number, identityKind, status, summary, projectStatus = "current") => ({
-    ...template, id, number, identityKind, numbering: "persistent", projectStatus, status,
+    ...template, id, number, sequenceNumber: identityKind === "product" ? number + 3 : identityKind === "exploration" ? number : null, identityKind, numbering: "persistent", projectStatus, status,
     active: false, summary, report: summary, workReport: null, workReportStatus: null,
     startedAt: new Date(Date.now() - number * 60000).toISOString(),
     endedAt: new Date(Date.now() - number * 60000 + 30000).toISOString(),
   });
-  const products = [5, 4, 3, 2, 1].map((number) => cycle(`product-${number}`, number, "product", "completed", `Product record ${number}`));
+  const products = [4, 3, 2, 1].map((number) => cycle(`product-${number}`, number, "product", "completed", `Product record ${number}`));
   const exploration = [
     cycle("explore-3", 3, "exploration", "completed", "Exploration report 3"),
     cycle("explore-2", 2, "exploration", "failed", "Exploration report 2"),
@@ -363,39 +363,33 @@ test("product timeline keeps five product cycles visible and folds exploration i
   legacy.numbering = "legacy";
   delete legacy.identityKind;
   data.cycles = [...products, ...exploration, legacy];
-  data.latestProjectCycleId = "product-5";
+  data.latestProjectCycleId = "product-4";
   data.cycleNumbering = { mode: "persistent", hasLegacy: true };
   data.language = "en";
   data.languageState = null;
   await page.route("**/api/journal", (route) => route.fulfill({ json: data }));
   await page.goto(`${journal.url}/journal`);
 
-  await expect(page.locator("#cycleNumber")).toHaveText("05");
-  await expect(page.locator("#historyList .history-number")).toHaveText(["04", "03", "02", "01"]);
+  await expect(page.locator("#cycleNumber")).toHaveText("07");
+  await expect(page.locator("#historyList .history-number")).toHaveText(["06", "05", "04", "03", "02", "01", "09"]);
   await expect(page.locator("#historyList .history-row[open]")).toHaveCount(0);
-  await expect(page.locator("#olderButton")).toContainText("1 cycle");
-  await expect(page.locator("#historyList")).not.toContainText("Exploration report");
-
-  const explorationDisclosure = page.locator("#explorationSection > details");
-  await expect(explorationDisclosure).not.toHaveAttribute("open", "");
-  await expect(explorationDisclosure.locator(":scope > summary")).toContainText("Pre-product exploration records");
-  await explorationDisclosure.locator(":scope > summary").click();
-  await expect(explorationDisclosure).toHaveAttribute("open", "");
-  await expect(page.locator("#explorationSection .history-number")).toHaveText(["EXP 03", "EXP 02", "EXP 01"]);
-  await expect(page.locator("#explorationSection .history-row > summary .progress-completed")).toHaveCount(1);
-  await expect(page.locator("#explorationSection .history-row > summary .progress-failed")).toHaveCount(1);
-  await expect(page.locator("#explorationSection .history-row > summary .progress-unknown")).toHaveCount(1);
-  const explorationRow = page.locator("#explorationSection .history-row").first();
+  await expect(page.locator("#olderButton, #explorationSection")).toHaveCount(0);
+  const explorationRows = page.locator('#historyList .history-row[data-cycle-id^="explore-"]');
+  await expect(explorationRows).toHaveCount(3);
+  await expect(explorationRows.locator(":scope > summary .progress-completed")).toHaveCount(1);
+  await expect(explorationRows.locator(":scope > summary .progress-failed")).toHaveCount(1);
+  await expect(explorationRows.locator(":scope > summary .progress-unknown")).toHaveCount(1);
+  const explorationRow = explorationRows.first();
+  await expect(explorationRow).toBeVisible();
+  await expect(explorationRow.locator(":scope > summary")).toContainText("Pre-product exploration");
   await explorationRow.locator(":scope > summary").click();
   await expect(explorationRow).toHaveAttribute("open", "");
   await expect(explorationRow.locator(".history-content")).toContainText("Exploration report 3");
   await expect(explorationRow.locator(".cycle-log-link")).toBeVisible();
 
   await page.locator("#refreshButton").click();
-  await expect(explorationDisclosure).toHaveAttribute("open", "");
   await expect(explorationRow).toHaveAttribute("open", "");
 
-  await page.locator("#olderButton").click();
   const legacyRow = page.locator('#historyList .history-row[data-cycle-id="legacy-9"]');
   await expect(legacyRow).toBeVisible();
   await expect(legacyRow.locator(".progress-unknown")).toHaveCount(1);
@@ -419,7 +413,7 @@ test("exploration-only archives keep the original current and history timeline",
   await expect(page.locator("#cycleNumber")).toHaveText("03");
   await expect(page.locator("#currentCycle")).toContainText("Pre-product exploration");
   await expect(page.locator("#historyList .history-number")).toHaveText(["02", "01"]);
-  await expect(page.locator("#explorationSection")).toBeHidden();
+  await expect(page.locator("#explorationSection")).toHaveCount(0);
 });
 
 

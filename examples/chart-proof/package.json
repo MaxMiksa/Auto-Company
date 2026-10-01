@@ -1,0 +1,14 @@
+{
+  "name": "chart-proof",
+  "version": "1.0.0",
+  "private": true,
+  "description": "可核验的非视觉图表资料交付",
+  "scripts": {
+    "start": "node serve.cjs 8080",
+    "test": "node --test tests/core.test.cjs",
+    "test:browser": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.58.2"
+  }
+}

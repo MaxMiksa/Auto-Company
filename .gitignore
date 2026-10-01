@@ -158,12 +158,8 @@ projects/*
 !projects/README.md
 !projects/registry.tsv
 
-# Explicitly published product examples; autonomous output stays ignored.
-!projects/tabledelta/
-!projects/cuecheck/
-!projects/scopefence/
-!projects/text-meter/
-!projects/scope-sheet/
+# Human-authorized public snapshots live under examples/. Autonomous output
+# under projects/ stays ignored; the historical tracked SnapOG assets remain.
 
 # Local/private outputs (do not publish)
 AGENTS.md
@@ -195,6 +191,9 @@ CHANGELOG.md
 RELEASE_NOTES.md
 node_modules/
 bin/
+# This public CLI entrypoint is source, not a generated binary directory.
+!examples/payment-recovery-audit/bin/
+!examples/payment-recovery-audit/bin/audit.js
 obj/
 .vs/
 .vscode/

@@ -21,7 +21,7 @@
 
 读 `.claude/skills/team/SKILL.md`，按里面的流程组建团队执行任务。每轮选 3-5 个最相关的 agent，不要全部拉上。
 
-如果本轮任务会产出 landing page、dashboard、marketing site、产品 Web UI、应用界面、前端组件，或任何面向用户的前端交付物，必须先读并使用 `.claude/skills/frontend-design.md`，再进入界面设计或代码实现。不要跳过这一步，也不要只做普通样式拼装。
+如果本轮任务会产出 landing page、dashboard、marketing site、产品 Web UI、应用界面、前端组件，或任何面向用户的前端交付物，必须先读并使用 `.claude/skills/frontend-design.md`，再进入界面设计或代码实现。协调器须指定本轮已有成员中的前端设计负责人；负责人与实现者均读取该技能，先确定用户任务、信息层级及具体视觉方向，再实现并检查真实页面。已有产品按既有身份与流程精修，新产品按其内容和使用场景选择方向；不规定统一配色或框架。
 
 ### 4. 更新共识（必须）
 

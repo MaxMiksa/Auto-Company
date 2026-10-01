@@ -766,14 +766,14 @@ class DashboardHandler(BaseHTTPRequestHandler):
         if path in {"/", "/index.html", "/journal", "/journal/", "/journal/index.html"}:
             self._serve_file(DASHBOARD_DIR / "index.html", "text/html; charset=utf-8")
             return
-        if path in {"/app.js", "/i18n.js", "/journal/app.js", "/journal/i18n.js"}:
+        if path in {"/app.js", "/i18n.js", "/icons.js", "/journal/app.js", "/journal/i18n.js", "/journal/icons.js"}:
             self._serve_file(
                 DASHBOARD_DIR / path.rsplit("/", 1)[-1],
                 "application/javascript; charset=utf-8",
             )
             return
-        if path in {"/styles.css", "/journal/styles.css"}:
-            self._serve_file(DASHBOARD_DIR / "styles.css", "text/css; charset=utf-8")
+        if path in {"/styles.css", "/journal/styles.css", "/design-system.css", "/journal/design-system.css"}:
+            self._serve_file(DASHBOARD_DIR / Path(path).name, "text/css; charset=utf-8")
             return
         if path == "/favicon.svg":
             self._serve_file(DASHBOARD_DIR / "favicon.svg", "image/svg+xml")

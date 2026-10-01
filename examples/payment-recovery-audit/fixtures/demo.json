@@ -1,0 +1,51 @@
+{
+  "currency": "USD",
+  "invoices": [
+    {
+      "id": "inv_open_declined",
+      "status": "open",
+      "amount": 12000,
+      "failed_at": "2026-09-01T00:00:00Z",
+      "failure_code": "card_declined",
+      "recovery_status": "not_attempted"
+    },
+    {
+      "id": "inv_partial_recovery",
+      "status": "open",
+      "amount": 8000,
+      "failed_at": "2026-09-01T00:00:00Z",
+      "failure_code": "authentication_required",
+      "recovery_status": "in_progress"
+    },
+    {
+      "id": "inv_attributed_recovery",
+      "status": "paid",
+      "amount": 5000,
+      "failed_at": "2026-09-01T00:00:00Z",
+      "events": [
+        { "id": "evt_failed_1", "type": "status", "status": "failed", "occurred_at": "2026-09-01T00:00:00Z" },
+        { "id": "evt_paid_1", "type": "status", "status": "paid", "occurred_at": "2026-09-02T00:00:00Z" }
+      ],
+      "payments": [
+        { "id": "pay_demo_1", "amount": 5000, "currency": "USD", "occurred_at": "2026-09-02T00:00:00Z" }
+      ],
+      "attribution": {
+        "status": "attributed",
+        "amount": 5000,
+        "source": "merchant_email",
+        "merchant_action_id": "email-demo-1",
+        "payment_id": "pay_demo_1",
+        "baseline_id": "baseline-demo-september",
+        "evidence_id": "evidence-demo-1",
+        "action_at": "2026-09-01T12:00:00Z",
+        "window_start": "2026-09-01T00:00:00Z",
+        "window_end": "2026-09-30T23:59:59Z"
+      }
+    },
+    {
+      "id": "inv_paid_clean",
+      "status": "paid",
+      "amount": 3000
+    }
+  ]
+}

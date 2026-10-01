@@ -17,11 +17,17 @@ from cycle_reports import write_report
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--cycles', type=int, choices=(6, 36), default=6)
+parser.add_argument('--exploration-cycles', type=int, choices=(0, 3), default=0)
 args = parser.parse_args()
 case = CenterCatalogTests()
 case.setUp()
 server = None
 try:
+    for number in range(1, args.exploration_cycles + 1):
+        cycle = case.cycle('', 'exploration-' + str(number), tokens=10,
+                           created_project='projects/one' if number == args.exploration_cycles else None)
+        write_report(case.root, cycle['cycleId'], {'title': f'Fixture exploration round {number}',
+                     'summary': f'Recorded exploration detail {number}', 'phase': 'review', 'blocker': '', 'final': True}, '')
     for number in range(1, args.cycles + 1):
         cycle = case.cycle(attempt='browser-' + str(number), tokens=10)
         write_report(case.root, cycle['cycleId'], {'title': f'Fixture round {number}',
@@ -33,7 +39,7 @@ try:
                    ended_at=f'2026-09-26T01:{number:02d}:30+00:00')
     ledger.write_text(''.join(json.dumps(row) + '\n' for row in rows))
     case.write('.auto-company.local', 'ACTIVE_PROJECT=projects/one\nAUTO_COMPANY_LANGUAGE=en\n')
-    entry, = case.import_root()
+    entry = next(row for row in case.import_root() if case.catalog.get_entry(row['entryId'])['kind'] == 'product')
     preview = base_record('projects/one', 'preview', case.root)
     preview.update(cycleId=None, state='running', lifetime='operator',
                    url='http://127.0.0.1:12345/', token='a' * 32)
@@ -60,7 +66,8 @@ try:
         thread.start()
         print(json.dumps({'url': f'http://127.0.0.1:{server.server_address[1]}',
                           'entryId': entry['entryId'], 'sourceId': entry['sourceId'],
-                          'firstCycleId': rows[0]['cycle_id'], 'previewUrl': preview['url']}), flush=True)
+                          'firstCycleId': rows[0]['cycle_id'], 'previewUrl': preview['url'],
+                          'explorationCycleIds': [row['cycle_id'] for row in rows[:args.exploration_cycles]]}), flush=True)
         sys.stdin.read()
 finally:
     if server:

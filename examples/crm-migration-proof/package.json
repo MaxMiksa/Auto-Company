@@ -1,0 +1,1 @@
+{"name":"crm-migration-proof","version":"1.0.0","private":true,"type":"module","scripts":{"test":"node --test tests/engine.test.js","test:browser":"node --test tests/browser.test.js","start":"node serve.cjs 8765"},"devDependencies":{"playwright":"1.63.0"}}

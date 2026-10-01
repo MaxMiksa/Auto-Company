@@ -32,14 +32,16 @@ def route_paths(paths):
     for path in paths:
         if path.startswith((".github/workflows/", ".github/actions/", "scripts/ci/")) or path == "tests/test_ci_policy.py":
             return all_routes()
-        product = next((name for name in ROUTES[2:] if path.startswith(f"projects/{name}/")), None)
+        product = next((name for name in ROUTES[2:] if path.startswith(f"projects/{name}/") or (name != "snapog" and path.startswith(f"examples/{name}/"))), None)
         if product:
             selected[product] = True
         runtime = path in RUNTIME_FILES or path.startswith(RUNTIME_PREFIXES) or path.endswith(".sh")
         if runtime:
             selected["runtime"] = True
-        if path.startswith(BROWSER_PREFIXES) or path.startswith("tests/test_dashboard") or path == "tests/test_product_media.py":
+        if path.startswith(BROWSER_PREFIXES) or path.startswith("examples/") or path.startswith("tests/test_dashboard") or path == "tests/test_product_media.py":
             selected["browser"] = True
+        if path.startswith("examples/"):
+            continue
         if product or runtime:
             continue
         # Ordinary prose and presentation assets explicitly need no test jobs.

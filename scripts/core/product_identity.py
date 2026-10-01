@@ -328,9 +328,34 @@ def relocate_identity(root, identity, project):
         return dict(item)
 
 
-def _projection(state, row):
+def _sequence_offsets(state):
+    """Use explicit creation boundaries, never retained log/page counts."""
+    offsets = {}
+    for row in state["cycles"].values():
+        owner = state["identities"][row["identityId"]]
+        product_id = owner.get("linkedProductId")
+        product = state["identities"].get(product_id, {})
+        if (owner["kind"] == "exploration" and product.get("kind") == "product"
+                and product.get("explorationId") == owner["id"]
+                and product_id in row.get("createdProductIds", [])
+                and product.get("createdAt", "") >= row["reservedAt"]):
+            offsets[product_id] = min(offsets.get(product_id, row["productCycleNumber"]), row["productCycleNumber"])
+    return offsets
+
+
+def _projection(state, row, offsets=None):
     owner = state["identities"][row["identityId"]]
+    offsets = _sequence_offsets(state) if offsets is None else offsets
+    sequence = row["productCycleNumber"]
+    if owner["kind"] == "product" and owner.get("explorationId"):
+        offset = offsets.get(owner["id"])
+        sequence = sequence + offset if offset is not None else None
+    elif owner["kind"] == "exploration" and owner.get("linkedProductId"):
+        offset = offsets.get(owner["linkedProductId"])
+        if offset is None or sequence > offset:
+            sequence = None
     return {**row, "schemaVersion": 1, "numbering": "persistent", "kind": owner["kind"],
+            "sequenceNumber": sequence,
             "productId": owner["id"] if owner["kind"] == "product" else None,
             "explorationId": owner["id"] if owner["kind"] == "exploration" else owner.get("explorationId"),
             "linkedProductId": owner.get("linkedProductId"),
@@ -355,7 +380,7 @@ def cycle_projects(root, cycle_id):
 
 def list_cycle_projections(root, product_id=None, limit=200, before=None):
     state = read_state(root)
-    limit = max(1, min(int(limit), 2000))
+    limit = max(1, min(int(limit), 2000)) if limit is not None else None
     rows = []
     for row in state["cycles"].values():
         owner = state["identities"][row["identityId"]]
@@ -370,8 +395,9 @@ def list_cycle_projections(root, product_id=None, limit=200, before=None):
             raise ValueError("Unknown cycle cursor")
         rows = rows[position + 1:]
     selected = rows[:limit]
-    return {"cycles": [_projection(state, row) for row in selected], "total": total,
-            "nextBefore": selected[-1]["cycleId"] if len(rows) > limit else None}
+    offsets = _sequence_offsets(state)
+    return {"cycles": [_projection(state, row, offsets) for row in selected], "total": total,
+            "nextBefore": selected[-1]["cycleId"] if limit is not None and len(rows) > limit else None}
 
 
 def reserve_cycle(root, project, attempt_id, run_cycle_number, engine="", model=""):

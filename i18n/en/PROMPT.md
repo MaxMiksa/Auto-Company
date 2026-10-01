@@ -21,7 +21,7 @@ Priority: **Ship > Plan > Discuss**
 
 Read `.claude/skills/team/SKILL.md` and follow its process to assemble a team and execute the task. Select the 3-5 most relevant agents each cycle; do not bring everyone in.
 
-If this cycle will produce a landing page, dashboard, marketing site, product Web UI, application interface, frontend component, or any user-facing frontend deliverable, you must first read and use `.claude/skills/frontend-design.md` before designing the interface or implementing code. Do not skip this step, and do not merely assemble generic styling.
+If this cycle will produce a landing page, dashboard, marketing site, product Web UI, application interface, frontend component, or any user-facing frontend deliverable, you must first read and use `.claude/skills/frontend-design.md` before designing the interface or implementing code. The coordinator must name a frontend design owner among this cycle's existing members. Both the owner and implementer read this skill, establish the user task, information hierarchy and specific visual direction, then implement and inspect real screens. Refine an existing product around its identity and flow; give a new product a direction grounded in its content and use context. No universal palette or framework is prescribed.
 
 ### 4. Update the Consensus (Mandatory)
 

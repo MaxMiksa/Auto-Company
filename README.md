@@ -1,4 +1,4 @@
-﻿<div align="center">
+<div align="center">
 
 # Auto Company
 
@@ -21,25 +21,24 @@ Optional Cursor and OpenAI-compatible adapters require explicit configuration. S
 
 ---
 
-## Dashboard Preview
+## Dashboard and Product Preview
 
-[![Auto Company Dashboard](presentation/dashboard-showcase.png)](presentation/dashboard-showcase.png)
+[![ScopeFence · seven continuous work cycles](presentation/showcase/scopefence-timeline-en.png)](presentation/showcase/scopefence-timeline-en.png)
 
-Four real ScopeFence product cycles: 04 is expanded; 03, 02 and 01 remain individually collapsed and visible. Pre-product exploration is kept separately. The journal connects reports, checks, documents, real previews, usage and logs. Titles and summaries remain model-authored reports; runtime facts and supported check results are collected by the program. Missing, failed, stale and partial evidence stays explicit. See the [recording contract](docs/runtime-observability.md), [continuous cycles](docs/product-cycles.md) and [automatic previews](docs/product-media.md).
+ScopeFence across **7 real completed cycles: 3 exploration + 4 product cycles**. Exploration, delivery and later work share one continuous timeline, with original identities, timestamps, checks and logs preserved.
+
+The timeline uses a reviewed English presentation overlay. Product screenshots show the published copies after human-directed refinement and functional checks. These changes do not add historical cycles or establish paid demand. Open an image at full size; see [capture provenance and reproduction](presentation/showcase/README.md).
 
 <table>
-  <tr>
-    <th width="50%">Text Meter · English</th>
-    <th width="50%">范围确认单 / Scope Sheet · 中文</th>
-  </tr>
-  <tr>
-    <td width="50%" valign="top"><a href="presentation/dashboards/text-meter.png"><img src="presentation/dashboards/text-meter.png" alt="Text Meter · English Dashboard" width="100%" /></a></td>
-    <td width="50%" valign="top"><a href="presentation/dashboards/scope-sheet.png"><img src="presentation/dashboards/scope-sheet.png" alt="范围确认单 / Scope Sheet · 中文 Dashboard" width="100%" /></a></td>
-  </tr>
-  <tr>
-    <td width="50%" valign="top">Two product cycles across two separate starts; numbering continues from 01 to 02.</td>
-    <td width="50%" valign="top">Four product attempts. Two provider-capacity failures remain visible alongside the successful later work.</td>
-  </tr>
+<tr><th colspan="2"><a href="examples/scopefence/">ScopeFence</a> · 7 · 3 exploration + 4 product</th></tr>
+<tr><td colspan="2">Communicate scope, price and schedule changes through an editable decision link.</td></tr>
+<tr><td width="50%" valign="top"><a href="presentation/products/scopefence-en-result.png"><img src="presentation/products/scopefence-en-result.png" alt="ScopeFence · product interface" width="100%" /></a></td><td width="50%" valign="top"><a href="presentation/showcase/scopefence-timeline-en.png"><img src="presentation/showcase/scopefence-timeline-en.png" alt="ScopeFence · recorded work timeline" width="100%" /></a></td></tr>
+<tr><th colspan="2"><a href="examples/tujiandan/">Image Checklist</a> · 5 · 3 exploration + 2 product</th></tr>
+<tr><td colspan="2">Review image dimensions, size, format and names locally, then export a checklist.</td></tr>
+<tr><td width="50%" valign="top"><a href="presentation/products/tujiandan-en.png"><img src="presentation/products/tujiandan-en.png" alt="Image Checklist · product interface" width="100%" /></a></td><td width="50%" valign="top"><a href="presentation/showcase/tujiandan-timeline-en.png"><img src="presentation/showcase/tujiandan-timeline-en.png" alt="Image Checklist · recorded work timeline" width="100%" /></a></td></tr>
+<tr><th colspan="2"><a href="examples/coi-chase-desk/">COI Chase Desk</a> · 5 · 3 exploration + 2 product</th></tr>
+<tr><td colspan="2">Record follow-ups and document receipts, review the history and export session records.</td></tr>
+<tr><td width="50%" valign="top"><a href="presentation/products/coi-chase-desk-en-full.png"><img src="presentation/products/coi-chase-desk-en-full.png" alt="COI Chase Desk · product interface" width="100%" /></a></td><td width="50%" valign="top"><a href="presentation/showcase/coi-chase-desk-timeline-en.png"><img src="presentation/showcase/coi-chase-desk-timeline-en.png" alt="COI Chase Desk · recorded work timeline" width="100%" /></a></td></tr>
 </table>
 
 ## What Is This?
@@ -90,25 +89,11 @@ See the [Product Center guide](docs/product-center.md) for source registration, 
 
 ## Generated Applications
 
-These three local products come from actual runs and appear in both README languages. ScopeFence and Scope Sheet chose their directions through the default workflow; Text Meter came from an ordinary text-counting request. Humans set permissions, language and external run boundaries, then reviewed and made necessary publication fixes documented in each project. Product images show the actual default interfaces of the published source; the Dashboards above retain the original reports and failures.
+The [example catalog](examples/README.md) contains 22 independently runnable public examples, including 14 newly completed products and selected historical work. Each entry provides startup instructions, limitations and provenance; new local runs continue to write into `projects/`.
 
-<table>
-  <tr>
-    <th width="33%">ScopeFence · English</th>
-    <th width="33%">Text Meter · English</th>
-    <th width="33%">范围确认单 / Scope Sheet · 中文</th>
-  </tr>
-  <tr>
-    <td width="33%" valign="top"><a href="presentation/products/scopefence-full.png"><img src="presentation/products/scopefence.png" alt="ScopeFence" width="100%" /></a></td>
-    <td width="33%" valign="top"><a href="presentation/products/text-meter-full.png"><img src="presentation/products/text-meter.png" alt="Text Meter" width="100%" /></a></td>
-    <td width="33%" valign="top"><a href="presentation/products/scope-sheet-full.png"><img src="presentation/products/scope-sheet.png" alt="范围确认单 / Scope Sheet" width="100%" /></a></td>
-  </tr>
-  <tr>
-    <td width="33%" valign="top"><p>Turn a scope change into a no-login decision link. The returned link is an editable communication copy, not verified approval.</p><p><a href="projects/scopefence/">View source →</a></p></td>
-    <td width="33%" valign="top"><p>Count characters, non-whitespace characters, whitespace-separated words and lines locally as you type.</p><p><a href="projects/text-meter/">View source →</a></p></td>
-    <td width="33%" valign="top"><p>Prepare a Chinese scope note, check required fields, and copy or download the text for a client conversation.</p><p><a href="projects/scope-sheet/">View source →</a></p></td>
-  </tr>
-</table>
+The examples cover professional data review, image delivery, shared meals, travel pacing and family creation. Published copies preserve the original product direction while refining components and repairing real interactions; original reports and unsuccessful conclusions are not rewritten for the showcase.
+
+Frontend work now uses a task-led design skill adapted from Anthropic. In a [three-product prompt comparison](presentation/frontend-study/README.md), the retained instructions won two pairs and tied one, with all 12 shared desktop/mobile scenarios passing.
 
 ## Where To Start (By Platform)
 
@@ -142,7 +127,7 @@ This is not "you are a generic developer". It is "you are DHH" style role prompt
 | | CTO | Werner Vogels | Design for failure, API-first architecture |
 | | Inversion | Charlie Munger | Inversion, pre-mortems, misjudgment checklist |
 | **Product** | Product Design | Don Norman | Affordance, mental models, human-centered design |
-| | UI Design | Matias Duarte | Material metaphor, typography-first design |
+| | UI Design | Matias Duarte | Task-led layouts, typography and consistent components |
 | | Interaction Design | Alan Cooper | Goal-directed design, persona-driven decisions |
 | **Engineering** | Full-Stack | DHH | Convention over configuration, majestic monolith |
 | | QA | James Bach | Exploratory testing, testing is not checking |

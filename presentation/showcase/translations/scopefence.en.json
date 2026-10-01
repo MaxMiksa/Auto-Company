@@ -1,0 +1,54 @@
+{
+  "language": "en",
+  "productId": "d071699b7dd442fda31439230062ed43",
+  "viewLabel": "Recorded work · reviewed translation",
+  "project": {},
+  "documents": {
+    "projects/scopefence/DELIVERY.md": "Delivery notes",
+    "projects/scopefence/design/logo-selection-2026-09-30.md": "Logo options record"
+  },
+  "cycles": {
+    "cycle-df57339b41ed464ab29727be2ee0e3e9": {
+      "sourceSha256": "2e566fd8bddef08aa41ce5ce89492ea17e1fcea4386d6f492f7794b5471e3bb4",
+      "title": "Close ScopeFence static milestone",
+      "summary": "Static milestone closure is documented and committed. Five Node checks passed; the unresolved final-link-return question requires either a consented local session or explicit human acceptance of an unvalidated close.",
+      "blocker": ""
+    },
+    "cycle-67c2c803b69c4a818a3e0846b5c95532": {
+      "sourceSha256": "40630ec804bd44987fd1f353b56b91277121bfda2c5c731d0a6139c5092f06f7",
+      "title": "Prepare handoff session",
+      "summary": "Consent-safe briefing, neutral script, and evidence log are committed; the recorded Node check passed 5 of 5. No human session was conducted. The static preview URL returned HTTP 502 in this runtime.",
+      "blocker": "A consented local two-person participant session requires human-managed participants; the autonomous run cannot supply or consent for them."
+    },
+    "cycle-a24f62e3f12548dcb332dd73cc7dea59": {
+      "sourceSha256": "e2075734551db7dfc5f1f07c19542e94f0d154cc97d278652db917e2da16e393",
+      "title": "Verify ScopeFence final-link return",
+      "summary": "Committed a copy-feedback fix and final-receipt URL regression check, added Product, Interaction and QA review notes, ran 5 passing Node checks, and confirmed the static preview served locally. No consented participant session occurred.",
+      "blocker": ""
+    },
+    "cycle-86b7183447cd45b1b375246d58e96fa5": {
+      "sourceSha256": "582c3d3ee558a6509c6970f67fff5e9aa2b31790dbe7bea39faaeb48e9650646",
+      "title": "Improve ScopeFence return handoff",
+      "summary": "Shipped and committed the explicit final-link return panel and an evidence-based two-person session kit. Four Node checks passed; no human usability observations were collected or claimed.",
+      "blocker": ""
+    },
+    "cycle-994326738bce4f8b97792a1c14974f59": {
+      "sourceSha256": "d12bd56a0593849b5cc73139f3c51a0cfa131f2f077f4b9e43c3b083f7415253",
+      "title": "Review ScopeFence first milestone",
+      "summary": "ScopeFence is locally shipped and committed. Its static receipt flow has passed automated checks and browser smoke validation; the next highest-value task is a two-person handoff usability test.",
+      "blocker": ""
+    },
+    "cycle-99ad105b76684de79695314be416275b": {
+      "sourceSha256": "c038243cb988ee690544de4e1fa6b54e50a8677ff8b700b720781aef7dd3ceb7",
+      "title": "Decide ScopeProof build path",
+      "summary": "Completed independent pre-mortem, offline market-validation, and unit-economics artifacts. ScopeProof is NO-GO for a software build because no real-use or paid-demand evidence exists; ScopeFence is queued for the Cycle 3 delivery path.",
+      "blocker": ""
+    },
+    "cycle-108696f030f34406848bd564baa89d31": {
+      "sourceSha256": "9cf54299d496d5f829bad22be15a077083e7d1f9bfc7459dda70151cbd1e1a46",
+      "title": "Rank initial product opportunities",
+      "summary": "Completed Day 0 exploration. ScopeProof is the selected validation candidate after four independent memos converged on client-approved change orders for fixed-price digital agencies.",
+      "blocker": ""
+    }
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "language": "zh-CN",
+  "productId": "cdc5a3b498044434b684dd99db1b4e0f",
+  "viewLabel": "真实工作记录 · 经审校的翻译视图",
+  "project": {
+    "displayName": "图检单",
+    "description": "在浏览器本地批量检查图片的尺寸、体积、格式和命名，并导出待处理清单。"
+  },
+  "documents": {
+    "projects/tujiandan/design/logo-selection-2026-09-30.md": "标识方案记录",
+    "projects/tujiandan/DELIVERY.md": "交付说明"
+  },
+  "cycles": {
+    "cycle-bc3fceab56c1469dab09cfb466ad7c5d": {
+      "sourceSha256": "be27af2f9c716d85bffc2547c7a922a3667c1b49f736991613557112f3f7bca9",
+      "title": "核查图检单真实交付证据",
+      "summary": "本地资料未找到同批客户原始规范、原图和返工记录；已完成研究、运营、逆向审查与投入决定，停止独立收费投入并保留免费工具。交付说明已登记并在产品独立仓库本地提交，下一轮转向交付点名证据核查。",
+      "blocker": ""
+    },
+    "cycle-d9f1f8db879449729a499cec52dbd6ca": {
+      "sourceSha256": "2c5c5d1410f743d37b93512ee57824eb9306886e3c51987087b7aa95e4372a04",
+      "title": "图检单同批图片对照验证",
+      "summary": "已完成四文件的图检单与 AnalyzeImage 实测、逐文件对照和逆向审查；修复 SVG 说明与页面计数，程序登记检查 4/4，更新交付文档、共识并本地提交。结论为保留免费工具，暂停独立收费投入，真实用户价值仍待验证。",
+      "blocker": ""
+    },
+    "cycle-02c3fa3552b0463b86a97f5d5ab6e0a6": {
+      "sourceSha256": "aca0f46ce20c0228eeee5848a7fcd9142d400ac7ba1fff5532b3e6fa74ea092c",
+      "title": "交付图检单本地最小版",
+      "summary": "已创建并提交独立本地产品仓库，交付四项图片批次检查与中文 CSV；3 项 Node 检查通过，预览已核对并停止，交付文档和共识已更新。",
+      "blocker": ""
+    },
+    "cycle-106a71069a444ea7b270151d120d1eaa": {
+      "sourceSha256": "1f47b91b8fbaabb74dbc896a101f6d761c1588644f83735f3bd8ee6c06640a46",
+      "title": "核验 Shopify CSV 覆盖预演",
+      "summary": "已完成一页样例风险报告、Pre-Mortem、市场核验、财务模型与决策文档；本轮判定 Shopify 产品立项 NO-GO，下一轮转试图检单。共识已更新并校验人工专属区未变。",
+      "blocker": ""
+    },
+    "cycle-2ab60d433799472685e9374533acccd7": {
+      "sourceSha256": "40f8a0d5223ba539eda43fc531950146dee87883cb78169d41e724b6f88af1a0",
+      "title": "首轮产品机会探索",
+      "summary": "三名成员各提交一份提案，已核对现有项目和 Shopify 官方规则，完成前三排序与下一轮 GO / NO-GO 任务；共识已更新且受保护区原文未变。",
+      "blocker": ""
+    }
+  }
+}

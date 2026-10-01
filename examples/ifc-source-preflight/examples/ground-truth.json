@@ -1,0 +1,696 @@
+{
+  "provenance": "fully-synthetic; no customer models; authored quantities without geometry",
+  "schema": "IFC4",
+  "frozen_before_baseline_execution": true,
+  "cases": [
+    {
+      "id": "normal",
+      "old": {
+        "path": "fixtures/normal/old.ifc",
+        "sha256": "183c753ddca4baae8dcfb0b8eb07376f2f9ac0c5cc1b3342d406a934caf6d49b",
+        "bytes": 1698,
+        "length_unit": "m",
+        "volume_unit": "m3",
+        "objects": [
+          {
+            "guid": "0Rvmck4tzROfKSqAwdGxdc",
+            "entity": 16,
+            "name": "wall-A",
+            "material": "Concrete",
+            "sources": [
+              {
+                "quantity_entity": 19,
+                "qset_entity": 20,
+                "qset_guid": "2J59u716PLluxNbjRAEcjd",
+                "quantity_name": "NetVolume",
+                "measurement_basis": "SYNTHETIC-SAME-BASIS",
+                "value": 2,
+                "unit": "m3",
+                "unit_entity": 3
+              }
+            ]
+          }
+        ]
+      },
+      "new": {
+        "path": "fixtures/normal/new.ifc",
+        "sha256": "9fed1a9dfeb4bd6bfed816d9fff7d1fc6446c620ae2f4ab6e9afa1b7d8ebbd7d",
+        "bytes": 1698,
+        "length_unit": "m",
+        "volume_unit": "m3",
+        "objects": [
+          {
+            "guid": "0Rvmck4tzROfKSqAwdGxdc",
+            "entity": 16,
+            "name": "wall-A",
+            "material": "Concrete",
+            "sources": [
+              {
+                "quantity_entity": 19,
+                "qset_entity": 20,
+                "qset_guid": "2J59u716PLluxNbjRAEcjd",
+                "quantity_name": "NetVolume",
+                "measurement_basis": "SYNTHETIC-SAME-BASIS",
+                "value": 3,
+                "unit": "m3",
+                "unit_entity": 3
+              }
+            ]
+          }
+        ]
+      },
+      "expected_material_delta_m3": {
+        "Concrete": 1
+      },
+      "expectation": "known-model-change",
+      "procurement_quantity": "not-established"
+    },
+    {
+      "id": "swap",
+      "old": {
+        "path": "fixtures/swap/old.ifc",
+        "sha256": "50edd39d99cc11dc3514da560d7f3abe4565d02a47336fd892b73658dfd03b00",
+        "bytes": 2150,
+        "length_unit": "m",
+        "volume_unit": "m3",
+        "objects": [
+          {
+            "guid": "1PZra5zxLQZBcVQv3jNPES",
+            "entity": 16,
+            "name": "wall-A",
+            "material": "Concrete",
+            "sources": [
+              {
+                "quantity_entity": 19,
+                "qset_entity": 20,
+                "qset_guid": "0VcdmsR0PVJRTWBfyakkMt",
+                "quantity_name": "NetVolume",
+                "measurement_basis": "SYNTHETIC-SAME-BASIS",
+                "value": 2,
+                "unit": "m3",
+                "unit_entity": 3
+              }
+            ]
+          },
+          {
+            "guid": "0PrVVxwO1HIwwraZXkkHOO",
+            "entity": 23,
+            "name": "wall-B",
+            "material": "Steel",
+            "sources": [
+              {
+                "quantity_entity": 26,
+                "qset_entity": 27,
+                "qset_guid": "3k_Q_0qnTIbhkoCb65yLMZ",
+                "quantity_name": "NetVolume",
+                "measurement_basis": "SYNTHETIC-SAME-BASIS",
+                "value": 3,
+                "unit": "m3",
+                "unit_entity": 3
+              }
+            ]
+          }
+        ]
+      },
+      "new": {
+        "path": "fixtures/swap/new.ifc",
+        "sha256": "bd346bc2c68a3d6d212cd5b4e24a9137a01fe4409710672deae73616b0547b1a",
+        "bytes": 2150,
+        "length_unit": "m",
+        "volume_unit": "m3",
+        "objects": [
+          {
+            "guid": "1PZra5zxLQZBcVQv3jNPES",
+            "entity": 16,
+            "name": "wall-A",
+            "material": "Steel",
+            "sources": [
+              {
+                "quantity_entity": 19,
+                "qset_entity": 20,
+                "qset_guid": "0VcdmsR0PVJRTWBfyakkMt",
+                "quantity_name": "NetVolume",
+                "measurement_basis": "SYNTHETIC-SAME-BASIS",
+                "value": 2,
+                "unit": "m3",
+                "unit_entity": 3
+              }
+            ]
+          },
+          {
+            "guid": "0PrVVxwO1HIwwraZXkkHOO",
+            "entity": 23,
+            "name": "wall-B",
+            "material": "Concrete",
+            "sources": [
+              {
+                "quantity_entity": 26,
+                "qset_entity": 27,
+                "qset_guid": "3k_Q_0qnTIbhkoCb65yLMZ",
+                "quantity_name": "NetVolume",
+                "measurement_basis": "SYNTHETIC-SAME-BASIS",
+                "value": 3,
+                "unit": "m3",
+                "unit_entity": 3
+              }
+            ]
+          }
+        ]
+      },
+      "expected_material_delta_m3": {
+        "Concrete": 1,
+        "Steel": -1
+      },
+      "expectation": "material-transfer",
+      "procurement_quantity": "not-established"
+    },
+    {
+      "id": "material-only",
+      "old": {
+        "path": "fixtures/material-only/old.ifc",
+        "sha256": "3daa6ecd8d8ae22f285a006d62bb10707fadabff86a0ea20713b1f85dba80af6",
+        "bytes": 1705,
+        "length_unit": "m",
+        "volume_unit": "m3",
+        "objects": [
+          {
+            "guid": "3qieVKvHrGRxBl28Sv20ZT",
+            "entity": 16,
+            "name": "wall-A",
+            "material": "Concrete",
+            "sources": [
+              {
+                "quantity_entity": 19,
+                "qset_entity": 20,
+                "qset_guid": "3fnA31$UbNiekiYpCVlJdh",
+                "quantity_name": "NetVolume",
+                "measurement_basis": "SYNTHETIC-SAME-BASIS",
+                "value": 2,
+                "unit": "m3",
+                "unit_entity": 3
+              }
+            ]
+          }
+        ]
+      },
+      "new": {
+        "path": "fixtures/material-only/new.ifc",
+        "sha256": "31d5783fe0d543baaee0cf7ade5275627e3e793aadb5e56d48b8582cba404601",
+        "bytes": 1703,
+        "length_unit": "m",
+        "volume_unit": "m3",
+        "objects": [
+          {
+            "guid": "3qieVKvHrGRxBl28Sv20ZT",
+            "entity": 16,
+            "name": "wall-A",
+            "material": "Timber",
+            "sources": [
+              {
+                "quantity_entity": 19,
+                "qset_entity": 20,
+                "qset_guid": "3fnA31$UbNiekiYpCVlJdh",
+                "quantity_name": "NetVolume",
+                "measurement_basis": "SYNTHETIC-SAME-BASIS",
+                "value": 2,
+                "unit": "m3",
+                "unit_entity": 3
+              }
+            ]
+          }
+        ]
+      },
+      "expected_material_delta_m3": {
+        "Concrete": -2,
+        "Timber": 2
+      },
+      "expectation": "material-transfer",
+      "procurement_quantity": "not-established"
+    },
+    {
+      "id": "units",
+      "old": {
+        "path": "fixtures/units/old.ifc",
+        "sha256": "e6fba5e94e3724572747c20b2cbbeddb2a9e6c07041588a788c3f83b1f014afa",
+        "bytes": 1697,
+        "length_unit": "m",
+        "volume_unit": "m3",
+        "objects": [
+          {
+            "guid": "2Ye_DhQ8THBg0egCttBMKh",
+            "entity": 16,
+            "name": "wall-A",
+            "material": "Concrete",
+            "sources": [
+              {
+                "quantity_entity": 19,
+                "qset_entity": 20,
+                "qset_guid": "2PSqXNl2jRAuqhqzByZNQu",
+                "quantity_name": "NetVolume",
+                "measurement_basis": "SYNTHETIC-SAME-BASIS",
+                "value": 2,
+                "unit": "m3",
+                "unit_entity": 3
+              }
+            ]
+          }
+        ]
+      },
+      "new": {
+        "path": "fixtures/units/new.ifc",
+        "sha256": "bc8cb037a93b734a3190d46461267ee9b1ebf114501af8c91ae992308f4ee64d",
+        "bytes": 1703,
+        "length_unit": "mm",
+        "volume_unit": "m3",
+        "objects": [
+          {
+            "guid": "2Ye_DhQ8THBg0egCttBMKh",
+            "entity": 16,
+            "name": "wall-A",
+            "material": "Concrete",
+            "sources": [
+              {
+                "quantity_entity": 19,
+                "qset_entity": 20,
+                "qset_guid": "2PSqXNl2jRAuqhqzByZNQu",
+                "quantity_name": "NetVolume",
+                "measurement_basis": "SYNTHETIC-SAME-BASIS",
+                "value": 2,
+                "unit": "m3",
+                "unit_entity": 3
+              }
+            ]
+          }
+        ]
+      },
+      "expected_material_delta_m3": {
+        "Concrete": 0
+      },
+      "expectation": "equivalent-volume",
+      "procurement_quantity": "not-established"
+    },
+    {
+      "id": "missing",
+      "old": {
+        "path": "fixtures/missing/old.ifc",
+        "sha256": "5f5c04964503450f8ed51d3c4d506579f5e1b4a89a7df3a03ccd6a6bbd2c8f1a",
+        "bytes": 1699,
+        "length_unit": "m",
+        "volume_unit": "m3",
+        "objects": [
+          {
+            "guid": "1nMf9G8xjIrhCZ2ehpvrM6",
+            "entity": 16,
+            "name": "wall-A",
+            "material": "Concrete",
+            "sources": [
+              {
+                "quantity_entity": 19,
+                "qset_entity": 20,
+                "qset_guid": "1D6w4vk6DVWBm7eKdThYSF",
+                "quantity_name": "NetVolume",
+                "measurement_basis": "SYNTHETIC-SAME-BASIS",
+                "value": 2,
+                "unit": "m3",
+                "unit_entity": 3
+              }
+            ]
+          }
+        ]
+      },
+      "new": {
+        "path": "fixtures/missing/new.ifc",
+        "sha256": "45b54b208b928236625c3ff4cf68cdd0b7f80ff8606a8d1b6ddaa11d19c087a3",
+        "bytes": 1472,
+        "length_unit": "m",
+        "volume_unit": "m3",
+        "objects": [
+          {
+            "guid": "1nMf9G8xjIrhCZ2ehpvrM6",
+            "entity": 16,
+            "name": "wall-A",
+            "material": "Concrete",
+            "sources": []
+          }
+        ]
+      },
+      "expected_material_delta_m3": null,
+      "expectation": "missing-quantity-unresolved",
+      "procurement_quantity": "not-established"
+    },
+    {
+      "id": "source-conflict",
+      "old": {
+        "path": "fixtures/source-conflict/old.ifc",
+        "sha256": "dd5d4dca61022fd52d39a6bbc5e4e34ed7a5f5cb5e5ec4a00062f6def469691a",
+        "bytes": 1707,
+        "length_unit": "m",
+        "volume_unit": "m3",
+        "objects": [
+          {
+            "guid": "2iU5HHuibHcfv_zwUaj0XS",
+            "entity": 16,
+            "name": "wall-A",
+            "material": "Concrete",
+            "sources": [
+              {
+                "quantity_entity": 19,
+                "qset_entity": 20,
+                "qset_guid": "2FZTWdRbjTbOdGHMwJPq7E",
+                "quantity_name": "NetVolume",
+                "measurement_basis": "SYNTHETIC-SAME-BASIS",
+                "value": 2,
+                "unit": "m3",
+                "unit_entity": 3
+              }
+            ]
+          }
+        ]
+      },
+      "new": {
+        "path": "fixtures/source-conflict/new.ifc",
+        "sha256": "440df140e317c8be0b54f23a26f267c5fa5e30fb2f57a4ef2300f30ab3531c81",
+        "bytes": 1934,
+        "length_unit": "m",
+        "volume_unit": "m3",
+        "objects": [
+          {
+            "guid": "2iU5HHuibHcfv_zwUaj0XS",
+            "entity": 16,
+            "name": "wall-A",
+            "material": "Concrete",
+            "sources": [
+              {
+                "quantity_entity": 19,
+                "qset_entity": 20,
+                "qset_guid": "2FZTWdRbjTbOdGHMwJPq7E",
+                "quantity_name": "NetVolume",
+                "measurement_basis": "SYNTHETIC-SAME-BASIS",
+                "value": 3,
+                "unit": "m3",
+                "unit_entity": 3
+              },
+              {
+                "quantity_entity": 22,
+                "qset_entity": 23,
+                "qset_guid": "2BvVVW18HItvZt3CKyCGu5",
+                "quantity_name": "NetVolume",
+                "measurement_basis": "SYNTHETIC-SAME-BASIS",
+                "value": 7,
+                "unit": "m3",
+                "unit_entity": 3
+              }
+            ]
+          }
+        ]
+      },
+      "expected_material_delta_m3": null,
+      "expectation": "same-basis-conflicting-quantities-unresolved",
+      "procurement_quantity": "not-established"
+    },
+    {
+      "id": "guid-rebuilt",
+      "old": {
+        "path": "fixtures/guid-rebuilt/old.ifc",
+        "sha256": "1b9a5bdc045207bbbc1a916c1e794c7003fd0c241ac7edd6bf61f2a674ffbd3d",
+        "bytes": 1704,
+        "length_unit": "m",
+        "volume_unit": "m3",
+        "objects": [
+          {
+            "guid": "2nXxfhE7jHGu$FdJk0DPaQ",
+            "entity": 16,
+            "name": "wall-A",
+            "material": "Concrete",
+            "sources": [
+              {
+                "quantity_entity": 19,
+                "qset_entity": 20,
+                "qset_guid": "15$0hwqFjKxA88bHaOj844",
+                "quantity_name": "NetVolume",
+                "measurement_basis": "SYNTHETIC-SAME-BASIS",
+                "value": 2,
+                "unit": "m3",
+                "unit_entity": 3
+              }
+            ]
+          }
+        ]
+      },
+      "new": {
+        "path": "fixtures/guid-rebuilt/new.ifc",
+        "sha256": "8d998d91f142984470d3fa1e65d754b39a7a8ff6645186e6283855ca3de9474f",
+        "bytes": 1704,
+        "length_unit": "m",
+        "volume_unit": "m3",
+        "objects": [
+          {
+            "guid": "0osDRcK3TMMgBeEsNrpDx8",
+            "entity": 16,
+            "name": "wall-A",
+            "material": "Concrete",
+            "sources": [
+              {
+                "quantity_entity": 19,
+                "qset_entity": 20,
+                "qset_guid": "15$0hwqFjKxA88bHaOj844",
+                "quantity_name": "NetVolume",
+                "measurement_basis": "SYNTHETIC-SAME-BASIS",
+                "value": 3,
+                "unit": "m3",
+                "unit_entity": 3
+              }
+            ]
+          }
+        ]
+      },
+      "expected_material_delta_m3": {
+        "Concrete": 1
+      },
+      "expectation": "identity-inferred-if-paired",
+      "procurement_quantity": "not-established"
+    },
+    {
+      "id": "ambiguous",
+      "old": {
+        "path": "fixtures/ambiguous/old.ifc",
+        "sha256": "6fbcb6bba028202857b3cf987dae1a89fd94bcee87f506b524e87790e54910be",
+        "bytes": 2166,
+        "length_unit": "m",
+        "volume_unit": "m3",
+        "objects": [
+          {
+            "guid": "1TGQIwsf1OJeWh_EqDaYbO",
+            "entity": 16,
+            "name": "Repeated",
+            "material": "Concrete",
+            "sources": [
+              {
+                "quantity_entity": 19,
+                "qset_entity": 20,
+                "qset_guid": "2v7i69gkHGNuAHo5T1Xypv",
+                "quantity_name": "NetVolume",
+                "measurement_basis": "SYNTHETIC-SAME-BASIS",
+                "value": 2,
+                "unit": "m3",
+                "unit_entity": 3
+              }
+            ]
+          },
+          {
+            "guid": "2vp0Njz51TvxiLlDT$aIgX",
+            "entity": 23,
+            "name": "Repeated",
+            "material": "Concrete",
+            "sources": [
+              {
+                "quantity_entity": 26,
+                "qset_entity": 27,
+                "qset_guid": "0fH8gFBe1LLfTiGVl2p3Zm",
+                "quantity_name": "NetVolume",
+                "measurement_basis": "SYNTHETIC-SAME-BASIS",
+                "value": 3,
+                "unit": "m3",
+                "unit_entity": 3
+              }
+            ]
+          }
+        ]
+      },
+      "new": {
+        "path": "fixtures/ambiguous/new.ifc",
+        "sha256": "5eadafdfa3095f3d66125021d93fe4202efebf0fcc059dc6b9b5aeb04cb893df",
+        "bytes": 2166,
+        "length_unit": "m",
+        "volume_unit": "m3",
+        "objects": [
+          {
+            "guid": "1ebJxSyV9H3xU0Kxqw7aZn",
+            "entity": 16,
+            "name": "Repeated",
+            "material": "Concrete",
+            "sources": [
+              {
+                "quantity_entity": 19,
+                "qset_entity": 20,
+                "qset_guid": "2v7i69gkHGNuAHo5T1Xypv",
+                "quantity_name": "NetVolume",
+                "measurement_basis": "SYNTHETIC-SAME-BASIS",
+                "value": 2,
+                "unit": "m3",
+                "unit_entity": 3
+              }
+            ]
+          },
+          {
+            "guid": "2YgQ3tOVbS6AqvD234rONQ",
+            "entity": 23,
+            "name": "Repeated",
+            "material": "Concrete",
+            "sources": [
+              {
+                "quantity_entity": 26,
+                "qset_entity": 27,
+                "qset_guid": "0fH8gFBe1LLfTiGVl2p3Zm",
+                "quantity_name": "NetVolume",
+                "measurement_basis": "SYNTHETIC-SAME-BASIS",
+                "value": 3,
+                "unit": "m3",
+                "unit_entity": 3
+              }
+            ]
+          }
+        ]
+      },
+      "expected_material_delta_m3": {
+        "Concrete": 0
+      },
+      "expectation": "identity-unresolved",
+      "procurement_quantity": "not-established"
+    },
+    {
+      "id": "name-only",
+      "old": {
+        "path": "fixtures/name-only/old.ifc",
+        "sha256": "77e18183e413c8083fa51af22b4a3ff40e0ec746e192d5007e113d5c2f800167",
+        "bytes": 1701,
+        "length_unit": "m",
+        "volume_unit": "m3",
+        "objects": [
+          {
+            "guid": "1cpTwH6eTT3gev7tH30_do",
+            "entity": 16,
+            "name": "wall-A",
+            "material": "Concrete",
+            "sources": [
+              {
+                "quantity_entity": 19,
+                "qset_entity": 20,
+                "qset_guid": "1cekiumMXQlujRoSo333hr",
+                "quantity_name": "NetVolume",
+                "measurement_basis": "SYNTHETIC-SAME-BASIS",
+                "value": 2,
+                "unit": "m3",
+                "unit_entity": 3
+              }
+            ]
+          }
+        ]
+      },
+      "new": {
+        "path": "fixtures/name-only/new.ifc",
+        "sha256": "63bdbf90cffcd954d67aab0d17f5eff6eab00b3423ede1bb01261409864a8159",
+        "bytes": 1719,
+        "length_unit": "m",
+        "volume_unit": "m3",
+        "objects": [
+          {
+            "guid": "1cpTwH6eTT3gev7tH30_do",
+            "entity": 16,
+            "name": "修改名称",
+            "material": "Concrete",
+            "sources": [
+              {
+                "quantity_entity": 19,
+                "qset_entity": 20,
+                "qset_guid": "1cekiumMXQlujRoSo333hr",
+                "quantity_name": "NetVolume",
+                "measurement_basis": "SYNTHETIC-SAME-BASIS",
+                "value": 2,
+                "unit": "m3",
+                "unit_entity": 3
+              }
+            ]
+          }
+        ]
+      },
+      "expected_material_delta_m3": {
+        "Concrete": 0
+      },
+      "expectation": "no-quantity-change",
+      "procurement_quantity": "not-established"
+    },
+    {
+      "id": "unchanged",
+      "old": {
+        "path": "fixtures/unchanged/old.ifc",
+        "sha256": "99567227d2838ec6dd51f55265f5c2b7f9746a530b1041cdbd6dc39d12147e54",
+        "bytes": 1701,
+        "length_unit": "m",
+        "volume_unit": "m3",
+        "objects": [
+          {
+            "guid": "3rSQTlmT1M3go4gWX28zUK",
+            "entity": 16,
+            "name": "wall-A",
+            "material": "Concrete",
+            "sources": [
+              {
+                "quantity_entity": 19,
+                "qset_entity": 20,
+                "qset_guid": "1fGrZ5TY9Ko941KxlRUX_8",
+                "quantity_name": "NetVolume",
+                "measurement_basis": "SYNTHETIC-SAME-BASIS",
+                "value": 2,
+                "unit": "m3",
+                "unit_entity": 3
+              }
+            ]
+          }
+        ]
+      },
+      "new": {
+        "path": "fixtures/unchanged/new.ifc",
+        "sha256": "05ea0407a909cd2db70efed748704cff02ac57ef9eab892c67700761df37ea17",
+        "bytes": 1701,
+        "length_unit": "m",
+        "volume_unit": "m3",
+        "objects": [
+          {
+            "guid": "3rSQTlmT1M3go4gWX28zUK",
+            "entity": 16,
+            "name": "wall-A",
+            "material": "Concrete",
+            "sources": [
+              {
+                "quantity_entity": 19,
+                "qset_entity": 20,
+                "qset_guid": "1fGrZ5TY9Ko941KxlRUX_8",
+                "quantity_name": "NetVolume",
+                "measurement_basis": "SYNTHETIC-SAME-BASIS",
+                "value": 2,
+                "unit": "m3",
+                "unit_entity": 3
+              }
+            ]
+          }
+        ]
+      },
+      "expected_material_delta_m3": {
+        "Concrete": 0
+      },
+      "expectation": "no-change",
+      "procurement_quantity": "not-established"
+    }
+  ]
+}
