@@ -3,6 +3,7 @@ import importlib.util
 import json
 import os
 from pathlib import Path
+import shlex
 import shutil
 import subprocess
 import sys
@@ -719,6 +720,66 @@ class ContextLanguageTests(unittest.TestCase):
 
 
 class GovernanceObservationTests(unittest.TestCase):
+    @unittest.skipUnless(sys.platform == "linux", "Bash state publication runs under Linux/WSL")
+    def test_loop_state_publication_keeps_prior_snapshot_until_clock_field_is_ready(self):
+        source = (ROOT / "scripts/core/auto-loop.sh").read_text()
+        start = source.index("save_state() {")
+        function = source[start:source.index("\n}\n", start) + 3]
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            state = root / ".auto-loop-state"
+            prior = b"STATUS=paused\nPAUSE_REASON=unresolved_p1\n"
+            state.write_bytes(prior)
+            gate, ready = root / "hold-clock", root / "clock-held"
+            gate.touch()
+            binaries = root / "bin"
+            binaries.mkdir()
+            clock = binaries / "date"
+            clock.write_text("#!/bin/bash\ntouch " + shlex.quote(str(ready)) + "\nwhile [ -f " + shlex.quote(str(gate)) + " ]; do sleep 0.01; done\nprintf '2026-10-02 00:00:00\\n'\n")
+            clock.chmod(0o755)
+            script = "set -euo pipefail\nSTATE_FILE=" + shlex.quote(str(state)) + "\nloop_count=2\nerror_count=0\nMODEL_LABEL=fixture\nENGINE=fixture\nCURRENT_PRODUCT_CYCLE_ID=fixture\n" + function + '\nsave_state "idle"\n'
+            child = subprocess.Popen(["bash", "-c", script], env={**os.environ, "PATH": str(binaries) + os.pathsep + os.environ["PATH"]}, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            try:
+                deadline = time.monotonic() + 5
+                while not ready.exists() and child.poll() is None and time.monotonic() < deadline:
+                    time.sleep(0.01)
+                self.assertTrue(ready.exists(), "The actual state writer must reach the controlled clock read")
+                self.assertEqual(state.read_bytes(), prior)
+                self.assertIsNone(child.poll())
+            finally:
+                gate.unlink(missing_ok=True)
+                stdout, stderr = child.communicate(timeout=5)
+            self.assertEqual(child.returncode, 0, stderr.decode(errors="replace"))
+            saved = dict(line.split("=", 1) for line in state.read_text().splitlines())
+            self.assertEqual((saved["STATUS"], saved["PAUSE_REASON"], saved["LOOP_COUNT"]), ("idle", "", "2"))
+
+    def test_incomplete_observation_preserves_confirmed_p1_until_valid_transition(self):
+        sys.path.insert(0, str(ROOT / "scripts/core"))
+        from center_runner import execution_blocked_reason
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            consensus = root / "memories/consensus.md"
+            consensus.parent.mkdir()
+            consensus.write_text("## Human Overrides\n## Priority Issues\n- [ ] P1: decision\n")
+            state = root / ".auto-loop-state"
+            blocked = "unresolved_p1"
+            for partial in ("", "LOOP_COUNT=2\n", "STATUS=paused\n"):
+                with self.subTest(partial=partial):
+                    state.write_text(partial)
+                    self.assertEqual(execution_blocked_reason(root, 0, blocked), blocked)
+                    self.assertIsNone(execution_blocked_reason(root, 0), "An incomplete first observation cannot invent a block")
+            state.unlink()
+            self.assertEqual(execution_blocked_reason(root, 0, blocked), blocked)
+            state.write_text("STATUS=paused\nPAUSE_REASON=unresolved_p1\n")
+            self.assertEqual(execution_blocked_reason(root, time.time_ns() + 1000000000, blocked), blocked)
+            consensus.write_text("invalid governance fixture")
+            self.assertEqual(execution_blocked_reason(root, 0, blocked), blocked)
+            consensus.write_text("## Human Overrides\n## Priority Issues\n- [x] P1: resolved\n")
+            self.assertIsNone(execution_blocked_reason(root, 0, blocked))
+            consensus.write_text("## Human Overrides\n## Priority Issues\n- [ ] P1: decision\n")
+            state.write_text("STATUS=running\nPAUSE_REASON=\n")
+            self.assertIsNone(execution_blocked_reason(root, 0, blocked))
+
     def test_original_priority_grammar_and_observation_are_read_only_and_require_current_guard(self):
         sys.path.insert(0, str(ROOT / "scripts/core"))
         from center_runner import governance_reason, execution_blocked_reason, protective_reason
@@ -972,6 +1033,44 @@ if [ "$count" -ge "${STOP_AFTER:-2}" ]; then touch "$AUTO_COMPANY_ROOT/.auto-loo
         self.assertTrue(receipt["cleanupConfirmed"])
         self.assertIsNone(receipt["executionBlockedReason"])
         self.assertEqual((self.root / "memories/consensus.md").read_bytes(), consensus)
+
+    def test_guard_refresh_keeps_complete_p1_state_until_atomic_publication(self):
+        sys.path.insert(0, str(ROOT / "scripts/core"))
+        from center_runner import execution_blocked_reason
+        # Hold the second real guard write after its first field. The reader
+        # must still see the previous complete state while the new one is built.
+        guard = self.root / "scripts/core/consensus-guard.sh"
+        needle = "        printf 'LOOP_COUNT=%s\\n' \"$cycle\"\n"
+        gate = self.root / "hold-state-write"
+        ready = self.root / "state-write-held"
+        source = guard.read_text()
+        self.assertEqual(source.count(needle), 1)
+        guard.write_text(source.replace(needle, needle + '''        if [ -f "$FRAMEWORK_DIR/hold-state-write" ]; then
+            touch "$FRAMEWORK_DIR/state-write-held"
+            while [ -f "$FRAMEWORK_DIR/hold-state-write" ]; do sleep 0.05; done
+        fi
+'''))
+        self.addCleanup(lambda: gate.unlink(missing_ok=True))
+        process = self.launch(ADD_P1="1", STOP_AFTER="99", LOOP_INTERVAL="1")
+        receipt_path = self.control / "receipt.json"
+        self.wait_for(lambda: receipt_path.exists() and json.loads(receipt_path.read_text()).get("executionBlockedReason") == "unresolved_p1", timeout=25)
+        confirmed = json.loads(receipt_path.read_text())
+        consensus = (self.root / "memories/consensus.md").read_bytes()
+        gate.touch()
+        self.wait_for(ready.exists)
+        self.assertEqual(execution_blocked_reason(self.root, 0), "unresolved_p1")
+        receipt = json.loads(receipt_path.read_text())
+        self.assertEqual(receipt["executionBlockedReason"], "unresolved_p1")
+        self.assertEqual(receipt["executionBlockedAt"], confirmed["executionBlockedAt"])
+        self.assertIsNone(process.poll())
+        self.assertEqual((self.root / "invocations").read_text().strip(), "1")
+        probe = subprocess.run([sys.executable, str(self.runner), "probe", "--center-id", self.manifest["centerId"], "--manifest", str(self.manifest_path)],
+                               env=self.env, capture_output=True, text=True, check=True, timeout=10)
+        self.assertFalse(json.loads(probe.stdout)["slotFree"])
+        self.assertFalse((self.root / ".auto-loop-stop").exists())
+        self.assertFalse((self.root / ".auto-loop-paused").exists())
+        self.assertEqual((self.root / "memories/consensus.md").read_bytes(), consensus)
+        gate.unlink()
 
     def test_p1_rejects_runner_and_takeover_before_loop_but_does_not_prevent_release(self):
         consensus = self.root / "memories/consensus.md"

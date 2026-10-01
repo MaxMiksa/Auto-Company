@@ -38,14 +38,16 @@ log_guard() {
 }
 
 write_guard_state() {
-    local cycle="$1" status="$2" pause_reason="$3" error="$4"
+    local cycle="$1" status="$2" pause_reason="$3" error="$4" state_tmp
+    state_tmp="$(mktemp "$FRAMEWORK_DIR/.auto-loop-state.XXXXXX")"
     {
         printf 'LOOP_COUNT=%s\n' "$cycle"
         printf 'LAST_RUN=%s\n' "$(timestamp)"
         printf 'STATUS=%s\n' "$status"
         printf 'PAUSE_REASON=%s\n' "$pause_reason"
         printf 'LAST_ERROR=%s\n' "$error"
-    } > "$STATE_FILE"
+    } > "$state_tmp"
+    mv "$state_tmp" "$STATE_FILE"
 }
 
 write_pause_flag() {
