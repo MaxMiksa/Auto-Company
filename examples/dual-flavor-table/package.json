@@ -1,0 +1,9 @@
+{
+  "name":"dual-flavor-table",
+  "version":"1.0.0",
+  "private":true,
+  "type":"module",
+  "description":"一桌双味：无需录入菜谱的本地整餐手册",
+  "scripts":{"test":"node --test tests/*.test.js","start":"python -m http.server 8080 --bind 127.0.0.1"},
+  "devDependencies":{"playwright":"1.63.0"}
+}

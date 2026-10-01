@@ -1,0 +1,45 @@
+{
+  "language": "en",
+  "productId": "cdc5a3b498044434b684dd99db1b4e0f",
+  "viewLabel": "Recorded work · reviewed translation",
+  "project": {
+    "displayName": "Tujiandan",
+    "description": "Check image dimensions, file size, format, and naming in batches locally in the browser, then export a list of items to address."
+  },
+  "documents": {
+    "projects/tujiandan/design/logo-selection-2026-09-30.md": "Logo options record",
+    "projects/tujiandan/DELIVERY.md": "Delivery notes"
+  },
+  "cycles": {
+    "cycle-bc3fceab56c1469dab09cfb466ad7c5d": {
+      "sourceSha256": "be27af2f9c716d85bffc2547c7a922a3667c1b49f736991613557112f3f7bca9",
+      "title": "Review real delivery evidence for Tujiandan",
+      "summary": "No local batch was found containing the original client specification, original images, and rework records together. Research, operations, a critical review, and an investment decision are complete: stop investment in a standalone paid product and retain the free tool. Delivery notes were registered and committed locally in the independent product repository; the next cycle will review evidence for the delivery roll-call concept.",
+      "blocker": ""
+    },
+    "cycle-d9f1f8db879449729a499cec52dbd6ca": {
+      "sourceSha256": "2c5c5d1410f743d37b93512ee57824eb9306886e3c51987087b7aa95e4372a04",
+      "title": "Compare Tujiandan on the same image batch",
+      "summary": "Completed hands-on checks of four files in Tujiandan and AnalyzeImage, a file-by-file comparison, and a critical review. Fixed the SVG explanation and page counts; program-registered checks passed 4 of 4. Updated delivery notes and consensus, and committed locally. Retain the free tool and pause standalone paid-product investment; real user value remains unvalidated.",
+      "blocker": ""
+    },
+    "cycle-02c3fa3552b0463b86a97f5d5ab6e0a6": {
+      "sourceSha256": "aca0f46ce20c0228eeee5848a7fcd9142d400ac7ba1fff5532b3e6fa74ea092c",
+      "title": "Deliver the local Tujiandan MVP",
+      "summary": "Created and committed an independent local product repository, delivering four batch image checks and Chinese CSV export. Three Node checks passed; the preview was verified and stopped, and delivery notes and consensus were updated.",
+      "blocker": ""
+    },
+    "cycle-106a71069a444ea7b270151d120d1eaa": {
+      "sourceSha256": "1f47b91b8fbaabb74dbc896a101f6d761c1588644f83735f3bd8ee6c06640a46",
+      "title": "Evaluate a Shopify CSV overwrite rehearsal",
+      "summary": "Completed a one-page sample risk report, pre-mortem, market review, financial model, and decision document. The Shopify product received a NO-GO decision; the next cycle will try Tujiandan. Consensus was updated and the human-only section was verified unchanged.",
+      "blocker": ""
+    },
+    "cycle-2ab60d433799472685e9374533acccd7": {
+      "sourceSha256": "40f8a0d5223ba539eda43fc531950146dee87883cb78169d41e724b6f88af1a0",
+      "title": "Explore initial product opportunities",
+      "summary": "Three team members each submitted a proposal. Existing projects and official Shopify rules were checked, the top three were ranked, and the next GO / NO-GO task was set. Consensus was updated and the protected section remained verbatim.",
+      "blocker": ""
+    }
+  }
+}

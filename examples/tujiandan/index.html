@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#171a18">
+  <link rel="icon" type="image/svg+xml" href="auto-company-icon.svg">
+  <title>图检单｜本地图片批次检查</title>
+  <meta name="description" content="在浏览器本地核对图片尺寸、体积、格式与文件名，导出待处理清单。">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="./" aria-label="图检单首页"><span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span><span></span></span><span>图检单</span></a>
+      <div class="top-controls"><div class="top-meta"><span class="live-dot"></span>浏览器本地处理 <span class="divider">/</span> 无需上传</div><select id="language" aria-label="Language / 语言"><option value="zh-CN">简体中文</option><option value="en">English</option></select></div>
+    </header>
+
+    <main>
+      <section class="intro" aria-labelledby="page-title">
+        <div class="intro-copy">
+          <p class="eyebrow"><span class="eyebrow-line"></span> 图片批次检查 <span class="edition">01 / 工作台</span></p>
+          <h1 id="page-title">让每一张图，<br><em>交付前</em>都过一遍。</h1>
+          <p class="lead">把图片拖进来，按你的标准核对尺寸、体积、格式和命名。问题集中列出，处理清单一键导出。</p>
+          <div class="intro-stats" aria-label="检查范围"><span><b>04</b> 项规则</span><span><b id="intro-count">00</b> 张已检查</span><span><b>CSV</b> 结果导出</span></div>
+        </div>
+        <div class="hero-visual" aria-hidden="true"><div class="visual-grid"><div class="visual-image"><div class="visual-sun"></div><div class="visual-hill one"></div><div class="visual-hill two"></div></div><div class="visual-corner top-left"></div><div class="visual-corner top-right"></div><div class="visual-corner bottom-left"></div><div class="visual-corner bottom-right"></div><div class="visual-tag">图片 0042 <span>待校验</span></div></div><div class="visual-stamp">交付前<br>过一遍<span>↗</span></div></div>
+      </section>
+
+      <section class="workbench" aria-label="图片检查工作台">
+        <div class="section-heading"><div><p class="section-kicker">01 / 设定标准</p><h2>这批图，按什么要求检查？</h2></div><span class="section-hint">以下为示例要求，请按本次交付约定修改</span></div>
+        <div class="rule-grid">
+          <div class="rule-card"><span class="rule-number">01 <span>尺寸</span></span><span class="rule-title">最低像素</span><span class="rule-description">任一边不足即标记</span><span class="two-fields"><label class="field" for="min-width"><span>宽度 ≥</span><span class="input-unit"><input id="min-width" type="number" min="0" max="50000" step="1" value="1200" inputmode="numeric"><span>px</span></span></label><label class="field" for="min-height"><span>高度 ≥</span><span class="input-unit"><input id="min-height" type="number" min="0" max="50000" step="1" value="1200" inputmode="numeric"><span>px</span></span></label></span></div>
+          <label class="rule-card" for="max-mb"><span class="rule-number">02 <span>体积</span></span><span class="rule-title">文件上限</span><span class="rule-description">超过上限即标记</span><span class="field"><span>单张 ≤</span><span class="input-unit"><input id="max-mb" type="number" min="0.01" max="10000" step="any" value="5" inputmode="decimal"><span>MiB</span></span></span></label>
+          <fieldset class="rule-card format-card"><legend class="sr-only">允许的格式</legend><span class="rule-number">03 <span>格式</span></span><span class="rule-title">允许的格式</span><span class="rule-description">按文件内容识别，并检查扩展名</span><span class="format-options"><label><input type="checkbox" name="format" value="jpeg" checked><span>JPEG</span></label><label><input type="checkbox" name="format" value="png" checked><span>PNG</span></label><label><input type="checkbox" name="format" value="webp" checked><span>WebP</span></label><label><input type="checkbox" name="format" value="gif"><span>GIF</span></label><label><input type="checkbox" name="format" value="avif"><span>AVIF</span></label><label><input type="checkbox" name="format" value="bmp"><span>BMP</span></label></span></fieldset>
+          <label class="rule-card" for="name-style"><span class="rule-number">04 <span>命名</span></span><span class="rule-title">文件名规范</span><span class="rule-description">同批重名会标记，忽略大小写</span><select id="name-style"><option value="spaces">检查名称首尾空格</option><option value="slug">小写英文 / 数字 / - / _</option><option value="none">只检查重名和前缀</option></select><span class="prefix-row"><span>指定前缀 <small>可选</small></span><input id="prefix" type="text" maxlength="40" placeholder="例如 product-" autocomplete="off"></span></label>
+        </div>
+
+        <div class="section-heading upload-heading"><div><p class="section-kicker">02 / 导入文件</p><h2>把这批图片放进来</h2></div><span class="section-hint">支持 PNG、JPEG、WebP、GIF、AVIF、BMP；其他文件会标记</span></div>
+        <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="选择图片文件，也可以拖入图片"><input id="files" type="file" multiple accept="image/*,.svg" hidden><input id="folder" type="file" multiple webkitdirectory hidden><div class="drop-icon" aria-hidden="true">↥</div><div class="drop-copy"><strong>拖入图片，开始核对</strong><p>文件只在此设备的浏览器中读取，不会传到服务器。</p></div><div class="drop-actions"><button id="choose-files" class="button button-dark" type="button">选择图片 <span>↗</span></button><button id="choose-folder" class="button button-outline" type="button">选择文件夹 <span>↗</span></button></div></div>
+
+        <section class="results" id="results" aria-live="polite" aria-label="检查结果"><div class="results-heading"><div><p class="section-kicker">03 / 查看结果</p><h2>检查记录 <span id="count-label">0 张</span></h2></div><div class="result-actions"><button id="filter-all" type="button" class="filter active" aria-pressed="true">全部 <span id="all-count">0</span></button><button id="filter-issues" type="button" class="filter" aria-pressed="false">待处理 <span id="issue-count">0</span></button><button id="clear" type="button" class="filter" disabled>清空</button><button id="export" type="button" class="button button-export" disabled>导出 CSV ↓</button></div></div><div id="empty-state" class="empty-state"><div class="empty-figure" aria-hidden="true"><span>✓</span><i></i><i></i><i></i></div><p>检查结果会出现在这里。</p><small>先设好标准，再导入一批图片。</small></div><div id="result-list" class="result-list" hidden></div><p id="result-note" class="result-note" hidden></p></section>
+      </section>
+    </main>
+    <footer><span>图检单 <span class="footer-slash">/</span> 为交付前的最后一眼</span><span>本地读取 · 无账号 · 无上传</span></footer>
+  </div>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

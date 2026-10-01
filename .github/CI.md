@@ -8,7 +8,8 @@ Only this aggregate job should be a required status check on `main`.
 | --- | --- |
 | Runtime, configuration, or runtime tests | Windows PowerShell 5.1/7, Python, macOS launchd, Shell syntax, Linux systemd and runtime contracts |
 | Dashboard or its runtime/language dependencies | Dashboard Chromium smoke tests, in addition to applicable runtime checks |
-| A published example under `projects/` | That example's core tests (TableDelta/CueCheck) or type check (SnapOG) |
+| A published example under `examples/` | Showcase catalog and Chromium smoke checks, plus TableDelta/CueCheck core tests for those directories |
+| The preserved legacy `projects/snapog/` | SnapOG type check |
 | CI workflow or routing policy | All checks |
 | Ordinary documentation only | Successful routing and aggregate gate; test jobs explicitly skipped |
 

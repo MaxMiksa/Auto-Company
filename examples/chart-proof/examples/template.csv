@@ -1,0 +1,4 @@
+series,x,y,kind,evidence,note
+构造样例A,2023,12,observed,构造表格第2行,仅用于格式演示；请替换为自己的数据
+构造样例A,2024,,missing,构造表格第3行,未采集；不是零
+构造样例A,2025,17.5,approximate,构造图形估读,近似值；请写明估读方法

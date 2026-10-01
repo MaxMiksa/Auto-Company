@@ -1,0 +1,5 @@
+node_modules/
+.auto-company/
+node_modules/
+auto-company-icon.svg
+playwright-report/

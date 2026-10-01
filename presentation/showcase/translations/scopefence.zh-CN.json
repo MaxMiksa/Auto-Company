@@ -1,0 +1,56 @@
+{
+  "language": "zh-CN",
+  "productId": "d071699b7dd442fda31439230062ed43",
+  "viewLabel": "真实工作记录 · 经审校的翻译视图",
+  "project": {
+    "description": "无需登录的项目变更确认链接，帮助独立网站开发者在开始额外工作前明确范围。"
+  },
+  "documents": {
+    "projects/scopefence/DELIVERY.md": "交付说明",
+    "projects/scopefence/design/logo-selection-2026-09-30.md": "标识方案记录"
+  },
+  "cycles": {
+    "cycle-df57339b41ed464ab29727be2ee0e3e9": {
+      "sourceSha256": "2e566fd8bddef08aa41ce5ce89492ea17e1fcea4386d6f492f7794b5471e3bb4",
+      "title": "收尾 ScopeFence 静态交付",
+      "summary": "静态版本的收尾决定已记录并提交，5 项 Node 检查通过。最终链接回传的可用性尚未验证，仍需一次经参与者同意的本地测试，或由人类明确接受尚未验证的收尾结果。",
+      "blocker": ""
+    },
+    "cycle-67c2c803b69c4a818a3e0846b5c95532": {
+      "sourceSha256": "40630ec804bd44987fd1f353b56b91277121bfda2c5c731d0a6139c5092f06f7",
+      "title": "准备双人交接测试",
+      "summary": "测试说明、中立主持脚本及证据记录表已提交，5 项 Node 检查全部通过。尚未开展真人测试；本轮访问静态预览地址时返回 HTTP 502。",
+      "blocker": "经同意的本地双人测试需要人类安排参与者；自主运行不能代替参与者或替他们作出同意。"
+    },
+    "cycle-a24f62e3f12548dcb332dd73cc7dea59": {
+      "sourceSha256": "e2075734551db7dfc5f1f07c19542e94f0d154cc97d278652db917e2da16e393",
+      "title": "验证最终链接回传",
+      "summary": "已提交复制反馈修复和最终回执链接的回归检查，补充产品、交互与 QA 审查记录。5 项 Node 检查通过，本地静态预览可访问；未开展参与者测试。",
+      "blocker": ""
+    },
+    "cycle-86b7183447cd45b1b375246d58e96fa5": {
+      "sourceSha256": "582c3d3ee558a6509c6970f67fff5e9aa2b31790dbe7bea39faaeb48e9650646",
+      "title": "改善最终链接交接",
+      "summary": "已交付并提交清晰的最终链接回传面板，以及用于记录证据的双人测试材料。4 项 Node 检查通过，未收集或声称已有真人可用性观察。",
+      "blocker": ""
+    },
+    "cycle-994326738bce4f8b97792a1c14974f59": {
+      "sourceSha256": "d12bd56a0593849b5cc73139f3c51a0cfa131f2f077f4b9e43c3b083f7415253",
+      "title": "审查首个产品里程碑",
+      "summary": "ScopeFence 已在本地交付并提交。静态回执流程通过自动检查和浏览器基础验证；下一项重要工作是双人交接可用性测试。",
+      "blocker": ""
+    },
+    "cycle-99ad105b76684de79695314be416275b": {
+      "sourceSha256": "c038243cb988ee690544de4e1fa6b54e50a8677ff8b700b720781aef7dd3ceb7",
+      "title": "决定 ScopeProof 的开发路径",
+      "summary": "已完成独立的失败预判、离线市场验证方案和单位经济分析。由于没有真实使用或付费需求证据，暂不开发 ScopeProof；安排在第 3 轮交付 ScopeFence。",
+      "blocker": ""
+    },
+    "cycle-108696f030f34406848bd564baa89d31": {
+      "sourceSha256": "9cf54299d496d5f829bad22be15a077083e7d1f9bfc7459dda70151cbd1e1a46",
+      "title": "筛选初始产品机会",
+      "summary": "已完成初始探索。四份独立分析聚焦于固定报价数字服务团队的客户变更确认，选出 ScopeProof 作为后续验证候选。",
+      "blocker": ""
+    }
+  }
+}

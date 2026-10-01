@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#233c55">
+  <title>量源复核 · IFC 数量来源完整性预检</title>
+  <link rel="icon" href="/auto-company-icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/style.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#workspace">跳到复核工作台</a>
+  <header class="masthead">
+    <div class="brand"><img src="/auto-company-icon.svg" width="36" height="36" alt=""><div><strong>量源复核<span class="brand-mark"> / </span></strong><span>IFC 数量来源完整性预检</span></div></div>
+    <div class="local-label"><span class="status-dot"></span>本机处理 · 无需账户</div>
+  </header>
+  <main id="workspace" class="workspace">
+    <aside class="input-panel" aria-labelledby="input-title">
+      <div class="panel-intro"><span class="eyebrow">01 / 版本与范围</span><h1 id="input-title">先核对来源，<br>再解释差量。</h1><p>读入两个 IFC 版本，核对数量、材料与对象身份。</p></div>
+      <form id="analysis-form">
+        <fieldset id="input-controls">
+          <legend class="sr-only">选择 IFC 文件和复核范围</legend>
+          <div class="file-slot" id="old-drop" data-version="old">
+            <div class="slot-heading"><span class="version-tag">A</span><label for="old-file">基准版本</label><span class="file-format">.ifc</span></div>
+            <input id="old-file" name="old-file" type="file" accept=".ifc" aria-describedby="old-file-info">
+            <label class="file-picker" for="old-file"><span class="file-symbol" aria-hidden="true">↓</span><span id="old-file-info">选择文件或拖到这里</span></label>
+          </div>
+          <div class="version-connector" aria-hidden="true"><span></span>比较来源完整性<span></span></div>
+          <div class="file-slot" id="new-drop" data-version="new">
+            <div class="slot-heading"><span class="version-tag">B</span><label for="new-file">当前版本</label><span class="file-format">.ifc</span></div>
+            <input id="new-file" name="new-file" type="file" accept=".ifc" aria-describedby="new-file-info">
+            <label class="file-picker" for="new-file"><span class="file-symbol" aria-hidden="true">↓</span><span id="new-file-info">选择文件或拖到这里</span></label>
+          </div>
+          <div class="field-pair"><div class="field"><label for="element-type">构件范围</label><select id="element-type"><option value="IfcElement">全部构件 · IfcElement</option><option value="IfcWall">墙 · IfcWall</option><option value="IfcSlab">板 · IfcSlab</option><option value="IfcBeam">梁 · IfcBeam</option><option value="IfcColumn">柱 · IfcColumn</option></select></div><div class="field"><label for="quantity-name">体积字段</label><select id="quantity-name"><option value="NetVolume">净体积 · NetVolume</option><option value="GrossVolume">毛体积 · GrossVolume</option><option value="Volume">体积 · Volume</option></select></div></div>
+          <p class="scope-note">只复核文件中已有的数量来源，不从几何重算，也不推算采购量。</p>
+          <button id="analyze-button" class="primary-button" type="submit" disabled><span>开始来源复核</span><span aria-hidden="true">↗</span></button>
+        </fieldset>
+      </form>
+      <section class="demo-panel" aria-labelledby="demo-title"><h2 id="demo-title">先用样例走一遍</h2><p>合成 IFC，专为边界情境构造。样例结果不代表真实项目表现。</p><label class="sr-only" for="demo-case">样例情境</label><select id="demo-case"><option value="normal">正常数量变化</option></select><button id="load-demo" class="secondary-button" type="button">载入合成样例 <span aria-hidden="true">→</span></button></section>
+      <button id="reset-button" class="reset-button" type="button">清空并重新开始</button>
+      <p class="privacy-note">文件仅发送到当前本机服务。关闭或清空工作台后，不保留输入文件。</p>
+    </aside>
+    <section class="results-panel" aria-labelledby="results-title">
+      <div class="results-header"><div><span class="eyebrow">02 / 复核底稿</span><h2 id="results-title">数量来源与版本差量</h2></div><span id="result-state" class="state-label">待载入版本</span></div>
+      <div id="feedback" class="feedback" role="status" aria-live="polite" hidden></div>
+      <div id="empty-state" class="empty-state"><div class="sheet-art" aria-hidden="true"><div class="sheet sheet-back"></div><div class="sheet sheet-front"><i></i><i></i><i></i><b></b></div><span class="sheet-index">A → B</span></div><span class="eyebrow">让汇总有据可循</span><h3>从两份 IFC，回到每一条来源。</h3><p>左侧选择基准与当前版本，或载入合成样例。复核后可查看异常对象、材料小计、版本差量，并导出完整底稿。</p><div class="journey"><span><b>01</b>读入双版本</span><span><b>02</b>定位缺口</span><span><b>03</b>导出留痕</span></div><div class="boundary-note"><strong>复核边界</strong><p>数量来源完整，不等于工程数量准确。构件身份依赖 GlobalId；跨版本重建对象可能需要人工对应。</p></div></div>
+      <div id="results-content" hidden>
+        <div id="summary-grid" class="summary-grid" aria-label="复核摘要"></div>
+        <div class="identity-note"><p id="identity-note">跨版本对象按 GlobalId 对应。新增、删除与标识重建需结合模型复核。</p><details class="model-boundaries"><summary>计算口径与模型边界</summary><p id="model-boundaries"></p></details></div>
+        <section class="result-section" aria-labelledby="issues-title"><div class="section-heading"><div><span class="section-no">01</span><h3 id="issues-title">待复核问题</h3><span id="issue-count" class="count-label"></span></div><p>点击问题，定位原始来源行</p></div><div id="issues-list" class="issues-list"></div></section>
+        <section class="result-section" aria-labelledby="materials-title"><div class="section-heading"><div><span class="section-no">02</span><h3 id="materials-title">材料数量与版本差量</h3></div></div><p class="table-note">已知小计仅包含可归属且可读取的来源；完整差量只在两版来源完整、单位可比时给出。</p><div class="table-scroll"><table id="materials-table"><caption class="sr-only">按材料复核两个版本数量及完整性</caption><thead><tr><th scope="col">材料</th><th scope="col">基准已知小计</th><th scope="col">当前已知小计</th><th scope="col">完整差量</th><th scope="col">复核状态</th></tr></thead><tbody id="materials-body"></tbody></table></div></section>
+        <section class="result-section" aria-labelledby="objects-title"><div class="section-heading"><div><span class="section-no">03</span><h3 id="objects-title">跨版本对象对应</h3></div></div><div class="table-scroll"><table id="objects-table"><caption class="sr-only">按 GlobalId 对应的跨版本对象</caption><thead><tr><th scope="col">对象 / GlobalId</th><th scope="col">身份变化</th><th scope="col">基准体积</th><th scope="col">当前体积</th><th scope="col">对象差量</th></tr></thead><tbody id="objects-body"></tbody></table></div></section>
+        <section class="result-section source-section" aria-labelledby="sources-title"><div class="section-heading"><div><span class="section-no">04</span><h3 id="sources-title">完整来源表</h3><span id="source-count" class="count-label"></span></div><div class="export-actions"><button id="export-csv" type="button">导出 CSV</button><button id="export-json" type="button">导出 JSON</button></div></div><div class="source-filters"><div class="field"><label for="filter-version">版本</label><select id="filter-version"><option value="all">全部版本</option><option value="old">基准 A</option><option value="new">当前 B</option></select></div><div class="field"><label for="filter-issue">来源状态</label><select id="filter-issue"><option value="all">全部来源</option><option value="issues">仅待复核来源</option><option value="complete">仅完整来源</option></select></div><div class="field search-field"><label for="source-search">搜索对象或材料</label><input id="source-search" type="search" placeholder="名称、GlobalId、材料…"></div><button id="clear-filters" class="filter-reset" type="button">重置筛选</button></div><p id="filter-status" class="table-note" aria-live="polite"></p><div class="table-scroll source-scroll"><table id="sources-table"><caption class="sr-only">IFC 数量原始来源表</caption><thead><tr><th scope="col">版本 / 对象</th><th scope="col">材料来源</th><th scope="col">数量来源</th><th scope="col">体积 / 单位</th><th scope="col">复核状态</th></tr></thead><tbody id="sources-body"></tbody></table></div><p class="export-note">导出包含全部来源与问题，不受当前筛选影响。CSV 已处理可能被表格软件识别为公式的文本。</p></section>
+      </div>
+      <footer class="workspace-footer"><span>量源复核 / 本地工作台</span><span>用来源证明小计，用缺口限定结论。</span></footer>
+    </section>
+  </main>
+</body>
+</html>

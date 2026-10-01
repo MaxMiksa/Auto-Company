@@ -47,6 +47,7 @@ class ProductIdentityTests(unittest.TestCase):
         shutil.rmtree(self.root / "logs")
         third = products.reserve_cycle(self.root, "projects/alpha", "run2-1", 1, "claude", "other")
         self.assertEqual([row["productCycleNumber"] for row in (first, second, third)], [1, 2, 3])
+        self.assertEqual([row["sequenceNumber"] for row in (first, second, third)], [1, 2, 3])
         self.assertEqual(third["runCycleNumber"], 1)
         self.assertEqual(first["productId"], third["productId"])
         self.assertEqual(len(products.read_state(self.root)["cycles"]), 3)
@@ -126,6 +127,70 @@ class ProductIdentityTests(unittest.TestCase):
         self.assertEqual(len({row["cycleId"] for row in first["cycles"] + second["cycles"]}), 5)
         self.assertEqual(first["total"], 5)
         self.assertIsNone(second["nextBefore"])
+
+    def test_linked_sequence_survives_restart_without_changing_recorded_ids_or_numbers(self):
+        explorations = []
+        for index in range(3):
+            row = self.reserve(f"explore-{index}", project="", run=index + 1)
+            if index == 2:
+                product = products.register_project(self.root, "alpha", row["cycleId"])
+            self.complete(row)
+            explorations.append(row)
+        first = self.reserve("product-run1", run=1)
+        self.complete(first)
+        restarted = products.reserve_cycle(self.root, "alpha", "product-run2", 1, "claude", "other")
+        self.complete(restarted)
+        expected = explorations + [first, restarted]
+        state_path = self.root / ".auto-company/product-state.json"
+        before = state_path.read_bytes()
+        original = json.loads(before)
+        all_rows = products.list_cycle_projections(self.root, product["id"], limit=None)
+        projected = {row["cycleId"]: row for row in all_rows["cycles"]}
+        self.assertEqual(set(projected), {row["cycleId"] for row in expected})
+        self.assertEqual([projected[row["cycleId"]]["sequenceNumber"] for row in expected], [1, 2, 3, 4, 5])
+        self.assertEqual([projected[row["cycleId"]]["productCycleNumber"] for row in expected], [1, 2, 3, 1, 2])
+        self.assertEqual([projected[row["cycleId"]]["runCycleNumber"] for row in expected], [1, 2, 3, 1, 1])
+        for cycle_id, row in original["cycles"].items():
+            self.assertEqual({key: projected[cycle_id][key] for key in row}, row)
+            self.assertEqual(products.cycle_projection(self.root, cycle_id), projected[cycle_id])
+        page = products.list_cycle_projections(self.root, product["id"], limit=2)
+        remaining = products.list_cycle_projections(self.root, product["id"], limit=None, before=page["nextBefore"])
+        self.assertEqual(page["cycles"] + remaining["cycles"], all_rows["cycles"])
+        self.assertIsNone(all_rows["nextBefore"])
+        self.assertEqual(state_path.read_bytes(), before, "Presentation projection must not rewrite identity history")
+
+    def test_missing_creation_evidence_does_not_invent_a_continuous_offset(self):
+        exploration = self.reserve("explore", project="")
+        product = products.register_project(self.root, "alpha", exploration["cycleId"])
+        self.complete(exploration)
+        self.complete(self.reserve("product"))
+        state_path = self.root / ".auto-company/product-state.json"
+        state = json.loads(state_path.read_text())
+        # An older linked ledger can lack the explicit creation-cycle evidence.
+        del state["cycles"][exploration["cycleId"]]["createdProductIds"]
+        state_path.write_text(json.dumps(state), encoding="utf-8")
+        before = state_path.read_bytes()
+        rows = products.list_cycle_projections(self.root, product["id"], limit=None)["cycles"]
+        self.assertEqual(len(rows), 2)
+        self.assertTrue(all(row["sequenceNumber"] is None for row in rows))
+        self.assertEqual({row["cycleId"] for row in rows}, set(state["cycles"]))
+        self.assertEqual(state_path.read_bytes(), before)
+
+    def test_later_exploration_cannot_shift_an_existing_product_creation_boundary(self):
+        first = self.reserve("explore-first", project="")
+        self.complete(first)
+        creation = self.reserve("explore-create", project="", run=2)
+        product = products.register_project(self.root, "alpha", creation["cycleId"])
+        self.complete(creation)
+        product_cycle = self.reserve("product-first")
+        self.complete(product_cycle)
+        later = self.reserve("explore-later", project="", run=1)
+        products.register_project(self.root, "alpha", later["cycleId"])
+        self.complete(later)
+        self.assertEqual(products.cycle_projection(self.root, product_cycle["cycleId"])["sequenceNumber"], 3)
+        self.assertIsNone(products.cycle_projection(self.root, later["cycleId"])["sequenceNumber"])
+        self.assertEqual(products.cycle_projection(self.root, creation["cycleId"])["sequenceNumber"], 2)
+        self.assertEqual(products.get_identity(self.root, "alpha")["id"], product["id"])
 
     def test_source_relocation_keeps_identity_and_sequence(self):
         first = self.reserve("before-move")

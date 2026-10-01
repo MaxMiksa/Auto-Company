@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#24483c">
+  <meta name="description" content="孩子选作品、定顺序、自在主持。照片与原话保存在本机的家庭小展会。">
+  <title>家里的小展会</title>
+  <link rel="icon" type="image/svg+xml" href="./icon.svg">
+  <link rel="stylesheet" href="./styles.css">
+  <script src="./app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">跳到主要内容</a>
+  <header class="site-header">
+    <a class="brand" href="#main"><img src="./icon.svg" alt="" width="34" height="34"><span>家里的小展会<small>把客厅交给小策展人</small></span></a>
+    <nav aria-label="展会步骤"><button type="button" data-view="prepare" aria-current="page">01 准备</button><button type="button" data-view="host">02 主持</button><button type="button" data-view="review">03 回顾</button></nav>
+  </header>
+  <div id="notice" role="status" aria-live="polite" hidden></div>
+  <div class="storage-strip"><span id="save-status" role="status">正在读取本机记录…</span><span>无需账号 · 不上传图片</span></div>
+  <main id="main" tabindex="-1">
+    <section id="prepare-view" data-panel="prepare">
+      <div class="intro"><div><p class="eyebrow">一场属于孩子的家庭小展会</p><h1>每一件作品，<br>都有自己的位置。</h1><p class="intro-copy">选一件也可以。名字、顺序和想说的话，都交给孩子。<br>不想讲时，安静看看；想结束时，随时收好。</p></div><div class="exhibition-mark" aria-hidden="true"><span>家庭<br>小美术馆</span><small>今天，客厅开馆。</small></div></div>
+      <form id="show-settings" class="show-settings"><label>展会名字<input id="show-title" name="showTitle" maxlength="80" placeholder="家里的小展会" autocomplete="off"></label><label>小主持的昵称（可留空）<input id="host-name" name="hostName" maxlength="40" placeholder="你想怎么称呼自己？" autocomplete="off"></label><p>这里没有评分，也不替孩子解释作品。</p></form>
+      <div class="section-heading"><div><p class="eyebrow">01 / 孩子来策展</p><h2>先把作品摆出来</h2></div><p id="art-count">还没有作品</p></div>
+      <div class="preparation-layout">
+        <div class="collection"><div id="empty-state" class="empty-state"><span class="empty-number">＋</span><h3>第一件，可以就在手边。</h3><p>拍好的照片可以放进来，也可以只记录原作，<br>把画摆在桌上一起看。</p></div><div id="artwork-list" aria-label="作品列表"></div></div>
+        <aside class="editor"><form id="artwork-form"><p class="eyebrow" id="editor-mode">添加一件作品</p><h3 id="editor-heading">给作品留个位置</h3><label>作品名字（可留空）<input id="art-title" name="artTitle" maxlength="120" placeholder="孩子想怎么叫它？"></label><label>孩子原话（可留空）<textarea id="art-words" name="artWords" rows="4" maxlength="4000" placeholder="照孩子说的写。不想说，就留白。"></textarea></label><label class="file-label">本地作品图片（可选）<input id="art-image" name="artImage" type="file" accept="image/png,image/jpeg,image/webp"></label><p class="field-help">PNG / JPEG / WebP，单张最多 12 MB。图片会完整缩小，长边最多 1600 像素；保留原作。最多 24 件作品。</p><div id="image-preview" hidden><img id="preview-image" alt="待保存的作品图片"><button id="remove-image" type="button" class="text-button">移除图片，使用原作</button></div><fieldset><legend>这件作品，孩子愿意入展吗？</legend><label class="radio-label"><input type="radio" name="included" id="art-included" value="yes">愿意，这次展示</label><label class="radio-label"><input type="radio" name="included" id="art-excluded" value="no" checked>暂不展示，先收好</label></fieldset><p id="form-error" class="form-error" role="alert" hidden></p><div class="form-actions"><button id="save-artwork" type="submit" class="primary">放进作品夹</button><button id="cancel-edit" type="button" hidden>取消编辑</button></div></form></aside>
+      </div>
+      <div class="opening"><div><h2>准备好了，就请小主持开场。</h2><p>只展示愿意入展的作品。任何时候都能暂停或结束。</p></div><button id="start-show" class="primary" type="button">开始小展会 →</button></div>
+    </section>
+    <section id="host-view" data-panel="host" hidden>
+      <div class="section-heading"><div><p class="eyebrow">02 / 把话筒交给孩子</p><h1 id="host-title">家里的小展会</h1></div><p id="host-progress"></p></div>
+      <div id="host-empty" class="empty-state" hidden><h2>先选一件愿意展示的作品。</h2><p>可以只摆原作，不需要上传照片。</p><button type="button" data-view="prepare">回到准备作品</button></div>
+      <div id="host-stage"><p id="host-greeting" class="host-greeting"></p><div class="stage-layout"><div id="stage-art" class="stage-art"></div><div class="stage-label"><p id="stage-number" class="eyebrow"></p><h2 id="stage-title"></h2><div class="original-words"><p class="eyebrow">孩子原话</p><p id="stage-words"></p></div><p class="host-prompt">想让大家看哪里？<br><strong>可以说、指一下，或安静看看。</strong></p><label>这次想留下的原话（可留空）<textarea id="host-note" maxlength="4000" rows="3" placeholder="照孩子原话记，不补解释。"></textarea></label><p id="host-note-error" class="form-error" role="alert" hidden></p></div></div><p id="paused-message" class="pause-message" hidden>先休息一下。准备好时再继续，想收好也可以。</p><div class="host-controls"><button id="host-next" type="button" class="primary">看好了，下一件 →</button><button id="host-skip" type="button">不说也可以 / 跳过</button><button id="host-pause" type="button">暂停一下</button><button id="host-end" type="button" class="text-button">今天到这里，结束</button></div></div>
+    </section>
+    <section id="review-view" data-panel="review" hidden>
+      <div class="section-heading"><div><p class="eyebrow">03 / 把今天留在作品夹里</p><h1>一起看过，就很好。</h1></div><button id="print-show" type="button" class="primary">打印展签与回顾 / 存为 PDF</button></div><p class="intro-copy">没有分数，也没有讲完的要求。这里保留每场当时的文字与孩子愿意留下的话；展签展示当前作品。</p><div id="review-summary"></div><div id="review-list"></div><div class="opening"><div><h2>随时可以再开一场。</h2><p>上一场回顾会保留；重新开始前，记得导出备份。</p></div><button id="restart-show" type="button">再开一场 →</button></div>
+    </section>
+    <section class="safekeeping" aria-labelledby="safekeeping-heading"><div><p class="eyebrow">作品留在你这里</p><h2 id="safekeeping-heading">收好这份小展会</h2><p>本机自动保存不是永久备份。换浏览器、清理缓存或移动文件后，记录可能不在原处。<br>导出含图片的备份，之后可完整恢复。导入将覆盖当前小展会。</p></div><div class="backup-actions"><button id="export-backup" type="button">导出完整备份</button><label class="button-like" for="import-backup">导入备份<input id="import-backup" type="file" accept="application/json,.json"></label><button id="load-demo" type="button" class="text-button">看看合成示例</button><button id="reset-show" type="button" class="text-button danger">清空本机小展会</button></div></section>
+  </main>
+  <footer><p>作品属于孩子，解释也属于孩子。</p><small>本地工具 · 没有上传、账号或自动生成的作品解释</small></footer>
+  <section id="print-document" aria-label="完整打印文档"></section>
+</body>
+</html>

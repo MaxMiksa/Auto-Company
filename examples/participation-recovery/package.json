@@ -1,0 +1,15 @@
+{
+  "name": "participation-recovery",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "混合活动参与路径演练与变更恢复工作台",
+  "scripts": {
+    "test": "node --test tests/core.test.js tests/recovery.test.js",
+    "test:browser": "playwright test",
+    "start": "node server.mjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0"
+  }
+}

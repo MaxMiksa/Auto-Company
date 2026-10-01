@@ -1,0 +1,9 @@
+{
+  "name": "spec-evidence",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "本地工程采购规格变更证据核验台",
+  "scripts": {"test":"node --test tests/core.test.js", "test:browser":"playwright test", "start":"node serve.cjs 8080"},
+  "devDependencies": {"@playwright/test":"1.63.0"}
+}

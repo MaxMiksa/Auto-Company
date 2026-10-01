@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#393c65">
+  <title>触图审查台 · 触觉图形打印前审查</title>
+  <link rel="icon" type="image/svg+xml" href="auto-company-icon.svg">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#workspace">跳到审查工作台</a>
+  <header class="masthead">
+    <a class="brand" href="./" aria-label="触图审查台首页"><img src="auto-company-icon.svg" alt="" width="40" height="40"><span>触图审查台<small>触觉图形 / 印前审查</small></span></a>
+    <span class="local-mark"><i aria-hidden="true"></i>本地处理 · 无需账户</span>
+  </header>
+  <main>
+    <section class="intro" aria-labelledby="page-title">
+      <div class="intro-copy"><p class="eyebrow">SVG / 实际尺寸 / 人工审查</p><h1 id="page-title">确认纸面尺寸，<br>逐项审查图形关系。</h1><p class="lede">载入图稿，定位重叠与近距关系，调整标签，保存审查依据。</p></div>
+      <div class="specimen" aria-hidden="true"><span class="specimen-caption">图稿 / 标签 / 间距</span><div class="specimen-line"><b></b><span>3.0 mm</span><b></b></div><span class="specimen-foot">看得见的关系，仍需触读判断。</span></div>
+    </section>
+    <div class="notice-strip"><span>审查辅助</span><p>几何间距不能替代实际触读。材料、凸起高度、纹理、盲文准确性与打印设备效果，需要人工确认。</p></div>
+    <section id="workspace" class="workspace" aria-label="触觉图形审查工作台">
+      <aside class="tool-panel" aria-labelledby="import-heading">
+        <div class="section-heading"><span class="chapter">01</span><h2 id="import-heading">图稿与尺寸</h2></div>
+        <label class="file-control" for="svg-file"><span>＋ 导入 SVG 文件</span><small>SVG · 最多 2 MB</small><input id="svg-file" type="file" accept=".svg,image/svg+xml"></label>
+        <details class="paste-box"><summary>或粘贴 SVG 源码</summary><label for="svg-source">SVG 源码</label><textarea id="svg-source" rows="5" spellcheck="false" placeholder="<svg xmlns=…>…</svg>"></textarea><button id="import-source" class="secondary" type="button">载入源码</button></details>
+        <div class="sample-row"><span>先试一个图稿</span><button id="sample-label" type="button">标签修改示例 ↗</button><button id="sample-crowded" type="button">密集散点 ↗</button></div>
+        <div class="file-summary"><span id="file-name">尚未载入图稿</span><small id="size-source">支持有限的静态 SVG 图形与文字。</small></div>
+        <form id="calibration-form" class="calibration">
+          <h3>实际打印尺寸 <span>mm</span></h3>
+          <p>以最终纸面尺寸为准；像素图稿必须先校准。</p>
+          <div class="two-fields"><div><label for="width-mm">宽度</label><input id="width-mm" type="number" min="1" max="2000" step="any" required placeholder="如 160"></div><div><label for="height-mm">高度</label><input id="height-mm" type="number" min="1" max="2000" step="any" required placeholder="如 100"></div></div>
+          <button id="calibrate" type="submit" class="primary" disabled>确认尺寸并审查</button>
+        </form>
+        <div class="threshold-control"><label for="near-mm">近距提示阈值 <span>mm</span></label><div class="threshold-input"><input id="near-mm" type="number" min="0.1" max="50" step="0.1" value="3"><button id="reanalyze" type="button" class="secondary" disabled>重新审查</button></div><p>这是你的审查策略，不是规范合格线。重叠始终提示。</p></div>
+        <details class="review-import"><summary>恢复之前的审查</summary><label for="review-file">导入本工具导出的 JSON</label><input id="review-file" type="file" accept=".json,application/json"><p>恢复图稿、尺寸、阈值及逐项备注。</p></details>
+      </aside>
+      <div class="drawing-panel">
+        <div class="drawing-header"><div class="section-heading"><span class="chapter">02</span><h2>纸面预览</h2></div><span id="canvas-size" class="mono">— × — mm</span></div>
+        <div class="paper-bed"><div class="ruler horizontal" aria-hidden="true"></div><div class="ruler vertical" aria-hidden="true"></div><div id="svg-preview" class="svg-preview"><div class="empty-preview"><div class="empty-symbol" aria-hidden="true">＋</div><h3>把图稿放上工作台</h3><p>导入自己的 SVG，或从左侧选择一个示例。</p><small>文件只在当前浏览器中处理</small></div></div></div>
+        <div class="drawing-footer"><span id="object-count">0 个可审查对象</span><span>预览比例随屏幕调整，请按确认尺寸打印</span></div>
+        <div id="status" class="status" role="status" aria-live="polite">就绪。先载入图稿。</div>
+        <section id="warnings-panel" class="warnings-panel" aria-labelledby="warnings-heading" hidden><h3 id="warnings-heading">需要人工确认</h3><ul id="warnings-list"></ul></section>
+        <section class="label-editor" aria-labelledby="label-heading">
+          <div class="section-heading"><span class="chapter">↗</span><h2 id="label-heading">标签调整</h2></div>
+          <p id="selection-description">从对象列表选择一个文字标签。数据点和图形保持原位。</p>
+          <div class="editor-fields"><div><label for="label-target">关联对象</label><select id="label-target" disabled><option value="">未指定</option></select></div><div><label for="move-x">水平位移 / mm</label><input id="move-x" type="number" step="0.1" value="0" disabled></div><div><label for="move-y">垂直位移 / mm</label><input id="move-y" type="number" step="0.1" value="0" disabled></div></div>
+          <div class="editor-actions"><button id="apply-label" class="primary" type="button" disabled>应用标签调整</button><small>正值向右 / 向下</small><button id="undo" type="button" class="text-button" disabled>撤销一步</button><button id="reset" type="button" class="text-button" disabled>恢复原图</button></div>
+        </section>
+      </div>
+      <aside class="review-panel" aria-labelledby="review-heading">
+        <div class="section-heading"><span class="chapter">03</span><h2 id="review-heading">关系审查</h2></div>
+        <div class="review-totals"><strong id="relation-count">—</strong><div>待看的关系<small id="review-progress">确认尺寸后开始</small></div></div>
+        <div class="tabs" role="tablist" aria-label="审查列表"><button id="relations-tab" type="button" role="tab" aria-selected="true" aria-controls="relations-panel">关系清单</button><button id="objects-tab" type="button" role="tab" aria-selected="false" aria-controls="objects-panel" tabindex="-1">对象列表</button></div>
+        <section id="relations-panel" role="tabpanel" aria-labelledby="relations-tab"><p id="relations-empty" class="empty-list">确认尺寸后，这里会解释哪些对象重叠、接近或有关联。</p><div id="relations-list"></div></section>
+        <section id="objects-panel" role="tabpanel" aria-labelledby="objects-tab" hidden><p id="objects-empty" class="empty-list">载入后可选择标签，查看它和图形的关联。</p><div id="objects-list"></div></section>
+      </aside>
+    </section>
+    <section class="export-bar" aria-labelledby="export-heading"><div><p class="eyebrow">把工作带走</p><h2 id="export-heading">图稿与审查，一起留档。</h2><p>JSON 可恢复工作；文本报告方便交接。离开前请导出，浏览器不会自动保存。</p></div><div class="export-actions"><button id="export-svg" type="button" class="secondary" disabled>↓ 修改后 SVG</button><button id="export-json" type="button" class="primary" disabled>↓ 完整审查 JSON</button><button id="export-report" type="button" class="secondary" disabled>↓ 文本审查报告</button></div></section>
+    <footer class="page-footer"><span>触图审查台 / 本地审查工作台</span><span>几何提示 · 人工判断 · 留存依据</span></footer>
+  </main>
+  <script type="module" src="app.js"></script>
+</body>
+</html>

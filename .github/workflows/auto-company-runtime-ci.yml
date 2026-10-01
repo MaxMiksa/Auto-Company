@@ -186,10 +186,6 @@ jobs:
         run: python3 scripts/ci/run.py shell-contracts-6 node tests/test_dashboard_frontend.js
       - name: Verify product center frontend contracts
         run: python3 scripts/ci/run.py center-frontend node tests/test_center_frontend.js
-      - name: Verify published example logic and syntax
-        run: |
-          python3 scripts/ci/run.py showcase-core node --test projects/scopefence/tests/scopefence-core.test.mjs projects/text-meter/tests/counts.test.js
-          python3 scripts/ci/run.py showcase-syntax node --check projects/scope-sheet/app.js
       - name: Save failure evidence
         if: failure()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -222,6 +218,10 @@ jobs:
         run: python3 ../../scripts/ci/run.py chromium-install npx playwright install --with-deps chromium
       - name: Test Dashboard with a real browser and isolated server
         run: python3 scripts/ci/run.py dashboard-browser npm test --prefix tests/browser
+      - name: Verify published example logic and syntax
+        run: |
+          python3 scripts/ci/run.py showcase-core node --test examples/scopefence/tests/scopefence-core.test.mjs examples/text-meter/tests/counts.test.js
+          python3 scripts/ci/run.py showcase-syntax node --check examples/scope-sheet/app.js
       - name: Verify automatic product screenshots and process cleanup
         env:
           AUTO_COMPANY_TEST_PRODUCT_MEDIA_BROWSER: '1'
@@ -252,7 +252,7 @@ jobs:
           node-version: '22'
           package-manager-cache: false
       - name: Run existing core tests
-        run: python3 scripts/ci/run.py tabledelta npm test --prefix projects/tabledelta
+        run: python3 scripts/ci/run.py tabledelta npm test --prefix examples/tabledelta
       - name: Save failure evidence
         if: failure()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -275,7 +275,7 @@ jobs:
           node-version: '22'
           package-manager-cache: false
       - name: Run existing core tests
-        run: python3 scripts/ci/run.py cuecheck npm test --prefix projects/cuecheck
+        run: python3 scripts/ci/run.py cuecheck npm test --prefix examples/cuecheck
       - name: Save failure evidence
         if: failure()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

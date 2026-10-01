@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>图证 · 可核验图表资料</title>
+  <link rel="icon" href="auto-company-icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+  <script defer src="core.js"></script><script defer src="app.js"></script>
+</head>
+<body>
+<a class="skip" href="#main">跳到工作区</a>
+<aside class="rail">
+  <a class="brand" href="#main"><img src="auto-company-icon.svg" alt="" width="36" height="36"><span>图证<small>可核验图表资料</small></span></a>
+  <p class="rail-title">把数据的边界<br>一起交给读者。</p>
+  <nav aria-label="工作流程"><a href="#import"><b>01</b> 导入资料</a><a href="#metadata"><b>02</b> 说明来源</a><a href="#review"><b>03</b> 核对数据</a><a href="#reader"><b>04</b> 阅读与交付</a></nav>
+  <div class="rail-note"><span class="local-dot"></span> 本地工作台<p>数据留在当前浏览器。<br>导出项目备份后，才可跨设备继续。</p></div>
+</aside>
+<main id="main">
+  <header class="masthead"><div><p class="eyebrow">图表资料 / 制作与复核</p><h1>让每一个数字，<br><em>都有可追溯的来处。</em></h1><p class="intro">整理数据与出处，明确空白、估计和复核责任。交付一份读者无需看图，也能逐点探索的资料。</p></div><div class="issue"><span>资料制作台</span><strong>01—04</strong><small>导入 · 说明 · 核对 · 交付</small></div></header>
+  <div id="message" class="message" role="status" aria-live="polite">从自己的 CSV 开始，或载入构造样例了解流程。</div>
+  <section id="import" class="section"><div class="section-heading"><span class="number">01</span><div><h2>带入你的数据</h2><p>使用原始表格或整理后的数字化结果。这里不自动识别截图。</p></div><button id="load-demo" class="quiet">载入构造样例</button></div>
+    <div class="import-grid"><div><label for="csv-input">粘贴长表 CSV</label><textarea id="csv-input" rows="7" spellcheck="false" placeholder="series,x,y,kind,evidence,note&#10;样本A,2024,12,observed,原始表格第2行,&#10;样本A,2025,,missing,原始表格第3行,未采集"></textarea><div class="actions"><button id="import-csv" class="primary">导入 CSV</button><label class="file-button" for="csv-file">选择 CSV 文件</label><input id="csv-file" class="file-input" type="file" accept=".csv,text/csv"><a href="examples/template.csv" download>下载输入模板 ↓</a></div></div><div class="input-note"><h3>空白不是零。</h3><p>每行对应一个系列、一个横轴位置。空值保留为缺测，插值与近似值单独标记。</p><details><summary>支持的列与数据类型</summary><p>必需：series（系列）、x（数值横轴）、y（数值或空白）。可选：kind、evidence（出处）、note（说明）。支持引号及中文表头；最多 5,000 点。</p><p>kind：observed 观测、approximate 近似、interpolated 插值、missing 缺测、unconfirmed 未确认。横轴须为数值；日期可转换为年份或时间编号。</p></details><label class="file-button backup" for="project-file">恢复项目 JSON 备份 ↑</label><input id="project-file" class="file-input" type="file" accept=".json,application/json"></div></div>
+  </section>
+  <section id="metadata" class="section"><div class="section-heading"><span class="number">02</span><div><h2>说明原图与来源</h2><p>轴类型由制作者核对；数据出处不能证明数值一定正确。</p></div></div>
+    <form id="meta-form" aria-describedby="meta-draft-status"><div class="fields"><label>资料标题<input id="title" required maxlength="200" placeholder="例如：两组样本的年度测量"></label><label>来源 / 文献 / 数据地址<input id="source" required maxlength="2000" placeholder="文献名称、页码或公开地址"></label><label>横轴名称与单位<input id="x-label" maxlength="200" value="横轴"></label><label>纵轴名称与单位<input id="y-label" maxlength="200" value="纵轴"></label><label>横轴尺度<select id="x-scale"><option value="linear">线性</option><option value="log">对数（正数）</option></select></label><label>纵轴尺度<select id="y-scale"><option value="linear">线性</option><option value="log">对数（正数）</option></select></label></div><label>背景与阅读说明<textarea id="description" rows="2" maxlength="4000" placeholder="测量方式、适用范围、需要读者知道的限制"></textarea></label><p id="meta-draft-status" class="draft-status" role="status" aria-live="polite">导入资料后，填写并保存来源说明。</p><div class="actions"><button id="save-meta" class="primary" type="submit">保存来源说明</button><button id="discard-meta-draft" type="button" disabled>放弃来源草稿</button></div></form>
+  </section>
+  <section id="review" class="section"><div class="section-heading"><span class="number">03</span><div><h2>逐点核对，留下责任记录</h2><p>先补充每点出处，再署名复核。修改数据或出处后需重新复核。</p></div></div>
+    <div id="metrics" class="metrics"></div><div class="review-tools"><label>本次复核人<input id="reviewer" maxlength="100" placeholder="填写你的姓名或责任标识"></label><label>系列筛选<select id="series-filter"><option value="">全部系列</option></select></label><label class="check-label"><input id="pending-only" type="checkbox"> 只看未复核</label></div>
+    <div class="table-wrap" tabindex="0" role="region" aria-label="数据复核表，可横向滚动"><table id="point-table"><caption>数据点、出处及复核状态</caption><thead><tr><th scope="col">系列 / 横轴</th><th scope="col">数值</th><th scope="col">语义</th><th scope="col">出处与说明</th><th scope="col">复核</th><th scope="col">操作</th></tr></thead><tbody></tbody></table></div>
+    <details class="audit"><summary>查看变更与复核记录</summary><ol id="audit-list"></ol></details>
+  </section>
+  <section id="reader" class="section"><div class="section-heading"><span class="number">04</span><div><h2>交给读者的资料</h2><p>缺测保持缺测；待复核的数据会明确标注。</p></div></div><p id="reader-draft-note" class="draft-status pending" hidden>来源说明有未保存草稿。下方阅读资料和所有导出仅包含已保存说明；请先保存来源说明，再交付新版本。</p><div id="reading-content" class="reading-content"></div>
+    <div class="export-panel"><div><h3>带走完整资料</h3><p>HTML 可独立阅读；JSON 可恢复编辑。资料不会因导出而自动获得正确性认证。</p></div><div class="actions"><button id="export-html" class="primary">导出阅读资料 HTML ↓</button><button id="export-json">备份项目 JSON ↓</button><button id="export-csv">导出 CSV ↓</button><button id="export-md">导出 Markdown ↓</button></div></div>
+  </section>
+  <footer><p>没有真实读屏用户验证、真实性认证或交易记录。请核对来源与轴尺度后交付。</p><button id="reset-project" class="quiet danger">清空本地项目</button><a href="DELIVERY.md">操作与交接说明 ↗</a></footer>
+</main>
+<dialog id="editor" aria-labelledby="editor-title"><form id="edit-form"><div class="dialog-heading"><h2 id="editor-title">编辑数据点</h2><button type="button" id="close-editor" aria-label="关闭编辑">×</button></div><p id="editing-label"></p><label>数值（缺测时留空）<input id="edit-value" inputmode="decimal"></label><label>数据语义<select id="edit-kind"><option value="observed">观测</option><option value="approximate">近似</option><option value="interpolated">插值</option><option value="missing">缺测</option><option value="unconfirmed">未确认</option></select></label><label>出处<input id="edit-evidence" maxlength="2000" placeholder="原表行号、原图位置、提取配置或公开链接"></label><label>说明<textarea id="edit-note" rows="3" maxlength="4000"></textarea></label><p id="edit-error" role="alert"></p><button id="save-point" class="primary" type="submit">保存修改</button></form></dialog>
+</body></html>

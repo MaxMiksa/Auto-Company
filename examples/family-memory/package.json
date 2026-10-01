@@ -1,0 +1,15 @@
+{
+  "name": "family-memory",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "家族共忆活动与可追溯共同故事的本地浏览器手册",
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "test:browser": "playwright test",
+    "start": "node server.mjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0"
+  }
+}

@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>栖改 · 租客舒适工作台</title>
+  <meta name="description" content="把租来的房间改善计划，变成可核算、可验证、可带走的交接单。">
+  <link rel="icon" type="image/svg+xml" href="auto-company-icon.svg"><link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <aside class="rail">
+    <a class="brand" href="./"><img src="auto-company-icon.svg" width="38" height="38" alt=""><span>栖改<small>租客舒适工作台</small></span></a>
+    <div class="rail-label">房间改善档案 / 01</div>
+    <nav aria-label="工作流程">
+      <button class="tab active" data-tab="profile" aria-current="step"><span>01</span>房间档案</button>
+      <button class="tab" data-tab="plan"><span>02</span>方案与成本</button>
+      <button class="tab" data-tab="trial"><span>03</span>试验记录</button>
+      <button class="tab" data-tab="handoff"><span>04</span>搬迁与交接</button>
+    </nav>
+    <div class="rail-bottom"><span class="local-dot"></span>数据保存在此浏览器<p>无需账户。导出备份后可换设备。</p><button id="clear-data" class="text-button">清空本机数据</button></div>
+  </aside>
+  <main>
+    <header class="topbar"><span>可逆改善 / 把试错留在纸上</span><span id="save-status" role="status">本机档案尚未建立</span></header>
+    <div id="message" class="message" role="status" hidden></div>
+    <section id="profile" class="panel">
+      <div class="hero"><div><div class="eyebrow">属于现在，也能带去下一站</div><h1>让房间好住一点。<br><em>把退路也想好。</em></h1><p>核对窗口、权限与预算，比较可拆方案。<br>记录实际变化，带走一份清楚的交接单。</p><button id="sample" class="button secondary">填入示例</button><span class="sample-note">示例档案 · 非真实房间</span></div><div class="window-art" aria-hidden="true"><div class="art-tag">可拆 / 可验 / 可交接</div><div class="window-frame"><i></i><b></b></div><div class="sun-patch"></div><div class="art-caption">先适配，再行动。</div></div></div>
+      <div class="section-heading"><div><span class="eyebrow">第一步</span><h2>建立你的房间档案</h2></div><p>金额为人民币规划估算，请按当地含税报价调整。</p></div>
+      <form id="profile-form">
+        <fieldset><legend><span>01</span> 房间与窗口</legend><div class="form-grid">
+          <label class="span-2">房间名称<input name="name" maxlength="80" required placeholder="例如：朝西的小卧室"></label>
+          <label>改善目标<select name="goal"><option value="heat">炎热与西晒</option><option value="cold">冷风与缝隙漏风</option><option value="glare">眩光与遮光</option></select></label>
+          <label>窗型<select name="windowType"><option value="sliding">推拉窗</option><option value="casement">平开窗</option><option value="fixed">固定窗</option></select></label>
+          <label>窗宽（厘米）<input name="width" type="number" min="20" max="400" step="0.1" required></label>
+          <label>窗高（厘米）<input name="height" type="number" min="20" max="400" step="0.1" required></label>
+          <label>安装权限<select name="permission"><option value="none">不钻孔、不胶粘</option><option value="adhesive">允许胶粘，不钻孔</option><option value="drill">有明确钻孔许可</option></select></label>
+          <label>表面状态<select name="surface"><option value="unknown">尚未确认</option><option value="sound">稳固完好</option><option value="fragile">松动、脆弱或易脱漆</option></select></label>
+          <label>玻璃类型<select name="glass"><option value="unknown">尚未确认</option><option value="single">单层玻璃</option><option value="double">双层玻璃</option></select></label>
+          <label>特殊风险<select name="risk"><option value="none">未发现下列异常</option><option value="damp">潮湿、渗水或霉斑</option><option value="hot">室内持续过热或热不适</option><option value="electrical">电线、插座或电器异常</option></select></label>
+        </div><div class="check-row"><label><input name="escape" type="checkbox">这是逃生窗口</label><label><input name="ventilation" type="checkbox">这是主要通风窗口</label><label><input name="hasFan" type="checkbox">已有可用风扇</label><label><input name="hasCurtain" type="checkbox">已有可用窗帘</label></div></fieldset>
+        <fieldset><legend>现场核实</legend><div class="check-row"><label><input name="safetyConfirmed" type="checkbox">已核实附件不阻挡通风、逃生，且密封不影响燃烧设备供气</label><label><input name="filmCompatible" type="checkbox">已获得膜厂商对本玻璃及保修的明确兼容说明</label></div><p class="field-hint">尚未核实就保留未勾选；未知条件下不会推荐密封或窗膜施工。现场确认不替代厂商安装指引。</p></fieldset>
+        <fieldset><legend><span>02</span> 预算与使用成本</legend><div class="form-grid">
+          <label>预算上限（元）<input name="budget" type="number" min="0" max="1000000" step="0.01" required></label>
+          <label>电价（元/度）<input name="electricity" type="number" min="0" max="20" step="0.01" required></label>
+          <label>每日使用（小时）<input name="hours" type="number" min="0" max="24" step="0.5" required></label>
+          <label>计划使用（天）<input name="days" type="number" min="1" max="366" required></label>
+          <label>人工机会成本（元/小时）<input name="laborRate" type="number" min="0" max="10000" step="1" required></label>
+          <label>剩余租期（月）<input name="rentalMonths" type="number" min="1" max="120" required></label>
+        </div><p class="field-hint">完整成本包含材料、税运、工具与安装时间、能耗、拆除恢复和搬迁适配。估算不是商家报价。</p></fieldset>
+        <fieldset><legend><span>03</span> 现状与下一次搬家</legend><div class="form-grid">
+          <label>当前空气温度（℃，选填）<input name="temperature" type="number" min="-10" max="60" step="0.1"></label>
+          <label>当前相对湿度（%，选填）<input name="humidity" type="number" min="0" max="100" step="0.1"></label>
+          <label>预计搬迁次数<input name="moveCount" type="number" min="0" max="10" required></label>
+          <label>下一处窗宽（厘米，选填）<input name="nextWidth" type="number" min="20" max="400" step="0.1"></label>
+          <label>下一处窗高（厘米，选填）<input name="nextHeight" type="number" min="20" max="400" step="0.1"></label>
+        </div></fieldset>
+        <div id="profile-errors" class="errors" role="alert" hidden></div><div class="form-footer"><p>默认值仅供规划。请核实现场、租约与产品说明；这里不提供安装承诺或热健康判断。</p><button type="submit" class="button primary">生成适配方案 <span>→</span></button></div>
+      </form>
+    </section>
+    <section id="plan" class="panel" hidden><div class="page-intro"><span class="eyebrow">第二步 / 比较再决定</span><h1>把每一笔成本，<em>和每一步退路放在一起。</em></h1><p>先比较不采购路径。可拆卸不等于无损，也不等于搬家后一定适配。</p></div><div id="plan-content"></div></section>
+    <section id="trial" class="panel" hidden><div class="page-intro"><span class="eyebrow">第三步 / 留下真实观察</span><h1>改变了什么，<em>让记录来说。</em></h1><p>在相近时间、室外天气、人员与使用条件下记录前后状态。空气温度不能独自解释西晒体感。</p></div><div class="notice">前后观察不能证明因果。这里不计算 PMV，也不诊断健康风险；遇持续过热或身体不适，优先按当地官方指引处理。</div><form id="record-form"><fieldset><legend>新增一次观察</legend><div class="form-grid"><label>记录日期<input name="date" type="datetime-local" required></label><label>阶段<select name="phase"><option value="before">改善前</option><option value="after">改善后</option></select></label><label>空气温度（℃）<input name="temperature" type="number" min="-10" max="60" step="0.1" required></label><label>相对湿度（%）<input name="humidity" type="number" min="0" max="100" step="0.1" required></label><label>体感评分<select name="sensation"><option value="-3">−3 很冷</option><option value="-2">−2 冷</option><option value="-1">−1 稍冷</option><option value="0" selected>0 舒适</option><option value="1">1 稍热</option><option value="2">2 热</option><option value="3">3 很热</option></select></label><label>室外温度（℃）<input name="outdoor" type="number" min="-30" max="60" step="0.1"></label><label>辐射温度（℃）<input name="radiation" type="number" min="-10" max="80" step="0.1"></label><label class="span-2">记录备注<input name="note" maxlength="500" placeholder="时间、遮帘状态、风扇档位、衣着或测量位置"></label></div><p class="field-hint">不知道辐射温度就留空，不用空气温度代填。至少保存改善前、后各两次，并核对室外温度。</p><div id="record-errors" class="errors" role="alert" hidden></div><button class="button primary" type="submit">添加记录</button></fieldset></form><div id="trial-summary"></div><div class="table-wrap"><table><caption>观察日记</caption><thead><tr><th>时间 / 阶段</th><th>空气 / 湿度</th><th>体感</th><th>室外 / 辐射</th><th>备注</th><th>操作</th></tr></thead><tbody id="records-body"></tbody></table></div></section>
+    <section id="handoff" class="panel" hidden><div class="page-intro"><span class="eyebrow">第四步 / 带走经验</span><h1>下一站，<em>从清楚的交接开始。</em></h1><p>再适配核对尺寸与权限；导出可编辑交接单或完整备份。所有数据只留在当前浏览器。</p></div><div id="move-content"></div><fieldset><legend>交接备注</legend><label>补充说明<textarea id="handoff-notes" maxlength="4000" rows="4" placeholder="材料型号、购买时含税运价格、固定位置、拆除情况、尚待核实的条件"></textarea></label></fieldset><div class="export-bar"><button id="export-markdown" class="button primary">导出交接单</button><button id="print" class="button secondary">打印交接单</button><button id="export-json" class="button secondary">导出备份</button><label class="button secondary file-button">恢复备份<input id="import-json" type="file" accept=".json,application/json" aria-label="恢复备份"></label></div><p class="field-hint">交接单为 Markdown 文档，可查看、打印或编辑；完整 JSON 备份用于恢复。导出包含你的记录，请自行保管。</p><div class="sources"><h3>依据与边界</h3><p>筛选规则参考公开的节能与产品适配资料；费用是人民币规划假设，未购买、安装或验证任何材料。详情见 <a href="SOURCE.md">证据说明</a> 和 <a href="DELIVERY.md">操作交接</a>。</p><a href="https://www.energy.gov/energysaver/energy-efficient-window-coverings" target="_blank" rel="noopener noreferrer">美国能源部：窗户遮挡与节能</a><a href="https://comfort.cbe.berkeley.edu/" target="_blank" rel="noopener noreferrer">CBE：热舒适模型（外部工具）</a></div></section>
+    <footer class="footer">栖改 <span>先适配 · 小步验证 · 留好退路</span><small>本地规划与记录工具 / 非安装、医学或效果保证</small></footer>
+  </main><section id="print-sheet" hidden aria-label="打印交接单"></section><script type="module" src="app.js"></script>
+</body></html>

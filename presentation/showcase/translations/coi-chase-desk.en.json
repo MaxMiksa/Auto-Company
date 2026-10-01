@@ -1,0 +1,45 @@
+{
+  "language": "en",
+  "productId": "8afe69a9dd254abcb61ef82b3ffab923",
+  "viewLabel": "Recorded work · reviewed translation",
+  "project": {
+    "displayName": "COI Chase Desk",
+    "description": "A focused workspace for small general contractors to chase missing certificates of insurance on live jobs."
+  },
+  "documents": {
+    "projects/coi-chase-desk/design/logo-selection-2026-09-30.md": "Logo options record",
+    "projects/coi-chase-desk/DELIVERY.md": "Delivery notes"
+  },
+  "cycles": {
+    "cycle-6621082f677d4a759d24652f48a47272": {
+      "sourceSha256": "fd941046558ef89f52cbb146fb4d855eb6782e5216fdbf740bc789e9f845e7f1",
+      "title": "Hand off first paid pilot kit",
+      "summary": "Created the Cycle 5 first-pilot kit and four role reviews covering qualification, execution, reconciliation, evidence integrity, and stop rules. No customer, outreach, payment, receipt, or outcome is claimed; the product MVP and pre-existing registry change remain untouched.",
+      "blocker": ""
+    },
+    "cycle-8385f74fd9c74ab9b471b01bdb722dc6": {
+      "sourceSha256": "7ddf99112a9c32fbb2b9e4ae8a81e0b47edee0b9aabcd06f7072def52d885e84",
+      "title": "Prepare the first paid pilot",
+      "summary": "Completed the local pilot-readiness packet across operations, sales, product, and QA. The MVP is conditionally ready for one controlled pilot with an independent evidence log; no outreach, customer, payment, or outcome evidence exists yet.",
+      "blocker": ""
+    },
+    "cycle-25744e9d2c81491baf8e7ee9834faa0f": {
+      "sourceSha256": "82f24684e66a94e2a27e6e508b20087653de824e7a4127fef4ab3815f247b32f",
+      "title": "Hand off the COI chase desk MVP",
+      "summary": "The independent COI Chase Desk repository now contains a responsive paid-pilot workflow for one live job: request tracking, status filters, chase notes, evidence feedback, and CSV reporting. Delivery.md is registered, the preview root returned 200, and the program-owned Node check recorded 3 passes with 0 failures.",
+      "blocker": ""
+    },
+    "cycle-d9225e029ef04699bf27ee0e75ae9f2b": {
+      "sourceSha256": "a10f5085adc1ef494564ba6a9f66d57263a0adb6e61009083c7cc13319b2ec2e",
+      "title": "Complete COI chase desk decision",
+      "summary": "Cycle 2 is complete: the team review produced a pre-mortem, market validation, unit-economics model, and a conditional GO. The next cycle will create the independent MVP repository and test the paid-pilot workflow against explicit customer, margin, and delivery gates.",
+      "blocker": ""
+    },
+    "cycle-44db5a97a9fe42c3be453347ad49d27c": {
+      "sourceSha256": "cd6db8f9e02f681c07e410775f43ff52a35103ab3a6113bcc9905fb234dace13",
+      "title": "Rank Day 0 product opportunities",
+      "summary": "Completed the five-role fallback brainstorm, documented all proposals, ranked the top three, preserved governance sections, and set the next action to validate the certificate-of-insurance tracker before any build.",
+      "blocker": ""
+    }
+  }
+}

@@ -1,0 +1,6 @@
+料号,参数,条件,需求值,单位
+DEMO-P100,最大工作压力,min,9,bar
+DEMO-P100,额定电压,equals,24,V
+DEMO-P100,最大工作温度,min,75,°C
+DEMO-P100,额定电流,max,150,mA
+DEMO-P100,时钟频率,equals,1e6,Hz

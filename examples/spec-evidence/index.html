@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#183e35">
+  <meta name="description" content="在本机对照新旧工程规格、采购要求与原文证据，保存人工复核并导出报告。">
+  <title>规格证据台 · 工程采购核验</title>
+  <link rel="icon" href="auto-company-icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+  <script type="module" src="app.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">跳到工作区</a>
+  <header class="masthead">
+    <a class="brand" href="#main"><img src="auto-company-icon.svg" alt="" width="38" height="38"><span>规格证据台<small>工程采购 · 变更核验</small></span></a>
+    <div class="header-meta"><span class="local-dot"></span> 本机工作区 <span class="edition">01 / 本机证据工作区</span></div>
+  </header>
+  <div class="shell">
+    <aside class="sidebar" aria-label="工作区导航">
+      <div class="workspace-label">当前核验项目</div>
+      <label class="sr-only" for="project-title">项目名称</label><input id="project-title" class="project-title" maxlength="120" value="未命名核验项目">
+      <nav class="steps"><a href="#inputs"><span>01</span> 整理规格</a><a href="#results"><span>02</span> 对照变更</a><a href="#evidence"><span>03</span> 复核证据</a><a href="#handoff"><span>04</span> 留存交接</a></nav>
+      <div class="sidebar-note"><span class="eyebrow">核验原则</span><p>每一个结论，<br>都回到一行原文。</p><small>机器提示风险；工程人员确认上下文。人工接受不会消除机器阻断。</small></div>
+      <div class="storage-state" id="storage-state">输入仅保存在此浏览器</div>
+      <button class="text-button destructive" id="clear-project" type="button">清空本机项目</button>
+      <a class="guide-link" href="DELIVERY.md" target="_blank" rel="noopener">使用指南 ↗</a>
+    </aside>
+    <main id="main">
+      <div class="desk-heading"><div><span class="eyebrow">规格变更 · 原文核验</span><h1>把变更，核到原文。</h1><p>新旧规格与采购要求并排核验，留下可追溯的复核记录。</p></div><div class="desk-stamp" aria-hidden="true">证据<br><span>先行</span></div></div>
+      <div id="status" class="status" role="status" aria-live="polite">先载入示例，或粘贴三份 CSV，开始核验。</div>
+      <section id="inputs" class="section">
+        <div class="section-heading"><h2><span class="section-number">01</span> 整理规格</h2><button type="button" class="button secondary" id="load-example">载入示例项目</button></div>
+        <p class="section-copy">将文档中需要对照的参数提取成证据行。PDF 附件只留存原件，不会自动解析。</p>
+        <details class="format-guide"><summary>CSV 填写格式与单位规则</summary><div><p>旧、新规格表头：</p><code>mpn,parameter,value,unit,revision,source,locator,quote</code><p>采购要求表头：</p><code>mpn,parameter,operator,value,unit</code><p><strong>mpn</strong> 是物料型号；<strong>parameter</strong> 是参数名；<strong>source / locator / quote</strong> 分别是原件名、页码或章节、原文引句。要求的 operator 使用 min（不低于）、max（不高于）或 equals（等于）。含逗号或换行的文本用双引号包围，文本中的双引号写成两个双引号。请保留原单位，不确定项会进入待复核。</p></div></details>
+        <div class="input-grid">
+          <article class="input-sheet"><div class="sheet-heading"><label for="old-input"><span>A</span> 旧版规格</label><label class="file-button" for="old-file">上传 CSV<input id="old-file" type="file" accept=".csv,text/csv" data-input="old"></label></div><textarea id="old-input" spellcheck="false" aria-describedby="csv-hint" placeholder="mpn,parameter,value,unit,revision,source,locator,quote"></textarea><div class="sheet-footer">基线 / 变更前<span id="old-count">未载入</span></div></article>
+          <article class="input-sheet"><div class="sheet-heading"><label for="new-input"><span>B</span> 新版规格</label><label class="file-button" for="new-file">上传 CSV<input id="new-file" type="file" accept=".csv,text/csv" data-input="new"></label></div><textarea id="new-input" spellcheck="false" aria-describedby="csv-hint" placeholder="mpn,parameter,value,unit,revision,source,locator,quote"></textarea><div class="sheet-footer">变更 / 变更后<span id="new-count">未载入</span></div></article>
+          <article class="input-sheet"><div class="sheet-heading"><label for="requirements-input"><span>C</span> 采购要求</label><label class="file-button" for="requirements-file">上传 CSV<input id="requirements-file" type="file" accept=".csv,text/csv" data-input="requirements"></label></div><textarea id="requirements-input" spellcheck="false" aria-describedby="csv-hint" placeholder="mpn,parameter,operator,value,unit"></textarea><div class="sheet-footer">约束 / 采购要求<span id="requirements-count">未载入</span></div></article>
+        </div>
+        <div class="audit-bar"><p id="csv-hint">匹配同一物料型号与参数；缺证据、单位不明或违反要求会单独标记。</p><button type="button" class="button primary" id="run-audit">执行核验 <span aria-hidden="true">→</span></button></div>
+        <details class="attachment-area"><summary>附上原件 <span>PDF / TXT · 可选 · 总备份不超过 10 MB</span></summary><div class="attachment-content"><p>文件仅保存在本机。原件与证据行需由你核对，附件内容不参与自动核验。</p><label class="button secondary file-button" for="attachment-files">选择原件<input id="attachment-files" type="file" accept=".pdf,.txt,application/pdf,text/plain" multiple></label><ul id="attachment-list" class="attachment-list"></ul></div></details>
+      </section>
+      <section id="results" class="section">
+        <div class="section-heading"><h2><span class="section-number">02</span> 对照变更</h2><span class="result-meta" id="audit-time">尚未核验</span></div>
+        <div class="metrics"><div><strong id="total-count">—</strong><span>证据条目</span></div><div class="risk"><strong id="block-count">—</strong><span>机器阻断</span></div><div><strong id="review-count">—</strong><span>机器待复核</span></div><div><strong id="unreviewed-count">—</strong><span>尚未人工复核</span></div></div>
+        <div class="filter-bar" aria-label="筛选核验结果"><button class="filter active" type="button" data-filter="all" aria-pressed="true">全部</button><button class="filter" type="button" data-filter="block" aria-pressed="false">阻断</button><button class="filter" type="button" data-filter="review" aria-pressed="false">待复核</button><button class="filter" type="button" data-filter="clear" aria-pressed="false">未发现差异</button><span id="visible-count">0 条</span></div>
+        <div class="comparison-table"><table><caption class="sr-only">规格对照结果，点击参数进入原文与人工复核</caption><thead><tr><th scope="col">编号 / 物料参数</th><th scope="col">旧版</th><th scope="col">新版</th><th scope="col">机器结论</th><th scope="col">人工复核</th></tr></thead><tbody id="finding-rows"></tbody></table><div id="results-empty" class="empty-state"><span aria-hidden="true">≡</span><p>对照台已就绪</p><small>载入旧版、新版与要求，执行核验后在这里查看变更。</small></div></div>
+      </section>
+      <section id="evidence" class="section evidence-section">
+        <div class="section-heading"><h2><span class="section-number">03</span> 复核证据</h2><span class="result-meta">结论与原文一起留存</span></div>
+        <div id="evidence-empty" class="evidence-placeholder">从上方对照台选择一条参数，查看原文、位置与机器判断依据。</div>
+        <div id="evidence-content" hidden><div class="evidence-heading"><div><span class="eyebrow" id="evidence-number"></span><h3 id="evidence-title"></h3></div><span id="evidence-severity" class="badge"></span></div><div class="evidence-columns"><article class="quote-sheet"><h4>旧版原文 <span>变更前</span></h4><dl><dt>来源</dt><dd id="old-source"></dd><dt>位置</dt><dd id="old-locator"></dd></dl><blockquote id="old-quote"></blockquote></article><article class="quote-sheet"><h4>新版原文 <span>变更后</span></h4><dl><dt>来源</dt><dd id="new-source"></dd><dt>位置</dt><dd id="new-locator"></dd></dl><blockquote id="new-quote"></blockquote></article></div><div class="reason-area"><h4>采购要求与判断依据</h4><p id="evidence-requirement"></p><ul id="evidence-reasons"></ul></div><form id="review-form" class="review-form"><div class="review-fields"><div><label for="reviewer">复核姓名 <span>必填</span></label><input id="reviewer" required maxlength="100" autocomplete="name" placeholder="填写实际复核者姓名"></div><div><label for="decision">处理意见</label><select id="decision"><option value="needs-info">需补充信息</option><option value="accepted">人工接受</option><option value="rejected">人工拒绝</option></select></div><div class="note-field"><label for="review-note">复核说明 <span>必填</span></label><textarea id="review-note" required maxlength="4000" placeholder="记录上下文、补充依据或后续动作"></textarea></div></div><div class="review-footer"><p>处理意见不会改变机器结论。输入修改后，所有旧复核作废。</p><button class="button primary" type="submit">保存本条复核</button></div></form></div>
+      </section>
+      <section id="handoff" class="section handoff-section"><div class="section-heading"><h2><span class="section-number">04</span> 留存交接</h2><span class="result-meta">可追溯 · 可恢复</span></div><p class="section-copy">CSV 与报告包含全部核验结果及人工记录。项目备份保留输入、复核与原件；请定期下载备份。</p><div class="handoff-actions"><button id="export-csv" class="button secondary" type="button" disabled>下载核验 CSV</button><button id="print-report" class="button secondary" type="button" disabled>打印 / 保存 PDF 报告</button><button id="backup-project" class="button primary" type="button">下载项目备份</button><label for="restore-project" class="button secondary file-button">恢复项目备份<input id="restore-project" type="file" accept=".json,application/json"></label></div><p class="boundary-note">仅核验你提供的证据行。未发现差异不等于原件完整或符合所有标准；本工具不能替代工程签核、供应商确认或合规审查。</p></section>
+      <footer class="desk-footer"><span>规格证据台 / 本机静态工具</span><span>先有证据，再作判断。</span></footer>
+    </main>
+  </div>
+  <dialog id="clear-dialog"><h2>清空当前项目？</h2><p>这会删除此浏览器中的输入、复核与原件。已下载的备份不会删除。</p><div class="dialog-actions"><button id="cancel-clear" type="button" class="button secondary">保留项目</button><button id="confirm-clear" type="button" class="button danger">确认清空</button></div></dialog>
+  <dialog id="text-dialog"><div class="section-heading"><h2 id="text-dialog-title">原件正文</h2><button id="close-text" type="button" class="button secondary">关闭</button></div><pre id="text-dialog-content"></pre></dialog>
+</body>
+</html>

@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>缓步 · 城市探索手账</title><link rel="icon" href="auto-company-icon.svg" type="image/svg+xml"><link rel="stylesheet" href="styles.css"></head>
+<body>
+<header class="masthead"><a class="brand" href="#"><img src="auto-company-icon.svg" width="38" height="38" alt="缓步标识"><span>缓步<small>城市探索手账</small></span></a><span class="privacy">本地保存 · 无需账户</span><button id="help-toggle" class="quiet" aria-expanded="false" aria-controls="help">使用说明</button></header>
+<main>
+<section class="intro"><div><p class="eyebrow">留一点余地，给自己。</p><h1>想看的风景，<br>也有休息的位置。</h1><p class="lead">把想做的事、恢复点和回程，安排进同一天。</p></div><div class="intro-note"><span class="folio">01 / 准备一天</span><p>探索不是一场耐力赛。</p><small>活动 → 转场 → 恢复 → 再出发</small><div class="rhythm"><i></i><i></i><i></i><i></i><i></i></div></div></section>
+<section id="help" class="notice" hidden><h2>从输入到带走</h2><p>1. 添加同行人的节奏、想做的活动和你查到的恢复点。转场包括从出发点到首站、各活动之间的移动；恢复点转场按往返计算。</p><p>2. 编排后查看保留目标、未完成目标与条件。你填写的环境信息只是准备假设，不能保证现场空座、独处或安静；请在来源中记录官方信息与核验时间。</p><p>3. 现场有变化时先标记已完成活动，填写当前时间，再重排余下安排。可导出JSON以便继续编辑，或导出文本、打印随身手账。</p><p>输入仅存在当前浏览器，不会上传。浏览器清理会删除本地草稿，请用JSON备份。当前版本支持一天、最多4人、20项活动，不提供地图导航、票务或实时地点数据。</p></section>
+<div class="workspace">
+<section class="editor" aria-label="旅行计划编辑">
+<div class="editor-heading"><h2>你的准备页</h2><span>可随时调整</span></div>
+<div class="draft-tools"><button id="sample" class="quiet">载入构造示例</button><button id="restore" class="quiet">恢复已保存草稿</button><button id="clear" class="quiet">清空本地草稿</button></div>
+<form id="trip-form" novalidate>
+<fieldset><legend><b>01</b> 这一天</legend><label>手账名称<input name="title" maxlength="100" value="我的城市探索"></label><div class="fields"><label>城市<input name="city" maxlength="100" placeholder="例如：上海" required></label><label>旅行日期<input name="date" type="date" required></label></div><label>出发地点<input name="origin" maxlength="100" placeholder="例如：住宿处或地铁站"></label><div class="fields"><label>出发时间<input name="start" type="time" value="10:00" required></label><label>最晚返回<input name="end" type="time" value="17:00" required></label></div></fieldset>
+<fieldset><legend><b>02</b> 每个人的节奏</legend><p class="hint">转场也消耗精力。同行按最短活动上限与最长恢复时长安排。</p><div id="people"></div><button type="button" id="add-person" class="add">＋ 添加同行人</button></fieldset>
+<fieldset><legend><b>03</b> 想保留的活动</legend><details class="planning-note"><summary>活动顺序与完成记录</summary><p class="hint">按你希望的顺序添加。必选无法安排时会明确列为未完成；雨天略过室外活动。开放时段由你核实。修改名称仍视为同一活动，保留完成记录；更换目标请添加新活动。已完成活动需先取消完成标记才能移除。</p></details><div id="activities"></div><button type="button" id="add-activity" class="add">＋ 添加活动</button></fieldset>
+<fieldset><legend><b>04</b> 恢复与回程</legend><details class="planning-note"><summary>如何填写恢复点转场</summary><p class="hint">恢复点必须能从各活动到达。这里的单程分钟使用保守估计；若差异很大，请分成独立的一日计划。</p></details><div id="recovery"></div><label class="check"><input id="use-backup" type="checkbox"> 添加备用恢复地点</label><div id="backup-recovery" hidden></div><h3>退出安排</h3><label>返回目的地<input name="exitName" placeholder="例如：住宿处" maxlength="100"></label><label>从任一活动返回的保守分钟<input name="exitTravel" type="number" min="0" max="240" value="20"></label><label>回程说明<textarea name="exitNotes" placeholder="交通方式、集合点，或如何联系同行人" maxlength="1000"></textarea></label></fieldset>
+<div id="errors" class="errors" role="alert" hidden></div><div class="form-foot"><button class="primary" type="submit">编排我的一天 <span>→</span></button><button id="save" type="button" class="secondary">保存草稿</button><p id="save-status" class="hint" role="status">草稿仅保存在本机浏览器；点击保存或编排时保存。</p></div>
+</form>
+</section>
+<section class="result" aria-label="编排结果"><div class="result-top"><div><p class="eyebrow">你的随身页</p><h2 id="plan-title">一天，不必填满。</h2></div><span class="paper-tab">探索 / 恢复</span></div>
+<div id="empty-state"><div class="empty-illustration" aria-hidden="true"><span></span><span></span><span></span></div><h3>先留住最想做的事。</h3><p>填写准备页，或载入示例。<br>活动、恢复与回程会依次出现在这里。</p><p class="empty-note">请自行核实地点、开放时间与恢复条件。</p></div>
+<div id="plan-output" hidden aria-live="polite"></div>
+<section id="disruptions" class="changes" hidden><h3>计划有变化？</h3><p class="hint">标记已完成活动，填写当前时间，再重排余下安排。</p><details class="planning-note"><summary>现场调整如何保留或重置</summary><p class="hint">每次使用下方当前值，不会重复叠加延误。编辑准备资料会保留这些记录；“恢复原定安排”会清除所有完成标记与现场调整。</p></details><div class="fields"><label>当前时间（可留空）<input id="now" type="time"></label><label>额外延误 / 分钟<input id="delay" type="number" min="0" max="240" value="0"></label></div><div class="fields"><label class="check"><input id="rain" type="checkbox"> 雨天，略过室外活动</label><label class="check"><input id="unavailable" type="checkbox"> 主恢复点不可用</label></div><label>提前返回时间（可留空）<input id="early-end" type="time"></label><div class="button-row"><button id="replan" class="primary">重排剩余安排</button><button id="reset-changes" class="quiet">恢复原定安排</button></div></section>
+<footer class="export-bar"><h3>把准备带在身边</h3><div class="button-row"><button id="export-json" class="secondary">导出JSON备份</button><button id="export-text" class="secondary">导出中文手账</button><button id="print" class="secondary">打印 / 存为PDF</button><label class="file-button">导入JSON<input id="import" type="file" accept=".json,application/json"></label></div><p id="export-status" class="hint" role="status">JSON保留输入和现场调整；打印会包含当前时间轴与未完成目标。</p></footer>
+</section></div>
+<footer class="page-footer"><span>缓步 · 给探索留白</span><span>准备工具，不提供实时环境保证。</span></footer>
+</main><script type="module" src="app.js"></script>
+</body></html>

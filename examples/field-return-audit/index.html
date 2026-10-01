@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#243441">
+  <title>归档验收台 · 离线采集往返验收</title>
+  <link rel="icon" type="image/svg+xml" href="/auto-company-icon.svg">
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#workbench">跳到验收工作台</a>
+  <header class="masthead">
+    <a class="brand" href="/" aria-label="归档验收台首页"><img src="/auto-company-icon.svg" alt="" width="42" height="42"><span>归档验收台<small>离线采集往返验收</small></span></a>
+    <div class="edition"><span class="local-dot" aria-hidden="true"></span>本机处理 · 无需账户<span class="edition-number">工作簿 / 01</span></div>
+  </header>
+  <main id="workbench">
+    <div class="intro"><p class="eyebrow">从现场带回来的，不止是一份文件。</p><h1>让每一次归档，<br>都有可核对的依据。</h1><p class="intro-note">比对出发、现场与回写后三份副本。检查新增、修改、删除及附件，<br class="desktop-only">把待复核项与证据一同带走。</p></div>
+    <div class="workspace">
+      <aside class="preparation" aria-labelledby="prepare-heading">
+        <div class="section-title"><span class="step-marker">01</span><h2 id="prepare-heading">准备作业</h2><span class="tiny-label">输入</span></div>
+        <div class="demo-tools"><button type="button" id="load-demo" class="button secondary">载入合成示例</button><button type="button" id="reset" class="text-button">清空重来</button></div>
+        <p id="demo-label" class="demo-label" hidden>当前包含合成示例数据，不代表真实作业。</p>
+        <fieldset id="inputs">
+          <legend class="sr-only">验收输入</legend>
+          <label class="field-label" for="job-name">作业名称</label><input id="job-name" type="text" maxlength="160" placeholder="例如：河道巡查 · 第三批回收">
+          <div class="subsection-heading"><h3>三份数据副本</h3><span>SQLite / GeoPackage</span></div>
+          <p class="helper">选择完成写入并关闭后的独立副本；本工具只读取，不回写原文件。三份齐全才能确认。</p>
+          <div class="file-slot"><label for="baseline"><span class="file-index">A</span><strong>出发前基线</strong><small>出发时留存的原始副本</small></label><input id="baseline" type="file" class="sr-only" tabindex="-1" accept=".sqlite,.sqlite3,.db,.gpkg"><label class="file-picker" for="baseline" role="button" tabindex="0" data-file-input="baseline">选择基线副本<span aria-hidden="true"> ＋</span></label><p id="baseline-detail" class="file-detail">尚未选择</p></div>
+          <div class="file-slot"><label for="field"><span class="file-index">B</span><strong>现场采集结果</strong><small>离线工作结束后的现场副本</small></label><input id="field" type="file" class="sr-only" tabindex="-1" accept=".sqlite,.sqlite3,.db,.gpkg"><label class="file-picker" for="field" role="button" tabindex="0" data-file-input="field">选择现场副本<span aria-hidden="true"> ＋</span></label><p id="field-detail" class="file-detail">尚未选择</p></div>
+          <div class="file-slot"><label for="target"><span class="file-index">C</span><strong>回写后的目标</strong><small>回写完成后导出的目标副本</small></label><input id="target" type="file" class="sr-only" tabindex="-1" accept=".sqlite,.sqlite3,.db,.gpkg"><label class="file-picker" for="target" role="button" tabindex="0" data-file-input="target">选择目标副本<span aria-hidden="true"> ＋</span></label><p id="target-detail" class="file-detail">尚未选择</p></div>
+          <div id="attachment-inputs" class="subsection-heading"><h3>附件证据</h3><span>相对路径与内容</span></div>
+          <p class="helper">选取数据库引用附件的根目录。目录本身的名称会被去掉，内部子目录保留。备用多文件选择仅保留文件名，适合没有子目录的附件。</p>
+          <label class="field-label" for="field-directory">现场附件目录</label><input id="field-directory" type="file" class="sr-only" tabindex="-1" webkitdirectory multiple><label class="file-picker" for="field-directory" role="button" tabindex="0" data-file-input="field-directory">选择现场附件目录<span aria-hidden="true"> ＋</span></label><details class="file-fallback"><summary>改用多文件选择</summary><label class="sr-only" for="field-files">现场附件多文件</label><input id="field-files" type="file" class="sr-only" tabindex="-1" multiple><label class="file-picker" for="field-files" role="button" tabindex="0" data-file-input="field-files">选择现场附件文件<span aria-hidden="true"> ＋</span></label></details><p id="field-attachments-detail" class="file-detail">尚未选择附件</p>
+          <label class="field-label" for="target-directory">目标附件目录</label><input id="target-directory" type="file" class="sr-only" tabindex="-1" webkitdirectory multiple><label class="file-picker" for="target-directory" role="button" tabindex="0" data-file-input="target-directory">选择目标附件目录<span aria-hidden="true"> ＋</span></label><details class="file-fallback"><summary>改用多文件选择</summary><label class="sr-only" for="target-files">目标附件多文件</label><input id="target-files" type="file" class="sr-only" tabindex="-1" multiple><label class="file-picker" for="target-files" role="button" tabindex="0" data-file-input="target-files">选择目标附件文件<span aria-hidden="true"> ＋</span></label></details><p id="target-attachments-detail" class="file-detail">尚未选择附件</p>
+          <button id="omit-attachment" class="text-button simulation-button" type="button" hidden>模拟漏交目标附件</button>
+          <label class="field-label" for="attachment-policy">附件验收方式</label><select id="attachment-policy"><option value="required">必需：缺失或不一致需复核</option><option value="deferred">延后：单列附件欠项，不确认全量通过</option></select>
+          <label class="declaration"><input id="evidence-complete" type="checkbox"><span>我确认现场副本、附件与验收配置完整，覆盖本次作业。<small>只有你能确认采集证据是否完整；勾选不会消除工具发现的问题。</small></span></label>
+          <details class="configuration" id="config-section"><summary>高级配置：业务表、关联、附件列</summary><p class="helper">留空业务表清单时自动发现有主键的业务表；无主键表需要显式指定稳定键。关联和附件列应按业务含义声明，工具无法自动推断完整规则。</p><label class="sr-only" for="config">高级配置 JSON</label><textarea id="config" spellcheck="false" rows="9">{
+  "tables": [],
+  "relations": [],
+  "attachment_columns": []
+}</textarea><p class="helper">例如：<code>observations</code> 的唯一键为 <code>uid</code>，<code>site_uid</code> 指向 <code>sites.uid</code>，<code>photo</code> 保存如 <code>photos/001.jpg</code> 的相对路径。</p><pre class="config-example">{
+  "tables": [
+    {"name": "sites", "key": ["uid"]},
+    {"name": "observations", "key": ["uid"]}
+  ],
+  "relations": [{
+    "table": "observations", "column": "site_uid",
+    "parent_table": "sites", "parent_column": "uid"
+  }],
+  "attachment_columns": [
+    {"table": "observations", "column": "photo"}
+  ]
+}</pre></details>
+        </fieldset>
+        <div class="run-area"><p class="size-note" id="size-note">数据与附件合计上限 100 MB。文件仅发送到本机服务。</p><button type="button" class="button primary" id="run-audit">开始验收 <span aria-hidden="true">↗</span></button><p id="form-message" class="form-message" role="status" aria-live="polite"></p></div>
+      </aside>
+      <section class="report" aria-labelledby="report-heading">
+        <div class="section-title"><span class="step-marker">02</span><h2 id="report-heading">验收记录</h2><span class="tiny-label">结果与证据</span></div>
+        <div id="report-empty" class="report-empty"><div class="workbook-symbol" aria-hidden="true"><span>A</span><i>→</i><span>B</span><i>→</i><span>C</span></div><h3>三份副本，一份可追溯记录。</h3><p>从左侧准备作业，或载入合成示例体验完整流程。<br>验收不会自动合并或修复数据。</p><div class="status-legend"><span><i class="status-dot passed"></i>通过</span><span><i class="status-dot review"></i>需复核</span><span><i class="status-dot deferred"></i>附件延后</span><span><i class="status-dot unconfirmed"></i>未确认</span></div><p class="scope-note">适用：本地 SQLite / GeoPackage 的记录与字节证据。<br>不验证地图渲染、空间语义、现场真实性或远端系统状态。</p></div>
+        <div id="report-result" hidden>
+          <div class="result-heading"><div><p class="eyebrow" id="result-job"></p><h3 id="status-label"></h3><p id="result-time" class="result-time"></p></div><div id="status-stamp" class="status-stamp"></div></div>
+          <p id="result-guidance" class="result-guidance"></p>
+          <div id="summary" class="summary-strip"></div>
+          <div class="report-tools"><nav aria-label="报告章节"><a href="#issues-section">待处理</a><a href="#changes-section">三方变更</a><a href="#evidence-section">证据</a></nav><div class="exports"><button class="text-button" id="export-json" type="button" disabled>导出 JSON</button><button class="text-button" id="export-csv" type="button" disabled>导出 CSV</button><button class="text-button" id="export-html" type="button" disabled>独立 HTML 报告</button></div></div>
+          <section id="issues-section" class="report-section"><div class="report-section-heading"><h3><span>01 /</span> 待处理与恢复</h3><span id="issues-count"></span></div><div id="issues-table"></div><div id="deferred-list"></div></section>
+          <section id="changes-section" class="report-section"><div class="report-section-heading"><h3><span>02 /</span> 三方记录变更</h3><label class="search-label" for="change-filter">筛选 <input id="change-filter" type="search" placeholder="表名、记录键或字段"></label></div><p class="table-help">按出发基线追踪现场新增、修改与删除，核对目标是否保留现场结果。值中的“∅”表示不存在。</p><div id="changes-table"></div></section>
+          <section id="evidence-section" class="report-section"><div class="report-section-heading"><h3><span>03 /</span> 输入证据与摘要</h3><span>SHA-256</span></div><div id="evidence-table"></div></section>
+          <section class="report-section limitations"><h3>本次验收范围</h3><div id="scope-table"></div><ul id="limitations-list"></ul></section>
+        </div>
+        <footer class="report-footer"><span>归档验收台 · 每次归档都有依据</span><span>本地验收 / 不替代业务确认</span></footer>
+      </section>
+    </div>
+  </main>
+</body>
+</html>

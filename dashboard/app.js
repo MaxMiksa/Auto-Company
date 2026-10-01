@@ -1,36 +1,10 @@
-/*
-Lucide SVG subset from 0.468.0, commit f12b0de177fbc2a6795e99be065887e72b237123
-Source: https://github.com/lucide-icons/lucide/tree/f12b0de177fbc2a6795e99be065887e72b237123/icons
-Icons: notebook-pen, chart-no-axes-column, terminal, play, square, sliders-horizontal, refresh-cw, file-text, list-checks, panels-top-left, external-link, chevron-right, x
-Stored inline in app.js; original geometry, decorative aria-hidden rendering.
-
-ISC License
-
-Copyright (c) for portions of Lucide are held by Cole Bemis 2013-2022 as part of Feather (MIT). All other copyright (c) for Lucide are held by Lucide Contributors 2022.
-
-Permission to use, copy, modify, and/or distribute this software for any
-purpose with or without fee is hereby granted, provided that the above
-copyright notice and this permission notice appear in all copies.
-
-THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
-WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
-MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
-ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
-WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
-ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
-OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
-
-*/
 (() => {
   'use strict';
 
-  // Lucide 0.468.0, pinned f12b0de; ISC/MIT notices in LICENSE-lucide.txt.
-  const ICONS = {"notebook-pen": "<path d=\"M13.4 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7.4\" />\n  <path d=\"M2 6h4\" />\n  <path d=\"M2 10h4\" />\n  <path d=\"M2 14h4\" />\n  <path d=\"M2 18h4\" />\n  <path d=\"M21.378 5.626a1 1 0 1 0-3.004-3.004l-5.01 5.012a2 2 0 0 0-.506.854l-.837 2.87a.5.5 0 0 0 .62.62l2.87-.837a2 2 0 0 0 .854-.506z\" />", "chart-no-axes-column": "<line x1=\"18\" x2=\"18\" y1=\"20\" y2=\"10\" />\n  <line x1=\"12\" x2=\"12\" y1=\"20\" y2=\"4\" />\n  <line x1=\"6\" x2=\"6\" y1=\"20\" y2=\"14\" />", "terminal": "<polyline points=\"4 17 10 11 4 5\" />\n  <line x1=\"12\" x2=\"20\" y1=\"19\" y2=\"19\" />", "play": "<polygon points=\"6 3 20 12 6 21 6 3\" />", "square": "<rect width=\"18\" height=\"18\" x=\"3\" y=\"3\" rx=\"2\" />", "sliders-horizontal": "<line x1=\"21\" x2=\"14\" y1=\"4\" y2=\"4\" />\n  <line x1=\"10\" x2=\"3\" y1=\"4\" y2=\"4\" />\n  <line x1=\"21\" x2=\"12\" y1=\"12\" y2=\"12\" />\n  <line x1=\"8\" x2=\"3\" y1=\"12\" y2=\"12\" />\n  <line x1=\"21\" x2=\"16\" y1=\"20\" y2=\"20\" />\n  <line x1=\"12\" x2=\"3\" y1=\"20\" y2=\"20\" />\n  <line x1=\"14\" x2=\"14\" y1=\"2\" y2=\"6\" />\n  <line x1=\"8\" x2=\"8\" y1=\"10\" y2=\"14\" />\n  <line x1=\"16\" x2=\"16\" y1=\"18\" y2=\"22\" />", "refresh-cw": "<path d=\"M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8\" />\n  <path d=\"M21 3v5h-5\" />\n  <path d=\"M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16\" />\n  <path d=\"M8 16H3v5\" />", "file-text": "<path d=\"M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z\" />\n  <path d=\"M14 2v4a2 2 0 0 0 2 2h4\" />\n  <path d=\"M10 9H8\" />\n  <path d=\"M16 13H8\" />\n  <path d=\"M16 17H8\" />", "list-checks": "<path d=\"m3 17 2 2 4-4\" />\n  <path d=\"m3 7 2 2 4-4\" />\n  <path d=\"M13 6h8\" />\n  <path d=\"M13 12h8\" />\n  <path d=\"M13 18h8\" />", "panels-top-left": "<rect width=\"18\" height=\"18\" x=\"3\" y=\"3\" rx=\"2\" />\n  <path d=\"M3 9h18\" />\n  <path d=\"M9 21V9\" />", "external-link": "<path d=\"M15 3h6v6\" />\n  <path d=\"M10 14 21 3\" />\n  <path d=\"M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6\" />", "chevron-right": "<path d=\"m9 18 6-6-6-6\" />", "x": "<path d=\"M18 6 6 18\" />\n  <path d=\"m6 6 12 12\" />"};
   const $ = (id) => document.getElementById(id);
-  const DEFAULT_HISTORY_LIMIT = 4;
   const productMatch = (globalThis.location?.pathname || '/journal').match(/^\/products\/([^/]+)\/?$/);
   const scope = { center: Boolean(productMatch), entryId: productMatch ? decodeURIComponent(productMatch[1]) : null, token: 0, contextToken: 0, entries: [] };
-  const state = { data: null, language: 'zh-CN', tab: 'work', expanded: new Set(), older: false, selectedLog: scope.center ? '' : 'runtime', logText: '', logLoadedId: '', logRequest: 0, logPending: null, refreshPending: null, signature: '', statusFailed: true, action: '', languageState: null, languageSaving: false, languageLoading: false, languageRevision: 0, languageError: '', languageSaved: false, timer: null, autoChanged: false, currentCycle: null, receivedAt: 0, elapsedTimer: null, centerSummary: null, scopedUsage: null, usageToken: 0, detailToken: 0, detailLoads: new Map(), mediaIntent: null, exploration: { key: '', token: 0, loading: false, loaded: false, failed: false, total: null, cycles: [] } };
+  const state = { data: null, language: 'zh-CN', tab: 'work', expanded: new Set(), selectedLog: scope.center ? '' : 'runtime', logText: '', logLoadedKey: '', logRequest: 0, logPending: null, refreshPending: null, signature: '', statusFailed: true, action: '', languageState: null, languageSaving: false, languageLoading: false, languageRevision: 0, languageError: '', languageSaved: false, timer: null, autoChanged: false, currentCycle: null, receivedAt: 0, elapsedTimer: null, centerSummary: null, scopedUsage: null, usageToken: 0, detailToken: 0, detailLoads: new Map(), mediaIntent: null };
   const message = (key, values = {}) => {
     const dictionary = window.JOURNAL_MESSAGES[state.language] || window.JOURNAL_MESSAGES.en;
     return Object.entries(values).reduce((result, [name, value]) => result.replaceAll(`{${name}}`, String(value)), dictionary[key] || key);
@@ -50,6 +24,8 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
     return text.length > length ? `${text.slice(0, length).trim()}…` : text;
   }
   function statusLabel(status) {
+    const shared = window.DashboardStatus.label(status, state.language);
+    if (shared) return shared;
     if (['not_started', 'startup_unconfirmed'].includes(status)) return message(status);
     return ['starting', 'stopping', 'stop_failed', 'completed', 'completed_with_timeout', 'failed', 'interrupted', 'stopped_status', 'running', 'blocked', 'idle', 'paused', 'waiting_limit', 'circuit_break', 'stopped', 'active', 'inactive', 'configured', 'not_configured', 'not_installed', 'mismatched', 'activating', 'deactivating', 'reloading', 'unsupported'].includes(status) ? message(status) : status === 'unavailable' ? message('statusUnavailable') : message('unknown');
   }
@@ -81,6 +57,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
     if (!scope.center) return null;
     const execution = data?.entry?.executionSummary;
     if (!execution?.requestId) return null;
+    if (execution.state === 'ended' && execution.terminalReason === 'delivery_complete') return 'delivery_complete';
     return ['ended', 'canceled', 'failed', 'queued', 'attention'].includes(execution.state) ? execution.state : null;
   }
   function runtimeStateValue() {
@@ -211,7 +188,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
       if (token !== state.usageToken || data !== state.data || usage.key !== usageKey(usageSelection(), state.data)) return;
       state.scopedUsage = usage; renderUsage();
     } catch (_) {
-      if (token === state.usageToken) { state.scopedUsage = null; renderUsage(); }
+      if (token === state.usageToken && data === state.data && usageKey(selection, data) === usageKey(usageSelection(), state.data)) { state.scopedUsage = null; renderUsage(); }
     }
   }
   async function fetchScopedText(value, timeout = 15000) {
@@ -294,41 +271,12 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
     });
     return details;
   }
-  function paddedCycleNumber(cycle) { return String(cycle.number ?? '—').padStart(2, '0'); }
+  function paddedCycleNumber(cycle) { return String(cycle.sequenceNumber ?? cycle.number ?? '—').padStart(2, '0'); }
   function historyGroups(data, current) {
     const cycles = Array.isArray(data?.cycles) ? data.cycles : [];
-    const hasProduct = cycles.some((cycle) => cycle.identityKind === 'product');
-    const separateExploration = hasProduct;
-    const older = cycles.filter((cycle) => cycle.id !== current?.id);
-    return {
-      main: older.filter((cycle) => !separateExploration || cycle.identityKind !== 'exploration'),
-      exploration: separateExploration ? older.filter((cycle) => cycle.identityKind === 'exploration') : [],
-    };
+    return { main: cycles.filter((cycle) => cycle.id !== current?.id) };
   }
-  function explorationScope(data) {
-    if (!scope.center || data?.entry?.kind !== 'product' || data?.explorationAvailable !== true) return null;
-    const entryId = data.entryId || data.entry?.entryId;
-    const sourceId = data.sourceId || data.entry?.sourceId;
-    const sourceRevision = data.sourceRevision ?? data.entry?.sourceRevision ?? null;
-    if (!entryId || !sourceId) return null;
-    return { entryId, sourceId, sourceRevision, key: JSON.stringify([entryId, sourceId, sourceRevision]) };
-  }
-  function explorationPageMatches(data, expected) {
-    if (!data || !expected || data.entryId !== expected.entryId || data.entry?.entryId !== expected.entryId || data.sourceId !== expected.sourceId || data.entry?.sourceId !== expected.sourceId) return false;
-    if (expected.sourceRevision !== null && data.sourceRevision !== expected.sourceRevision) return false;
-    return Array.isArray(data.cycles) && data.cycles.every((cycle) => cycle.identityKind === 'exploration');
-  }
-  function resetExploration(nextScope = null) {
-    const token = state.exploration.token + 1;
-    state.exploration = { key: nextScope?.key || '', token, loading: false, loaded: false, failed: false, total: null, cycles: [] };
-  }
-  function explorationRequestMatches(token, expected) {
-    const current = explorationScope(state.data);
-    return token === state.exploration.token && current?.key === expected?.key;
-  }
-  function logCycles() {
-    return [...(state.data?.cycles || []), ...(state.exploration.loaded ? state.exploration.cycles : [])];
-  }
+  function logCycles() { return state.data?.cycles || []; }
   function logButton(cycle) {
     if (cycle.synthetic) {
       const button = element('button', 'text-button cycle-log-link', message('viewRuntimeLog'));
@@ -387,19 +335,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
     const node = element('span', `progress-node progress-${state}`);
     if (state === 'pending') label = message('pendingCycle');
     node.setAttribute('role', 'img'); node.setAttribute('aria-label', label); node.title = label;
-    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    for (const [key, value] of Object.entries({ viewBox: '0 0 32 32', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.7', 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'aria-hidden': 'true' })) svg.setAttribute(key, value);
-    // Original status geometry: the sector indicates activity, never a measured percentage.
-    const marks = {
-      completed: '<path d="m10.5 16 3.8 3.8 7.2-8"/>',
-      running: '<path d="M16 6a10 10 0 0 1 10 10H16Z" fill="currentColor" opacity=".35" stroke="none"/><path d="M16 8v8l-4 3"/>',
-      paused: '<path d="M12.8 11.5v9m6.4-9v9" stroke-width="2.8"/>',
-      pending: '<path d="M16 9v7l4 2"/>',
-      failed: '<path d="m12 12 8 8m0-8-8 8"/>',
-      unknown: '<path d="M12.5 12a3.5 3.5 0 0 1 7 0c0 3-3.5 2.5-3.5 5m0 4h.01"/>',
-    };
-    svg.innerHTML = `<circle cx="16" cy="16" r="13"/>${marks[state]}`;
-    node.append(svg);
+    node.append(window.DashboardIcons.status(state));
     return node;
   }
   function checkPresentation(cycle) {
@@ -444,7 +380,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
     for (const artifact of cycle.artifacts || []) {
       if (artifact.kind !== 'document') continue;
       rows.push({ kind: 'document', time: artifact.recordedAt, title: message(artifact.available === true ? 'documentRecorded' : 'documentUnavailable'),
-        detail: String(artifact.path || artifact.label || '').split(/[\\/]/).pop(), url: scope.center ? safeScopedResource(artifact.url) : null });
+        detail: artifact.displayLabel || String(artifact.path || artifact.label || '').split(/[\\/]/).pop(), url: scope.center ? safeScopedResource(artifact.url) : null });
     }
     if (cycle.workReport && cycle.workReportStatus === 'valid') rows.push({ kind: 'report', time: cycle.workReport.recorded_at, title: message('workRecorded') });
     // Missing timestamps remain unknown, rather than borrowing a cycle or consensus time.
@@ -535,13 +471,13 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
     article.append(gutter, progressIcon(cycle.status), body);
     container.append(article);
   }
-  function historyRow(cycle, exploration = false) {
-    const row = bindDisclosure(element('details', `history-row${exploration ? ' exploration-row' : ''}`), `cycle:${cycle.id}`);
+  function historyRow(cycle) {
+    const row = bindDisclosure(element('details', 'history-row'), `cycle:${cycle.id}`);
     row.dataset.cycleId = cycle.id;
     const summary = element('summary');
     const association = cycle.projectStatus === 'other' ? message('otherProjectCycle') : cycle.projectStatus === 'unknown' ? message('unknownProjectCycle') : cycle.identityKind === 'exploration' ? message('explorationCycles') : '';
     const timing = `${statusLabel(cycle.status)} · ${formatTime(cycle.startedAt)}${association ? ` · ${association}` : ''}`;
-    const cycleNumber = exploration ? message('explorationNumber', { number: paddedCycleNumber(cycle) }) : paddedCycleNumber(cycle);
+    const cycleNumber = paddedCycleNumber(cycle);
     summary.append(element('span', 'history-number', cycleNumber), progressIcon(cycle.status), element('span', 'history-title', cycleTitle(cycle)), element('span', `history-meta${cycle.status === 'failed' ? ' status-failed' : ''}`, timing));
     const arrow = icon('chevron-right'); arrow.classList.add('history-chevron');
     arrow.setAttribute('aria-hidden', 'true');
@@ -564,10 +500,8 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
   async function loadCycleDetail(cycleId) {
     if (!scope.center || !state.data || state.detailLoads.has(cycleId)) return;
     const expected = { token: state.detailToken, entryId: state.data.entryId, sourceId: state.data.sourceId, sourceRevision: state.data.sourceRevision };
-    const primaryIndex = state.data.cycles.findIndex((cycle) => cycle.id === cycleId && cycle.detailStatus === 'limited');
-    const explorationIndex = state.exploration.cycles.findIndex((cycle) => cycle.id === cycleId && cycle.detailStatus === 'limited');
-    const collection = primaryIndex >= 0 ? state.data.cycles : explorationIndex >= 0 ? state.exploration.cycles : null;
-    const index = primaryIndex >= 0 ? primaryIndex : explorationIndex;
+    const collection = state.data.cycles;
+    const index = collection.findIndex((cycle) => cycle.id === cycleId && cycle.detailStatus === 'limited');
     if (!collection || index < 0) return;
     const limited = collection[index];
     const promise = (async () => {
@@ -577,91 +511,20 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
         const currentIndex = collection.findIndex((cycle) => cycle.id === cycleId && cycle.detailStatus === 'limited');
         if (currentIndex < 0) return;
         collection[currentIndex] = { ...limited, ...detail };
-        if (collection === state.data.cycles) renderHistory(); else renderExplorationHistory();
+        renderHistory();
       } catch (_) { /* The limited row remains retryable on its next open. */ }
       finally { state.detailLoads.delete(cycleId); }
     })();
     state.detailLoads.set(cycleId, promise);
     return promise;
   }
-  async function loadLinkedExploration(retry = false) {
-    const expected = explorationScope(state.data);
-    if (!expected || state.exploration.key !== expected.key || state.exploration.loading || state.exploration.loaded || (state.exploration.failed && !retry)) return;
-    const token = state.exploration.token + 1;
-    state.exploration.token = token;
-    state.exploration.loading = true;
-    state.exploration.failed = false;
-    renderExplorationHistory();
-    try {
-      const cycles = [];
-      const ids = new Set();
-      const cursors = new Set();
-      let before = null;
-      let total = null;
-      do {
-        const suffix = before ? `&before=${encodeURIComponent(before)}` : '';
-        const page = await fetchCenter(`${scopedJournalPath('/journal')}?section=exploration&sourceId=${encodeURIComponent(expected.sourceId)}&limit=100${suffix}`);
-        if (!explorationRequestMatches(token, expected)) return;
-        if (!explorationPageMatches(page, expected)) throw new Error('Out-of-scope exploration response');
-        for (const cycle of page.cycles) {
-          if (!cycle.id || ids.has(cycle.id)) throw new Error('Duplicate exploration cycle');
-          ids.add(cycle.id);
-          cycles.push(cycle);
-        }
-        total = page.total;
-        before = page.nextBefore || null;
-        if (before && cursors.has(before)) throw new Error('Repeated exploration cursor');
-        if (before) cursors.add(before);
-      } while (before);
-      if (Number.isFinite(total) && cycles.length !== total) throw new Error('Incomplete exploration journal');
-      if (!explorationRequestMatches(token, expected)) return;
-      state.exploration = { key: expected.key, token, loading: false, loaded: true, failed: false, total: Number.isFinite(total) ? total : null, cycles };
-    } catch (_) {
-      if (!explorationRequestMatches(token, expected)) return;
-      state.exploration = { key: expected.key, token, loading: false, loaded: false, failed: true, total: null, cycles: [] };
-    }
-    renderExplorationHistory();
-    renderLogOptions();
-  }
-  function renderExplorationHistory(embeddedCycles = []) {
-    const section = clear($('explorationSection'));
-    const linked = explorationScope(state.data);
-    const cycles = linked ? state.exploration.cycles : embeddedCycles;
-    section.hidden = !linked && !cycles.length;
-    if (section.hidden) return;
-    const disclosure = bindDisclosure(element('details', 'exploration-disclosure'), 'exploration-records');
-    const summary = element('summary');
-    const label = element('span', 'exploration-heading', message('explorationRecords'));
-    label.id = 'explorationHeading';
-    summary.append(label);
-    const total = linked ? state.exploration.total : cycles.length;
-    if (Number.isFinite(total)) summary.append(element('span', 'exploration-note', message('explorationRecordsNote', { count: total })));
-    const arrow = icon('chevron-right'); arrow.classList.add('exploration-chevron');
-    summary.append(arrow);
-    disclosure.setAttribute('aria-labelledby', label.id);
-    const content = element('div', 'exploration-list');
-    if (linked && state.exploration.loading) content.append(element('p', 'exploration-message', message('explorationLoading')));
-    else if (linked && state.exploration.failed) {
-      content.append(element('p', 'exploration-message status-failed', message('explorationLoadFailed')));
-      const retry = element('button', 'text-button exploration-retry', message('explorationRetry'));
-      retry.type = 'button';
-      retry.addEventListener('click', () => loadLinkedExploration(true));
-      content.append(retry);
-    } else if (linked && !state.exploration.loaded) content.append(element('p', 'exploration-message', message('explorationLoadHint')));
-    else if (!cycles.length) content.append(element('p', 'exploration-message', message('explorationEmpty')));
-    else for (const cycle of cycles) content.append(historyRow(cycle, true));
-    disclosure.append(summary, content);
-    if (linked) disclosure.addEventListener('toggle', () => { if (disclosure.open && !state.exploration.loading && !state.exploration.loaded && !state.exploration.failed) loadLinkedExploration(); });
-    section.append(disclosure);
-    if (linked && disclosure.open && !state.exploration.loaded && !state.exploration.loading && !state.exploration.failed) loadLinkedExploration();
-  }
   function renderHistory() {
     const history = clear($('historyList'));
     const groups = historyGroups(state.data, state.currentCycle);
     const older = groups.main;
     older.sort((a, b) => Number(a.numbering === 'legacy') - Number(b.numbering === 'legacy'));
-    const visible = state.older ? older : older.slice(0, DEFAULT_HISTORY_LIMIT);
-    $('historyNote').textContent = message(state.data.cycleNumbering?.mode === 'persistent' ? (state.data.cycleNumbering.hasLegacy ? 'mixedHistoryNote' : 'persistentHistoryNote') : state.data.cycleNumbering?.mode === 'unavailable' ? 'numberingUnavailable' : 'historyNote');
+    const visible = older;
+    $('historyNote').textContent = message(state.data.cycleNumbering?.mode === 'persistent' ? (state.data.cycleNumbering.hasLegacy || state.data.cycleNumbering.hasUnsequenced ? 'mixedHistoryNote' : 'persistentHistoryNote') : state.data.cycleNumbering?.mode === 'unavailable' ? 'numberingUnavailable' : 'historyNote');
     let group = null;
     for (const cycle of visible) {
       const nextGroup = cycle.numbering === 'legacy' ? 'legacy' : 'persistent';
@@ -669,11 +532,8 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
       group = nextGroup;
       history.append(historyRow(cycle));
     }
-    $('olderButton').hidden = older.length <= DEFAULT_HISTORY_LIMIT;
-    $('olderButton').textContent = state.older ? message('fewer') : message('older', { count: older.length - DEFAULT_HISTORY_LIMIT });
     document.querySelector('.history-section').hidden = !older.length;
     document.querySelector('.journal-layout').classList.toggle('no-history', !older.length);
-    renderExplorationHistory(groups.exploration);
   }
   function aggregate(cycles) {
     const result = { inputTokens: null, outputTokens: null, totalTokens: null, known: 0, count: cycles.length, partial: false };
@@ -685,13 +545,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
     result.partial = result.known < cycles.length || cycles.some((cycle) => cycle.usage?.status === 'partial');
     return result;
   }
-  function icon(name) {
-    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    for (const [key, value] of Object.entries({ viewBox: '0 0 24 24', class: 'ui-icon', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.7', 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'aria-hidden': 'true', focusable: 'false' })) svg.setAttribute(key, value);
-    // Only trusted, pinned library geometry is parsed here; all runtime content uses textContent.
-    svg.innerHTML = ICONS[name] || ICONS['file-text'];
-    return svg;
-  }
+  function icon(name) { return window.DashboardIcons.icon(name); }
   function iconLabel(node, name, text) {
     node.replaceChildren(icon(name), element('span', '', text));
     return node;
@@ -701,7 +555,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
     for (const [label, value] of entries) list.append(element('dt', '', label), element('dd', '', !value || value === 'unknown' ? message('unknown') : value));
     return list;
   }
-  function languageLabel(value) { return value === 'zh-CN' || value === 'zh' ? '简体中文' : value === 'en' ? 'English' : value || message('unknown'); }
+  function languageLabel(value) { return value === 'zh-CN' || value === 'zh' ? message('languageChinese') : value === 'en' ? message('languageEnglish') : value || message('unknown'); }
   function actionMessage(key, values = {}, error = false) {
     const node = $('actionStatus');
     node.hidden = false;
@@ -722,8 +576,8 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
     iconLabel($('startButton'), 'play', message(action === 'start' ? 'starting' : 'start'));
     iconLabel($('stopButton'), 'square', message(action === 'stop' ? 'stopping' : 'stop'));
     $('startButton').title = $('stopButton').title = readOnly() ? message('readOnly') : unavailable ? message('statusUnavailable') : '';
-    $('startButton').hidden = scope.center;
-    $('stopButton').hidden = scope.center;
+    $('startButton').hidden = scope.center || readOnly();
+    $('stopButton').hidden = scope.center || readOnly();
     $('refreshButton').disabled = Boolean(state.refreshPending || state.action);
     $('modeNote').textContent = data ? message(scope.center ? centerModeKey() : readOnly() ? 'preview' : 'live') : '';
     $('autoRefresh').disabled = Boolean(data && readOnly() && !scope.center);
@@ -741,7 +595,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
     const displayedState = runtimeStateValue();
     const unavailable = !scope.center && (state.statusFailed || runtime.available === false);
     const node = $('runtimeState');
-    node.textContent = runtimeStatusLabel(displayedState);
+    node.textContent = readOnly() && state.data?.status === null ? message('historicalRecord') : runtimeStatusLabel(displayedState);
     if (node.dataset) node.dataset.state = unavailable ? 'unavailable' : displayedState;
   }
   function renderCenterLiveState() {
@@ -876,8 +730,8 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
   }
   function renderProductMedia(media) {
     if (!media?.productId) return null;
-    const section = element('section', 'sidebar-block product-media');
-    section.append(element('h2', '', message('productScreenshot')));
+    const section = readOnly() ? bindDisclosure(element('details', 'sidebar-block product-media'), 'product-media') : element('section', 'sidebar-block product-media');
+    section.append(element(readOnly() ? 'summary' : 'h2', '', message('productScreenshot')));
     const capture = media.screenshot || {};
     const success = capture.latestSuccess;
     const variants = (success?.variants || []).filter((item) => mediaURL(item.href, media.productId));
@@ -930,7 +784,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
     const sidebar = clear($('projectSidebar'));
     const data = state.data;
     const overview = element('section', 'sidebar-block project-overview');
-    const name = element('h1', '', data.project?.name || message('noProject')); name.id = 'projectName';
+    const name = element('h1', '', data.project?.displayName || data.project?.name || message('noProject')); name.id = 'projectName';
     const description = element('p', 'project-description', clean(data.project?.description)); description.id = 'projectDescription'; description.title = description.textContent;
     const latest = state.currentCycle;
     const date = element('p', 'sidebar-note', latest?.active ? message('currentRun') : latest ? message('latestRun', { date: formatDate(latest.startedAt) }) : message(readOnly() ? 'archived' : 'ready')); date.id = 'runHeading';
@@ -955,7 +809,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
       const list = element('ul', 'artifact-list');
       for (const artifact of visibleArtifacts) {
         const item = element('li');
-        const label = artifact.kind === 'preview' ? message(artifact.available === false ? 'previewName' : 'productPreview') : artifact.path?.split(/[\\/]/).pop()?.toUpperCase() === 'DELIVERY.MD' ? message('deliveryDocument') : String(artifact.label || artifact.path || '').split(/[\\/]/).pop();
+        const label = artifact.displayLabel || (artifact.kind === 'preview' ? message(artifact.available === false ? 'previewName' : 'productPreview') : artifact.path?.split(/[\\/]/).pop()?.toUpperCase() === 'DELIVERY.MD' ? message('deliveryDocument') : String(artifact.label || artifact.path || '').split(/[\\/]/).pop());
         if (artifact.available === false || (!artifact.path && !artifact.url)) {
           item.append(element('span', '', `${label} · ${unavailableArtifact(artifact)}`));
         } else {
@@ -988,7 +842,8 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
       reasoning: recordedCycle?.observedConfig?.reasoning || 'unknown',
     } : data.runtime || {};
     const productLanguage = scope.center ? (data.languageState?.productLanguageStatus === 'unknown' ? null : data.languageState?.productLanguage) : config.language || data.language;
-    runtime.append(runtimeRows([[message('engine'), config.engine], [message('model'), config.model], [message('reasoning'), config.reasoning === 'unknown' ? message('unknown') : config.reasoning], [message('language'), languageLabel(productLanguage)], [message('recordedUsage'), usage]]));
+    const effort = ['low', 'medium', 'high', 'xhigh'].includes(config.reasoning) ? message(`effort_${config.reasoning}`) : config.reasoning;
+    runtime.append(runtimeRows([[message('engine'), config.engine], [message('model'), config.model], [message('reasoning'), effort === 'unknown' ? message('unknown') : effort], [message('language'), languageLabel(productLanguage)], [message('recordedUsage'), usage]]));
     const details = bindDisclosure(element('details', 'runtime-disclosure'), 'runtime');
     details.append(element('summary', '', message('moreRuntime')), runtimeRows([[message('state'), runtimeLabel()], [message('source'), data.sourceName]]));
     details.append(element('p', 'sidebar-note', message(config.configSource === 'session_context' ? 'observedSession' : 'unconfirmedSession')));
@@ -1005,7 +860,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
     document.querySelectorAll('[data-i18n-placeholder]').forEach((node) => { node.placeholder = message(node.dataset.i18nPlaceholder); });
     $('centerContextNav').hidden = !scope.center;
     if (scope.center) document.querySelector('.brand').href = '/center';
-    for (const [id, name] of [['tab-work', 'notebook-pen'], ['tab-usage', 'chart-no-axes-column'], ['tab-logs', 'terminal'], ['settingsButton', 'sliders-horizontal']]) iconLabel($(id), name, $(id).textContent);
+    for (const [id, name] of [['tab-work', 'notebook-pen'], ['tab-usage', 'chart-no-axes-column'], ['tab-logs', 'terminal'], ['settingsButton', 'settings']]) iconLabel($(id), name, $(id).textContent);
     $('refreshButton').replaceChildren(icon('refresh-cw'));
     $('closeSettingsButton').replaceChildren(icon('x'));
     $('refreshButton').title = message('refresh');
@@ -1015,6 +870,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
     document.querySelector('.tabs').setAttribute('aria-label', message('work'));
     document.querySelector('.table-scroll').setAttribute('aria-label', message('usageDetail'));
     $('projectSidebar').setAttribute('aria-label', message('artifacts'));
+    window.DashboardIcons.hydrate();
   }
   function rememberFocus() {
     const active = document.activeElement;
@@ -1160,10 +1016,19 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
     select.disabled = false;
     $('refreshLogButton').disabled = Boolean(state.logPending);
   }
+  function logContextKey() {
+    const id = state.selectedLog;
+    if (!scope.center) return JSON.stringify([id]);
+    const cycle = logCycles().find((item) => item.id === id);
+    return JSON.stringify([state.data?.entryId, state.data?.sourceId, state.data?.sourceRevision, id,
+      id === 'runtime' ? state.data?.runtimeLogUrl : cycle?.logUrl]);
+  }
   async function loadLog() {
+    const key = logContextKey();
     if (state.logPending) {
-      if (state.logPending.id !== state.selectedLog) {
+      if (state.logPending.key !== key) {
         ++state.logRequest;
+        if (state.logLoadedKey !== key) { state.logText = ''; $('logText').textContent = ''; $('copyLogButton').disabled = true; }
         await state.logPending.promise;
         return loadLog();
       }
@@ -1171,8 +1036,8 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
     }
     const request = ++state.logRequest;
     const id = state.selectedLog;
-    const previous = state.logLoadedId === id ? state.logText : '';
-    if (state.logLoadedId !== id) $('logText').textContent = '';
+    const previous = state.logLoadedKey === key ? state.logText : '';
+    if (state.logLoadedKey !== key) $('logText').textContent = '';
     state.logText = '';
     $('copyLogButton').disabled = true;
     $('copyLogButton').textContent = message('copy');
@@ -1182,27 +1047,27 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
       if (scope.center) {
         const cycle = logCycles().find((item) => item.id === id);
         const value = await fetchScopedText(id === 'runtime' ? state.data.runtimeLogUrl : cycle?.logUrl, 15000);
-        if (request !== state.logRequest) return;
-        state.logText = value; state.logLoadedId = id; $('logText').textContent = value;
+        if (request !== state.logRequest || key !== logContextKey()) return;
+        state.logText = value; state.logLoadedKey = key; $('logText').textContent = value;
         $('logStatus').textContent = value ? message('logAvailable', { count: number(value.length) }) : message('logEmpty');
         $('copyLogButton').disabled = !value;
         return;
       }
       const result = await fetchJSON(id === 'runtime' ? '/api/log-tail?lines=180' : `/api/journal/log?id=${encodeURIComponent(id)}`, {}, 15000);
-      if (request !== state.logRequest) return;
+      if (request !== state.logRequest || key !== logContextKey()) return;
       if (id !== 'runtime' && !result.available) { $('logText').textContent = ''; $('logStatus').textContent = message('noLog'); return; }
       if (id === 'runtime' && typeof result.logTail !== 'string') throw new Error('Invalid runtime log');
       state.logText = String(id === 'runtime' ? result.logTail : result.text || '');
-      state.logLoadedId = id;
+      state.logLoadedKey = key;
       $('logText').textContent = state.logText;
       $('logStatus').textContent = result.truncated ? message('logTruncated') : state.logText ? message('logAvailable', { count: number(state.logText.length) }) : message('logEmpty');
       $('copyLogButton').disabled = !state.logText;
     } catch (_) {
-      if (request !== state.logRequest) return;
+      if (request !== state.logRequest || key !== logContextKey()) return;
       state.logText = previous;
       $('logStatus').textContent = message('logFailed');
-    } finally { state.logPending = null; $('refreshLogButton').disabled = false; } })();
-    state.logPending = { id, promise };
+    } finally { if (state.logPending?.request === request) { state.logPending = null; $('refreshLogButton').disabled = false; } } })();
+    state.logPending = { key, request, promise };
     return promise;
   }
   function selectTab(tab, focus = false) {
@@ -1286,8 +1151,6 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
       if (!data.ok || !Array.isArray(data.cycles)) throw new Error('invalid journal response');
       const signature = JSON.stringify({ ...data, generatedAt: undefined, status: data.status ? { ...data.status, timestamp: undefined, elapsedMs: undefined } : undefined });
       if (state.data && Number.isFinite(Date.parse(data.generatedAt)) && Date.parse(data.generatedAt) < Date.parse(state.data.generatedAt)) throw new Error('Out-of-order journal snapshot');
-      const nextExploration = explorationScope(data);
-      if (state.exploration.key !== (nextExploration?.key || '')) resetExploration(nextExploration);
       let nextScopedUsage = null;
       if (scope.center) {
         if (!$('usageDate').value) {
@@ -1309,7 +1172,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
         state.language = scope.center && ['en', 'zh-CN'].includes(state.centerSummary?.language) ? state.centerSummary.language : state.languageState?.language || (data.language === 'zh-CN' ? 'zh-CN' : 'en');
       }
       if (!state.autoChanged) $('autoRefresh').checked = scope.center || !readOnly();
-      $('connectionError').hidden = !state.statusFailed;
+      $('connectionError').hidden = !state.statusFailed || (readOnly() && data.status === null);
       $('connectionError').textContent = message('runtimeUnavailable');
       $('loadingState').hidden = true;
       if (signature !== state.signature) {
@@ -1388,7 +1251,6 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
   $('stopButton').addEventListener('click', () => runAction('stop'));
   $('autoRefresh').addEventListener('change', () => { state.autoChanged = true; scheduleRefresh(); });
   document.addEventListener('visibilitychange', () => { if (!document.hidden && $('autoRefresh').checked && (scope.center || !readOnly()) && !state.action) refresh(); else scheduleRefresh(); });
-  $('olderButton').addEventListener('click', () => { state.older = !state.older; renderHistory(); });
   $('usagePeriod').addEventListener('change', () => { renderUsage(); refreshScopedUsage(); });
   $('usageDate').addEventListener('change', () => { renderUsage(); refreshScopedUsage(); });
   $('logSelect').addEventListener('change', () => { state.selectedLog = $('logSelect').value; loadLog(); });

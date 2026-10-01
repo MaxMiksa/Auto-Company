@@ -1,0 +1,12 @@
+# Local secrets and generated output
+.env
+.env.*
+dist/
+build/
+.auto-company/
+.venv/
+__pycache__/
+*.pyc
+node_modules/
+test-results/
+playwright-report/

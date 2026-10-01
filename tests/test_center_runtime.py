@@ -1182,7 +1182,7 @@ class MediaIntegrationTests(unittest.TestCase):
             copy_control_entrypoints(root)
             shutil.copytree(ROOT / "i18n", root / "i18n")
             shutil.copytree(ROOT / "memories", root / "memories")
-            shutil.copytree(ROOT / "projects/scopefence", root / "projects/scopefence")
+            shutil.copytree(ROOT / "examples/scopefence", root / "projects/scopefence")
             shutil.copy2(root / "memories/consensus.template.md", root / "memories/consensus.md")
             shutil.copy2(ROOT / ".gitignore", root / ".gitignore")
             (root / "PROMPT.md").write_text("Offline media lifecycle fixture; not product acceptance.\n")

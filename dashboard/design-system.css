@@ -1,0 +1,25 @@
+/* Shared Dashboard typography. Sizes are rem-based; branding is independent. */
+:root {
+  --font-ui: Inter, "Segoe UI", "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+  --font-code: "Cascadia Code", Consolas, monospace;
+  --text-caption: .875rem;
+  --text-body: 1rem;
+  --text-title: 1.25rem;
+  --text-section: 1.75rem;
+  --text-page: 2.25rem;
+  --weight-regular: 400;
+  --weight-medium: 600;
+  --weight-bold: 700;
+  --line-body: 1.6;
+  --line-heading: 1.3;
+}
+body { font-size: var(--text-body); line-height: var(--line-body); }
+button, input, select, textarea { font: inherit; }
+small { font-size: var(--text-caption); }
+h1 { font-size: var(--text-page); }
+h2 { font-size: var(--text-section); }
+h3 { font-size: var(--text-title); }
+h4, h5, h6 { font-size: var(--text-body); }
+h1, h2, h3, h4, h5, h6 { line-height: var(--line-heading); }
+.ui-icon { width: 20px; height: 20px; flex: 0 0 20px; vertical-align: -.15em; }
+[data-icon] { display: inline-flex; align-items: center; justify-content: center; }

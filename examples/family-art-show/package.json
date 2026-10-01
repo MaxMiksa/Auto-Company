@@ -1,0 +1,13 @@
+{
+  "name": "family-art-show",
+  "version": "1.0.0",
+  "private": true,
+  "description": "孩子主持的家庭作品小展会，本地浏览器产品",
+  "scripts": {
+    "start": "node server.mjs",
+    "test": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0"
+  }
+}

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="100mm" height="60mm" viewBox="0 0 100 60">
+  <circle id="parent-point-a" data-role="point" cx="20" cy="25" r="2" fill="black"/>
+  <circle id="parent-point-b" data-role="point" cx="40" cy="25" r="2" fill="black"/>
+  <g id="parent-label" data-role="label" data-associated="parent-point-a" data-content="父验收合成标签，不代表盲文转写">
+    <rect x="23" y="23" width="8" height="4" fill="black"/>
+  </g>
+</svg>

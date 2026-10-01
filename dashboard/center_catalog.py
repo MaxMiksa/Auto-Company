@@ -408,12 +408,13 @@ class CenterCatalog:
         entry, source, reader = self.resolve_source(entry_id, query.get('sourceId'))
         data = reader.snapshot()
         exploration = query.get('section') == 'exploration'
-        if entry['kind'] == 'product':
-            items = [row for row in data['cycles'] if (row.get('identityKind') == 'exploration') == exploration]
+        if entry['kind'] == 'product' and exploration:
+            items = [row for row in data['cycles'] if row.get('identityKind') == 'exploration']
         else:
             items = data['cycles']
         total = len(items)
-        cursor_scope = digest([entry_id, source['sourceId'], exploration, [(row['id'], row.get('startedAt'), row.get('status')) for row in items]])
+        cursor_scope = digest([entry_id, source['sourceId'], source['sourceRevision'], exploration,
+                               [(row['id'], row.get('startedAt'), row.get('status')) for row in items]])
         before = query.get('before')
         if before:
             try:

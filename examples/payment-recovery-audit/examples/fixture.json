@@ -1,0 +1,40 @@
+{
+  "currency": "USD",
+  "invoices": [
+    {
+      "id": "inv_failed_1",
+      "status": "open",
+      "amount": 12000,
+      "failed_at": "2026-09-01T00:00:00Z",
+      "failure_code": "card_declined",
+      "recovery_status": "not_attempted"
+    },
+    {
+      "id": "inv_recovered_1",
+      "status": "paid",
+      "amount": 5000,
+      "failed_at": "2026-09-01T00:00:00Z",
+      "recovery_status": "recovered",
+      "payments": [
+        {
+          "id": "pay-1",
+          "amount": 5000,
+          "currency": "USD",
+          "occurred_at": "2026-09-02T00:00:00Z"
+        }
+      ],
+      "attribution": {
+        "status": "attributed",
+        "amount": 5000,
+        "source": "merchant_email",
+        "merchant_action_id": "email-1",
+        "payment_id": "pay-1",
+        "baseline_id": "baseline-1",
+        "evidence_id": "evidence-1",
+        "action_at": "2026-09-01T12:00:00Z",
+        "window_start": "2026-09-01T00:00:00Z",
+        "window_end": "2026-09-30T23:59:59Z"
+      }
+    }
+  ]
+}

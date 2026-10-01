@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="交错岛：两人一起创造、交换与取舍的原创纸面叙事体验。">
+  <title>交错岛 · 把你的世界交给另一个人</title>
+  <link rel="icon" href="auto-company-icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+  <script src="story.js" defer></script>
+  <script src="engine.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <header class="masthead">
+    <a class="brand" href="index.html" aria-label="交错岛首页"><img src="auto-company-icon.svg" alt="" width="32" height="32"><span>交错岛<small>双人叙事手册 / 第一册</small></span></a>
+    <nav aria-label="体验工具">
+      <a href="printable.html" target="_blank" data-testid="paper-pack">纸面体验包 ↗</a>
+      <button type="button" data-testid="export-json" id="backup">保存进度</button>
+      <label class="file-button" for="import-file">导入进度<input id="import-file" data-testid="import-json" type="file" accept=".json,application/json"></label>
+    </nav>
+  </header>
+  <div class="workspace">
+    <aside class="margin-note" aria-label="旅程进度">
+      <span class="edition">两个人 / 一座岛</span>
+      <ol id="progress"><li>分别创造</li><li>进入对方世界</li><li>共同取舍</li></ol>
+      <div class="tokens" aria-label="两枚修复筹码"><span>壹</span><span>贰</span></div>
+      <p>今晚的修复能力<br>只有两枚筹码。</p>
+      <p class="aside-foot">不需要讲真实往事。<br>任何时候都可以停。</p>
+    </aside>
+    <div class="page">
+      <div id="notice" role="alert" data-testid="notice" hidden></div>
+      <main id="experience" data-stage="intro" tabindex="-1"><p>正在展开手册……</p></main>
+      <noscript><p class="notice">浏览器体验需要开启 JavaScript。也可以打开<a href="printable.html">完整纸面体验包</a>，用纸笔完成全部流程。</p></noscript>
+      <footer class="page-footer"><span id="save-status" role="status">作品只保存在这台设备上。</span><div><button type="button" id="pause" data-testid="pause">暂停 / 交还自己</button><button type="button" id="stop" data-testid="stop">停在这里</button><button type="button" id="new-game" data-testid="new-game">另起一局</button></div></footer>
+    </div>
+  </div>
+  <dialog id="confirm-dialog" aria-labelledby="dialog-title"><form method="dialog"><h2 id="dialog-title"></h2><p id="dialog-copy"></p><div class="button-row"><button value="cancel">返回</button><button class="primary" id="dialog-confirm" value="confirm">确认</button></div></form></dialog>
+</body>
+</html>

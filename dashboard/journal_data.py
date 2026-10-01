@@ -363,11 +363,11 @@ class JournalSource:
             identity = None
         projection_available = True
         try:
-            projections = list_cycle_projections(self.root, limit=MAX_CYCLES)
+            projections = list_cycle_projections(self.root, limit=None)
             if self.scope:
                 allowed = self.scoped_cycle_ids()
                 if allowed is not None:
-                    projections = list_cycle_projections(self.root, product_id=self.scope.product_id or self.scope.exploration_id, limit=MAX_CYCLES)
+                    projections = list_cycle_projections(self.root, product_id=self.scope.product_id or self.scope.exploration_id, limit=None)
         except (OSError, ValueError, TypeError, KeyError):
             warnings.append("product_cycle_ledger_unavailable")
             projection_available = False
@@ -395,7 +395,7 @@ class JournalSource:
             cycle["runCycleNumber"] = cycle["number"]
             cycle["numbering"] = "persistent" if row else "legacy" if projection_available else "unavailable"
             if row:
-                cycle.update(number=row["productCycleNumber"], productCycleNumber=row["productCycleNumber"], runCycleNumber=row["runCycleNumber"],
+                cycle.update(number=row["productCycleNumber"], sequenceNumber=row["sequenceNumber"], productCycleNumber=row["productCycleNumber"], runCycleNumber=row["runCycleNumber"],
                              stableProductId=row.get("productId"), identityKind=row["kind"],
                              linkedProductId=row.get("linkedProductId"), identityState=row["state"])
         cycles.sort(key=lambda cycle: (datetime.fromisoformat(cycle.get("startedAt") or cycle["reservedAt"]).timestamp() if cycle.get("startedAt") or cycle.get("reservedAt") else 0, cycle["id"]), reverse=True)
@@ -403,6 +403,7 @@ class JournalSource:
             warnings.append("product_cycle_history_truncated")
         return {"mode": "persistent" if identity else "legacy" if projection_available else "unavailable", "productId": project["stableId"],
                 "hasLegacy": any(cycle["numbering"] == "legacy" for cycle in cycles),
+                "hasUnsequenced": any(cycle["numbering"] == "persistent" and cycle.get("sequenceNumber") is None for cycle in cycles),
                 "total": projections.get("total", len(rows))}
 
     def cycle_context(self, identity: str) -> dict[str, Any]:
@@ -628,7 +629,8 @@ class JournalSource:
         if runtime["currentCycleId"]:
             current = next((cycle for cycle in cycles if cycle["id"] == runtime["currentCycleId"]), None)
             if current:
-                runtime["currentCycleNumber"] = current["number"]
+                runtime["currentCycleNumber"] = current.get("sequenceNumber") or current["number"]
+                runtime["currentProductCycleNumber"] = current["number"]
         # On-demand history uses the same identity and artifact checks as the
         # initial detail window, before limited rows receive placeholder data.
         for index, cycle in enumerate(cycles):

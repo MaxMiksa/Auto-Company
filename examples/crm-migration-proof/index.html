@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="在本地浏览器核验 CRM 迁移，整理可复核的验收证据。">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'">
+  <title>迁移验收工作台 · CRM 证据核验</title>
+  <link rel="icon" href="auto-company-icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+  <script type="module" src="app.js"></script>
+</head>
+<body>
+  <header class="masthead"><a class="brand" href="./"><img src="auto-company-icon.svg" alt="" width="36" height="36"><span>迁移验收工作台<small>CRM 迁移 / 验收证据</small></span></a><span class="local-mark"><i></i> 本地处理 · 无账户</span></header>
+  <main>
+    <section class="intro"><div><p class="eyebrow">从“导入成功”到有据可查</p><h1>让每一条迁移，<br>都有验收依据。</h1><p class="lead">对齐源与目标，核验记录、金额和关联。<br>把异常与未证明的范围，一起交给复核者。</p></div><aside class="intro-note"><span class="note-number">01 / 03</span><h2>材料留在你的浏览器</h2><p>上传、粘贴、核验和导出均在本机完成。不会连接 CRM；刷新页面会清除工作区，请及时导出。</p><a href="docs/USAGE.md" target="_blank" rel="noopener">查看中文使用说明 ↗</a></aside></section>
+    <nav class="steps" aria-label="操作步骤"><a href="#input-section"><b>01</b> 导入与映射</a><a href="#scope-section"><b>02</b> 确认证据边界</a><a href="#report"><b>03</b> 核验与交接</a></nav>
+    <section class="workspace" id="input-section"><div class="section-heading"><div><p class="eyebrow">01 / 数据材料</p><h2>先对齐，再比较</h2></div><div class="samples"><span>合成样例</span><button id="demo-valid" class="quiet">合法迁移</button><button id="demo-broken" class="quiet">含异常</button><button id="demo-unknown" class="quiet">缺证据</button></div></div>
+      <label class="project-label">验收项目名称<input id="project-name" maxlength="120" placeholder="例如：客户 A · 联系人与交易迁移" value="未命名验收项目"></label>
+      <p class="help">支持 UTF-8 CSV，每表不超过 5 MB / 20,000 行。ID 保留前导零；金额逐条精确比较，不用总额代替核验。</p>
+      <div id="objects"></div><button id="add-object" class="outline">＋ 添加数据对象</button>
+      <details class="relations-section" open><summary>关联材料 <span>多对多关系、孤儿与错挂核验</span></summary><p class="help">关联 CSV 的端点须使用对应对象所选的对齐键。若目标使用新 ID，请先通过可靠映射还原为旧 ID，再导入关联 CSV；工作台不会猜测身份。</p><div id="relationships"></div><button id="add-relationship" class="outline">＋ 添加关联表</button></details>
+    </section>
+    <section id="scope-section" class="scope-panel"><div class="section-heading"><div><p class="eyebrow">02 / 证据边界</p><h2>只确认你有依据的内容</h2></div><span class="stamp">声明 ≠ 自动核实</span></div><p>任何缺证都会保留为“不可判定”。这些勾选记录你的声明，不证明 CRM 全系统迁移完整。</p><div class="scope-grid">
+      <label><input type="checkbox" name="complete"><span><b>所选对象的导出范围完整</b><small>已核对过滤条件、字段及记录范围。</small></span></label>
+      <label><input type="checkbox" name="identity"><span><b>对齐键和身份映射可信</b><small>一条源记录对应一条目标记录；重编号使用旧 ID。</small></span></label>
+      <label><input type="checkbox" name="rules"><span><b>已复核并批准下面的比较规则</b><small>文本去首尾空白；邮箱忽略大小写；日期统一格式；金额精确比较；自定义值映射仅按配置转换。</small></span></label>
+      <label><input type="checkbox" name="snapshot"><span><b>源与目标快照可比较</b><small>迁移范围及期间新增、更新已处理。</small></span></label>
+      <label><input type="checkbox" name="relationships" checked><span><b>本次验收包含关联</b><small>未提供关联材料时不可判定；取消勾选明确排除关联，不代表关联已通过。</small></span></label>
+    </div><label>范围、排除项与规则依据<textarea id="scope-note" rows="3" maxlength="4000" placeholder="请记录对象/导出时间、过滤条件、转换批准依据、活动与附件等未覆盖范围。"></textarea></label>
+    <div class="action-bar"><button id="run-audit" class="primary">生成验收证据 <span>↗</span></button><button id="clear-all" class="quiet danger">清空工作区</button><span id="working-state" role="status" aria-live="polite">请导入材料并配置映射</span></div><div id="error" class="error" role="alert" hidden></div></section>
+    <section id="report" class="report-section" aria-live="polite"><div class="empty-report"><span>03 / 验收与交接</span><h2>这里将呈现你的验收依据</h2><p>你会得到逐项检查、异常定位、未证明项与可下载的证据包。<br>没有材料或缺少声明时，工作台不会给出“通过”。</p></div></section>
+  </main><footer><span>迁移验收工作台 / 本地版 1.0</span><span>仅验收所给材料 · 交接前请人工复核</span></footer>
+</body>
+</html>

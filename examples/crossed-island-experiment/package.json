@@ -1,0 +1,13 @@
+{
+  "name": "crossed-island-experiment",
+  "version": "1.0.0",
+  "private": true,
+  "description": "本地双人叙事体验《交错岛》及浏览器检查",
+  "scripts": {
+    "start": "python -m http.server 8080 --bind 127.0.0.1",
+    "test:browser": "playwright test",
+    "test:engine": "node --test tests/engine.test.js"
+  },
+  "engines": { "node": ">=20" },
+  "devDependencies": { "@playwright/test": "1.63.0" }
+}

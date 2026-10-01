@@ -34,12 +34,15 @@ class CenterCatalogTests(unittest.TestCase):
         path.write_text(text, encoding='utf-8')
         return path
 
-    def cycle(self, project='projects/one', attempt='first', tokens=13):
+    def cycle(self, project='projects/one', attempt='first', tokens=13, created_project=None):
         (self.root / project).mkdir(parents=True, exist_ok=True)
         row = products.reserve_cycle(self.root, project, attempt, 1, 'fixture', 'no-model')
+        if created_project:
+            (self.root / created_project).mkdir(parents=True, exist_ok=True)
+            products.register_project(self.root, created_project, row['cycleId'])
         products.update_cycle(self.root, row['cycleId'], 'completed')
         record = {'schema_version': 1, 'kind': 'cycle_usage', 'cycle_id': row['cycleId'], 'cycle_number': 1,
-                  'project': project, 'started_at': '2026-09-26T01:00:00+00:00', 'ended_at': '2026-09-26T01:01:00+00:00',
+                  'project': project or None, 'started_at': '2026-09-26T01:00:00+00:00', 'ended_at': '2026-09-26T01:01:00+00:00',
                   'status': 'completed', 'usage': {'input_tokens': tokens - 1, 'output_tokens': 1, 'total_tokens': tokens}}
         path = self.root / 'logs/usage.jsonl'
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -329,6 +332,49 @@ class CenterCatalogTests(unittest.TestCase):
         self.cycle(attempt='third')
         with self.assertRaises(CenterError) as context:
             self.catalog.journal(item['entryId'], {'before': page['nextBefore']})
+        self.assertEqual(context.exception.code, 'CURSOR_EXPIRED')
+
+    def test_default_journal_includes_linked_exploration_and_preserves_original_records(self):
+        explorations = [self.cycle('', 'explore-' + str(index),
+                                  created_project='projects/created' if index == 2 else None)
+                        for index in range(3)]
+        product_cycles = [self.cycle('projects/created', 'product-' + str(index)) for index in range(2)]
+        ledger = self.root / 'logs/usage.jsonl'
+        records = [json.loads(line) for line in ledger.read_text().splitlines()]
+        for index, record in enumerate(records):
+            record['started_at'] = f'2026-09-26T01:{index:02d}:00+00:00'
+        ledger.write_text(''.join(json.dumps(record) + '\n' for record in records))
+        before = self.hashes()
+        items = self.import_root()
+        item = next(row for row in items if self.catalog.get_entry(row['entryId'])['kind'] == 'product')
+        first = self.catalog.journal(item['entryId'], {'limit': 2})
+        second = self.catalog.journal(item['entryId'], {'limit': 2, 'before': first['nextBefore']})
+        third = self.catalog.journal(item['entryId'], {'limit': 2, 'before': second['nextBefore']})
+        rows = first['cycles'] + second['cycles'] + third['cycles']
+        self.assertEqual([row['id'] for row in rows], [row['cycleId'] for row in reversed(explorations + product_cycles)])
+        self.assertEqual([row['sequenceNumber'] for row in rows], [5, 4, 3, 2, 1])
+        self.assertEqual([row['number'] for row in rows], [2, 1, 3, 2, 1])
+        self.assertEqual(first['total'], 5)
+        self.assertIsNone(third['nextBefore'])
+        selected = self.catalog.journal(item['entryId'], {'section': 'exploration', 'limit': 100})
+        self.assertEqual([row['id'] for row in selected['cycles']], [row['cycleId'] for row in reversed(explorations)])
+        self.assertEqual(selected['total'], 3)
+        with self.assertRaises(CenterError) as context:
+            self.catalog.journal(item['entryId'], {'section': 'exploration', 'before': first['nextBefore']})
+        self.assertEqual(context.exception.code, 'CURSOR_EXPIRED')
+        self.assertEqual(self.hashes(), before)
+
+    def test_cycle_cursor_rejects_a_revised_source_with_unchanged_history(self):
+        self.cycle(attempt='first')
+        self.cycle(attempt='second')
+        item, = self.import_root()
+        first = self.catalog.journal(item['entryId'], {'limit': 1})
+        with self.store.transaction() as tx:
+            source = tx.get('sources', item['sourceId'])
+            source['sourceRevision'] += 1
+            tx.put('sources', item['sourceId'], source)
+        with self.assertRaises(CenterError) as context:
+            self.catalog.journal(item['entryId'], {'before': first['nextBefore']})
         self.assertEqual(context.exception.code, 'CURSOR_EXPIRED')
 
     def old_cycle(self):
