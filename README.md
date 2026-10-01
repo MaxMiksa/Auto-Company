@@ -93,6 +93,8 @@ The [example catalog](examples/README.md) contains 22 independently runnable pub
 
 The examples cover professional data review, image delivery, shared meals, travel pacing and family creation. Published copies preserve the original product direction while refining components and repairing real interactions; original reports and unsuccessful conclusions are not rewritten for the showcase.
 
+Frontend work now uses a task-led design skill adapted from Anthropic. In a [three-product prompt comparison](presentation/frontend-study/README.md), the retained instructions won two pairs and tied one, with all 12 shared desktop/mobile scenarios passing.
+
 ## Where To Start (By Platform)
 
 - Windows users: start from [Windows (WSL) Quick Start](#windows-wsl-quick-start), then read the [Windows + WSL Setup Guide](i18n/en/docs/windows-setup.md)
@@ -125,7 +127,7 @@ This is not "you are a generic developer". It is "you are DHH" style role prompt
 | | CTO | Werner Vogels | Design for failure, API-first architecture |
 | | Inversion | Charlie Munger | Inversion, pre-mortems, misjudgment checklist |
 | **Product** | Product Design | Don Norman | Affordance, mental models, human-centered design |
-| | UI Design | Matias Duarte | Material metaphor, typography-first design |
+| | UI Design | Matias Duarte | Task-led layouts, typography and consistent components |
 | | Interaction Design | Alan Cooper | Goal-directed design, persona-driven decisions |
 | **Engineering** | Full-Stack | DHH | Convention over configuration, majestic monolith |
 | | QA | James Bach | Exploratory testing, testing is not checking |

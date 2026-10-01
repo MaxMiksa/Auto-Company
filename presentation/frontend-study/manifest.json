@@ -1,0 +1,140 @@
+{
+  "name": "frontend-task-first-v1",
+  "comparison": "Three fixed existing products; one independent generation per arm and product. Not a blinded or statistical study.",
+  "baseCommit": "8becd542a3c76d286b21b27e15b99d71a4f2d0ca",
+  "frozenCandidateFiles": {
+    "PROMPT.md": "50f1b1184162013e0900f7210b91b186db12598935e53df0f7711de99965d99b",
+    "i18n/en/PROMPT.md": "8ed2c616dae568d889cd11f41f60f63dc75050774a2f43e5b964df86fee97be7",
+    ".claude/agents/ui-duarte.md": "7124e1103f0bbe0ff1895712790813f1ec224da67ad5a7ee768d254c0f8d6062",
+    "i18n/en/.claude/agents/ui-duarte.md": "8d476e76a6f795174babb246b6be630458d80dfa20769f9b3f99d7298b0399a5",
+    ".claude/skills/team/SKILL.md": "f963c2308cbe42b79e360a50f88b1c60f58c6829e27afff25b344ec35420af6c",
+    ".claude/skills/frontend-design.md": "1e99ff3bedf71e45f49b86d084d667c9e43149d4b51096ddf45def4d4023eae2",
+    ".claude/skills/frontend-design.LICENSE.txt": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594",
+    "i18n/source-hashes.json": "594e6c493d19fd8d7c97a824f1eb5174f681fa40dbd4bc07c9dcdb7b4aa01570"
+  },
+  "publishedCandidateFiles": {
+    "PROMPT.md": "50f1b1184162013e0900f7210b91b186db12598935e53df0f7711de99965d99b",
+    "i18n/en/PROMPT.md": "8ed2c616dae568d889cd11f41f60f63dc75050774a2f43e5b964df86fee97be7",
+    ".claude/agents/ui-duarte.md": "7124e1103f0bbe0ff1895712790813f1ec224da67ad5a7ee768d254c0f8d6062",
+    "i18n/en/.claude/agents/ui-duarte.md": "8d476e76a6f795174babb246b6be630458d80dfa20769f9b3f99d7298b0399a5",
+    ".claude/skills/team/SKILL.md": "f963c2308cbe42b79e360a50f88b1c60f58c6829e27afff25b344ec35420af6c",
+    ".claude/skills/frontend-design.md": "1e99ff3bedf71e45f49b86d084d667c9e43149d4b51096ddf45def4d4023eae2",
+    ".claude/skills/frontend-design.LICENSE.txt": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594",
+    "i18n/source-hashes.json": "960f12950786d0b3963eaefa273b1b94daa2d4cf4ea828ed2b7b0e2f587c5fc7"
+  },
+  "publicationNormalization": "Only i18n/source-hashes.json line endings changed from CRLF to LF; all prompt/role/skill bytes equal the frozen candidate.",
+  "actualModel": "gpt-6.1-sol",
+  "actualReasoningEffort": "high",
+  "actualSessions": 6,
+  "modelRunsCompleted": 6,
+  "uniformBrowserScenariosPassed": 12,
+  "viewports": {
+    "desktop": [
+      1440,
+      1000
+    ],
+    "mobile": [
+      390,
+      844
+    ]
+  },
+  "sourceProductsUnchangedDuringAcceptance": true,
+  "screenshots": [
+    {
+      "case": "everyday",
+      "arm": "A",
+      "viewport": "desktop",
+      "state": "03-plan-result",
+      "path": "presentation/frontend-study/everyday-A-desktop.png",
+      "sha256": "590a737cd4fa1afe5783c479bacd451fd1d9bb5f0c1797d3cabae60156e7726c"
+    },
+    {
+      "case": "everyday",
+      "arm": "A",
+      "viewport": "mobile",
+      "state": "03-plan-result",
+      "path": "presentation/frontend-study/everyday-A-mobile.png",
+      "sha256": "154be1151010e7bc90bbbc1d07d3f7cfdd1154c2d6758b5086d1bb30740c5b28"
+    },
+    {
+      "case": "everyday",
+      "arm": "B",
+      "viewport": "desktop",
+      "state": "03-plan-result",
+      "path": "presentation/frontend-study/everyday-B-desktop.png",
+      "sha256": "91d44a26016c40f1d7ed1b14a04cd985d95687cfbcd2cdf93b7c6024bcaaea04"
+    },
+    {
+      "case": "everyday",
+      "arm": "B",
+      "viewport": "mobile",
+      "state": "03-plan-result",
+      "path": "presentation/frontend-study/everyday-B-mobile.png",
+      "sha256": "2aa576fcf124c0d083a7181eb083f186d92c5d8708c606b6b8526176368b6e13"
+    },
+    {
+      "case": "professional",
+      "arm": "A",
+      "viewport": "desktop",
+      "state": "03-reviewed-data",
+      "path": "presentation/frontend-study/professional-A-desktop.png",
+      "sha256": "614a4f06190aac67e0fea8a989aa346b985d5da19e780432e526993384f849fa"
+    },
+    {
+      "case": "professional",
+      "arm": "A",
+      "viewport": "mobile",
+      "state": "03-reviewed-data",
+      "path": "presentation/frontend-study/professional-A-mobile.png",
+      "sha256": "898f782e74190910b7433091a8f1510f1c3a525d688c24186adf1706703bfb0c"
+    },
+    {
+      "case": "professional",
+      "arm": "B",
+      "viewport": "desktop",
+      "state": "03-reviewed-data",
+      "path": "presentation/frontend-study/professional-B-desktop.png",
+      "sha256": "211a77b4c0185a649cef0a02c53b985dde94c0b4eba242672b3905fd1a2c438d"
+    },
+    {
+      "case": "professional",
+      "arm": "B",
+      "viewport": "mobile",
+      "state": "03-reviewed-data",
+      "path": "presentation/frontend-study/professional-B-mobile.png",
+      "sha256": "47b5ee3f28009d1efb50a5f8c9c0f99f373c494dd700f0be471d96b6dd6b8a1a"
+    },
+    {
+      "case": "experience",
+      "arm": "A",
+      "viewport": "desktop",
+      "state": "03-paused-host",
+      "path": "presentation/frontend-study/experience-A-desktop.png",
+      "sha256": "89286cc4ca321d3202a02c9ede62f26d3450700027f5af40c88eeb27054f87d1"
+    },
+    {
+      "case": "experience",
+      "arm": "A",
+      "viewport": "mobile",
+      "state": "03-paused-host",
+      "path": "presentation/frontend-study/experience-A-mobile.png",
+      "sha256": "bde4c56e0e3f319614a341e0d95267db5c07679978a80e5fe29553a0bf6bd90e"
+    },
+    {
+      "case": "experience",
+      "arm": "B",
+      "viewport": "desktop",
+      "state": "03-paused-host",
+      "path": "presentation/frontend-study/experience-B-desktop.png",
+      "sha256": "91c7a8d68cc865fdef584f85ade2b4cd61088cb72f01232e1bf2521deb429d8a"
+    },
+    {
+      "case": "experience",
+      "arm": "B",
+      "viewport": "mobile",
+      "state": "03-paused-host",
+      "path": "presentation/frontend-study/experience-B-mobile.png",
+      "sha256": "fd117152b57bfd24cb81fc3a6f940312d84e9b9d14cf849ce9668b4562403635"
+    }
+  ]
+}

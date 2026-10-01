@@ -41,12 +41,12 @@ test.describe("an active product", () => {
     expect(before).toMatchObject({ language: "en", nextLanguage: "en", locked: true });
     await page.locator("#settingsButton").click();
     await page.locator("#languageSelect").selectOption("zh-CN");
-    await expect(page.locator("#languageHint")).toContainText(/English.*中文/);
+    await expect(page.locator("#languageHint")).toContainText(/English.*Simplified Chinese/);
     await expect(page.locator("#languageStatus")).toContainText(/next product|new product/i);
     await expect(page.locator("html")).toHaveAttribute("lang", "en");
     await page.reload();
     await page.locator("#settingsButton").click();
-    await expect(page.locator("#languageHint")).toContainText(/English.*中文/);
+    await expect(page.locator("#languageHint")).toContainText(/English.*Simplified Chinese/);
     await expect(page.locator("#languageSelect")).toHaveValue("zh-CN");
     await expect(page.locator("html")).toHaveAttribute("lang", "en");
     const after = await (await page.request.get(`${dashboard.url}/api/language`)).json();
@@ -162,7 +162,7 @@ test.describe("host action boundary", () => {
     await statusReceived;
     await page.locator("#stopButton").click();
     await stopReceived;
-    await expect(page.locator("#runtimeState")).toHaveText("Stopping…");
+    await expect(page.locator("#runtimeState")).toHaveText("Stopping");
     await expect(page.locator("#startButton")).toBeDisabled();
     await expect(page.locator("#stopButton")).toBeDisabled();
     releaseStatus();

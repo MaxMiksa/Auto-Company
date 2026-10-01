@@ -93,6 +93,8 @@ make center
 
 案例覆盖专业数据核验、图片交付、双人饮食、旅行节奏、家庭共同创作等任务。展示副本保留原产品方向，修复真实交互问题并统一组件细节；原始运行报告与失败结论不会随宣传图改写。
 
+前端现采用基于 Anthropic 技能改编、从用户任务出发的设计规则。[三个固定产品的提示词对照](presentation/frontend-study/README.md)中，新规则两胜一平，12 次共同桌面与手机流程全部通过。
+
 ## 你该看哪一节（按平台）
 
 - Windows 用户：从 [Windows (WSL) 快速开始](#windows-wsl-快速开始) 开始，再看 [`docs/windows-setup.md`](docs/windows-setup.md)
@@ -125,7 +127,7 @@ make center
 | | CTO | Werner Vogels | 为失败而设计、API First |
 | | 逆向思考 | Charlie Munger | 逆向思维、Pre-Mortem、心理误判清单 |
 | **产品** | 产品设计 | Don Norman | 可供性、心智模型、以人为本 |
-| | UI 设计 | Matías Duarte | Material 隐喻、Typography 优先 |
+| | UI 设计 | Matías Duarte | 任务布局、字体层级与组件一致性 |
 | | 交互设计 | Alan Cooper | Goal-Directed Design、Persona 驱动 |
 | **工程** | 全栈开发 | DHH | 约定优于配置、Majestic Monolith |
 | | QA | James Bach | 探索性测试、Testing ≠ Checking |
