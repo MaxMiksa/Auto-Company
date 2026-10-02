@@ -356,8 +356,13 @@ def interactive_team(root, engine):
     try:
         signal.signal(signal.SIGTERM, terminate)
         output_context = context(root, state["language"], resource_map(root, state["language"]))
-        return subprocess.run([executable, output_context], cwd=root,
-                              env=dict(os.environ, **{KEY: state["language"]})).returncode
+        from isolation_workspace import run_engine
+        from product_identity import continuation_project
+        _, configured = read_settings(root)
+        selected = configured.get("ACTIVE_PROJECT") or continuation_project(root)
+        return run_engine(root, selected, engine, executable, output_context,
+                          os.environ.get("MODEL", ""), os.environ.get("CODEX_REASONING_EFFORT", ""),
+                          interactive=True, language=state["language"])
     finally:
         signal.signal(signal.SIGTERM, previous_handler)
         with configuration_lock(root):

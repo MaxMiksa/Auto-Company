@@ -183,6 +183,7 @@ def run_check(root, project, record, args):
         record["path"] = path.relative_to(root).as_posix()
     observe(root, record)
     process = None
+    launch_status = None
     interrupted = False
     previous = signal.getsignal(signal.SIGTERM)
 
@@ -191,8 +192,20 @@ def run_check(root, project, record, args):
 
     signal.signal(signal.SIGTERM, stop)
     try:
+        from project_isolation import inside_boundary
+        if not inside_boundary():
+            # Checks execute product-authored code, even when triggered by a
+            # human or the dashboard. Give them the same mandatory boundary.
+            descriptor, launch_status = tempfile.mkstemp(prefix="auto-company-check-launch-")
+            os.close(descriptor)
+            Path(launch_status).write_text('{"started": false}')
+            command = [sys.executable, str(Path(__file__).with_name("project_isolation.py")),
+                       "--workspace", str(project), "--launch-status", launch_status,
+                       "--", *[re.sub(re.escape(str(project)) + r"(?=$|[/\s`\"'])", "/workspace", value) for value in command]]
         process = subprocess.Popen(command, cwd=project, env=environment)
         code = process.wait()
+        if launch_status and not json.loads(Path(launch_status).read_text()).get("started"):
+            record["state"] = "launch_failed"
     except KeyboardInterrupt:
         interrupted = True
         if process and process.poll() is None:
@@ -209,6 +222,8 @@ def run_check(root, project, record, args):
         record["state"] = "launch_failed"
     finally:
         signal.signal(signal.SIGTERM, previous)
+        if launch_status:
+            Path(launch_status).unlink(missing_ok=True)
     record.update(exitCode=code, endedAt=now(), recordedAt=now())
     if record["state"] != "launch_failed":
         record["state"] = "interrupted" if interrupted or code < 0 else "completed"

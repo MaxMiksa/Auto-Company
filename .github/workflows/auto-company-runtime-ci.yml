@@ -71,6 +71,11 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      - name: Install and verify mandatory Linux project isolation
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bubblewrap libseccomp2
+          python3 scripts/ci/run.py isolation-preflight python3 scripts/core/project_isolation.py --check
       - name: Run standard-library test suite
         run: python3 scripts/ci/run.py python-tests-1 python3 -m unittest discover -s tests -v
       - name: Check bundled skill resource references
@@ -165,6 +170,11 @@ jobs:
           package-manager-cache: false
       - name: Verify executable entrypoints and safe startup failure
         run: python3 scripts/ci/run.py shell-contracts-1 bash tests/test-shell-entrypoints.sh
+      - name: Install and verify mandatory Linux project isolation
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bubblewrap libseccomp2
+          python3 scripts/ci/run.py isolation-preflight python3 scripts/core/project_isolation.py --check
       - name: Verify generated units with a real systemd user manager
         run: |
           python3 scripts/ci/run.py shell-contracts-2 bash -e -o pipefail <<'CI_SCRIPT'
@@ -209,6 +219,11 @@ jobs:
         with:
           node-version: '22'
           package-manager-cache: false
+      - name: Install and verify mandatory Linux project isolation
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bubblewrap libseccomp2
+          python3 scripts/ci/run.py isolation-preflight python3 scripts/core/project_isolation.py --check
       - name: Install browser test dependencies
         run: python3 scripts/ci/run.py browser-dependencies npm ci --prefix tests/browser --ignore-scripts --no-audit --no-fund
       - name: Install product screenshot dependencies
@@ -225,7 +240,10 @@ jobs:
       - name: Verify automatic product screenshots and process cleanup
         env:
           AUTO_COMPANY_TEST_PRODUCT_MEDIA_BROWSER: '1'
-        run: python3 scripts/ci/run.py product-media python3 -m unittest discover -s tests -p test_product_media.py -v
+        run: |
+          export AUTO_COMPANY_BROWSER_RUNTIME="$HOME/.cache/ms-playwright"
+          python3 scripts/ci/run.py product-media python3 tests/run_isolated_media_contracts.py
+          python3 scripts/ci/run.py media-host-isolation python3 -m unittest discover -s tests -p test_isolated_media.py -v
       - name: Save failure evidence
         if: failure()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

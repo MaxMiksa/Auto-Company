@@ -217,9 +217,15 @@ class ObservabilityTests(unittest.TestCase):
             process.stderr.close()
         self.assertFalse(registered_artifacts(self.source)[0]["available"])
 
+    @unittest.skipUnless(sys.platform == 'linux', 'Event execution uses real Linux/WSL isolation')
     def test_stream_passthrough_exit_and_unknown_events(self):
         script = "import sys; print('{\"type\":\"future.event\"}'); print('{\"type\":\"turn.failed\"}'); raise SystemExit(7)"
-        result = subprocess.run([sys.executable, str(ROOT / "scripts/core/runtime_events.py"), "--root", str(self.root), "--cycle", "cycle-exit", "--", sys.executable, "-c", script], capture_output=True)
+        import shutil
+        shutil.copytree(ROOT / 'scripts/core', self.root / 'scripts/core')
+        result = subprocess.run([sys.executable, str(ROOT / 'scripts/core/project_isolation.py'),
+                                 '--workspace', str(self.root), '--', '/usr/bin/python3',
+                                 '/workspace/scripts/core/runtime_events.py', '--root', '/workspace',
+                                 '--cycle', 'cycle-exit', '--', '/usr/bin/python3', '-c', script], capture_output=True)
         self.assertEqual(result.returncode, 7, result.stderr)
         self.assertIn(b'future.event', result.stdout)
         events = cycle_events(self.source, {"id": "cycle-exit"})["events"]

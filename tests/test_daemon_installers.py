@@ -5,11 +5,14 @@ from pathlib import Path
 import plistlib
 import shutil
 import subprocess
+import sys
 import tempfile
 import unittest
 
 
 REPO = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(REPO / 'tests'))
+from isolation_fixture import install as install_fixture_boundary
 
 
 @unittest.skipIf(os.name == "nt", "installer contracts execute in POSIX/WSL CI")
@@ -25,6 +28,7 @@ class DaemonInstallerTests(unittest.TestCase):
                          "scripts/macos/install-daemon.sh", "scripts/wsl/install-wsl-daemon.sh"):
             shutil.copy2(REPO / filename, self.project / filename)
         shutil.copytree(REPO / "i18n", self.project / "i18n")
+        install_fixture_boundary(self.project)
         self.home_dir = root / "home"
         self.home_dir.mkdir()
         self.bin_dir = root / "bin"

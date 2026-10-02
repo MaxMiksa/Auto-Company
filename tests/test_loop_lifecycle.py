@@ -6,12 +6,15 @@ import platform
 import shutil
 import signal
 import subprocess
+import sys
 import tempfile
 import time
 import unittest
 
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / 'tests'))
+from isolation_fixture import install as install_fixture_boundary
 
 
 @unittest.skipUnless(platform.system() == "Linux", "Linux process lifecycle regression")
@@ -69,6 +72,7 @@ raise SystemExit(module.main())
         with tempfile.TemporaryDirectory() as tempdir:
             root = Path(tempdir)
             shutil.copytree(ROOT / "scripts" / "core", root / "scripts" / "core")
+            install_fixture_boundary(root)
             shutil.copytree(ROOT / "memories", root / "memories")
             (root / "PROMPT.md").write_text("Local lifecycle test\n")
             fake = root / "fake-engine"

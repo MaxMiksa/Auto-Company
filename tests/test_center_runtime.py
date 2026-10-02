@@ -15,12 +15,15 @@ import uuid
 from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / 'tests'))
+from isolation_fixture import install as install_fixture_boundary
 sys.path.insert(0, str(ROOT / "dashboard"))
 from center_runtime import CenterRuntime, CenterError, PosixAdapter, atomic_json, config_fingerprint, OPEN, TERMINAL
 from center_store import CenterStore
 
 
 def copy_control_entrypoints(root):
+    install_fixture_boundary(root)
     for name in ("dashboard/server.py", "Makefile", "scripts/macos/start-daemon.sh", "scripts/macos/install-daemon.sh",
                  "scripts/wsl/dashboard-wsl.sh", "scripts/wsl/install-wsl-daemon.sh", "scripts/windows/start-win.ps1", "scripts/windows/stop-win.ps1"):
         target = root / name

@@ -16,6 +16,7 @@ import shutil
 import signal
 import stat
 import subprocess
+import sys
 import tempfile
 import threading
 import time
@@ -346,6 +347,9 @@ def run_worker(project, profile, version, staging):
                "output": str(staging), "viewports": VIEWPORTS, "webSuffixes": sorted(WEB_SUFFIXES)}
     atomic_json(staging / "request.json", request)
     command = [node, str(Path(__file__).with_name("product_media_worker.cjs")), str(staging / "request.json")]
+    from project_isolation import inside_boundary
+    if not inside_boundary():
+        command = [sys.executable, str(Path(__file__).with_name("isolation_media.py")), str(staging / "request.json")]
     from product_media_process import ProcessScope
     scope = None
     previous_signal = None

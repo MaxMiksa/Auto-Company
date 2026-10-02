@@ -8,6 +8,7 @@ import platform
 import shutil
 import signal
 import subprocess
+import sys
 import tempfile
 import time
 import unittest
@@ -15,6 +16,8 @@ from unittest import mock
 
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / 'tests'))
+from isolation_fixture import install as install_fixture_boundary
 
 
 def load(name, path):
@@ -107,6 +110,7 @@ class LinuxStopTests(unittest.TestCase):
             with self.subTest(reported=reported), tempfile.TemporaryDirectory() as directory:
                 root = Path(directory)
                 shutil.copytree(ROOT / "scripts/core", root / "scripts/core")
+                install_fixture_boundary(root)
                 (root / "memories").mkdir()
                 shutil.copyfile(ROOT / "memories/consensus.template.md", root / "memories/consensus.template.md")
                 (root / "PROMPT.md").write_text("Local stop fixture\n")

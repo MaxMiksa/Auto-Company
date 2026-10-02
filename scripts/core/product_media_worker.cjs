@@ -7,6 +7,18 @@ const net = require("node:net");
 const { spawn } = require("node:child_process");
 const { createRequire } = require("node:module");
 
+// The Python entry owns isolation. A direct host invocation is unsupported.
+try {
+  const boundary = JSON.parse(fs.readFileSync("/run/auto-company/command.json", "utf8"));
+  const status = fs.readFileSync("/proc/self/status", "utf8");
+  if (fs.readlinkSync("/proc/self/ns/net") === boundary.hostNetworkNamespace ||
+      !/^NoNewPrivs:\s+1$/m.test(status) || !/^Seccomp:\s+2$/m.test(status) ||
+      !/^CapEff:\s+0+$/m.test(status)) throw new Error("missing kernel boundary");
+} catch (_) {
+  console.error("Product media worker requires project isolation");
+  process.exit(78);
+}
+
 const request = JSON.parse(fs.readFileSync(process.argv[2], "utf8"));
 let browser, server, child;
 let stopping = false;
@@ -187,6 +199,9 @@ async function main() {
   }
   fs.writeFileSync(path.join(request.output, "result.tmp"), JSON.stringify(result));
   fs.renameSync(path.join(request.output, "result.tmp"), path.join(request.output, "result.json"));
+  // The outer namespace owner reaps all descendants. In this mode the result
+  // is collected only after the complete namespace exits.
+  if (request.isolatedExit === true) process.exit(0);
   // Hold the leader alive so the owner never signals a recycled PID and can
   // reap the entire short-lived preview scope after success or failure.
   setInterval(() => {}, 1000);
