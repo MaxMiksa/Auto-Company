@@ -1,0 +1,19 @@
+{
+  "source": "examples/scopefence",
+  "variants": [
+    {
+      "file": "presentation/products/scopefence-zh-result.png",
+      "viewport": "desktop",
+      "sha256": "719f39ca6cb396474e082c7cccd89e9c1613b2e8e216c68498742cc209140f4c"
+    },
+    {
+      "file": "presentation/products/scopefence-zh-mobile.png",
+      "viewport": "mobile",
+      "sha256": "a782f0162260dc2b2628595b9da2fd7b3896c988c821a45c675be51e1a7b2ad8"
+    }
+  ],
+  "captureSessionAt": "2026-10-01T18:03:15.51Z",
+  "productId": "d071699b7dd442fda31439230062ed43",
+  "timeBasis": "Preserved actual capture-session observation; exact per-image capture time retained where recorded.",
+  "language": "zh-CN"
+}

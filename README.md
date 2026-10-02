@@ -27,7 +27,7 @@ Optional Cursor and OpenAI-compatible adapters require explicit configuration. S
 
 ScopeFence across **7 real completed cycles: 3 exploration + 4 product cycles**. Exploration, delivery and later work share one continuous timeline, with original identities, timestamps, checks and logs preserved.
 
-The timeline uses a reviewed English presentation overlay. Product screenshots show the published copies after human-directed refinement and functional checks. These changes do not add historical cycles or establish paid demand. Open an image at full size; see [capture provenance and reproduction](presentation/showcase/README.md).
+The timeline uses a reviewed English presentation overlay, with product screenshots expanded by default. The labeled **Published refinement** shows the reviewed English product copy; the original run captures remain linked separately. These changes do not add historical cycles or establish paid demand. Open an image at full size; see [capture provenance and reproduction](presentation/showcase/README.md).
 
 <table>
 <tr><th colspan="2"><a href="examples/scopefence/">ScopeFence</a> · 7 · 3 exploration + 4 product</th></tr>
@@ -93,7 +93,7 @@ The [example catalog](examples/README.md) contains 22 independently runnable pub
 
 The examples cover professional data review, image delivery, shared meals, travel pacing and family creation. Published copies preserve the original product direction while refining components and repairing real interactions; original reports and unsuccessful conclusions are not rewritten for the showcase.
 
-Frontend work now uses a task-led design skill adapted from Anthropic. In a [three-product prompt comparison](presentation/frontend-study/README.md), the retained instructions won two pairs and tied one, with all 12 shared desktop/mobile scenarios passing.
+Frontend work uses a task-led skill adapted from Anthropic, distinguishing targeted refinement from an explicitly requested redesign. See [three-product redesign captures and acceptance](presentation/frontend-redesign/README.md) and the [corrected earlier refinement study](presentation/frontend-study/README.md), which now includes a read-boundary audit. These small, non-blind case studies do not establish universal prompt superiority.
 
 ## Where To Start (By Platform)
 

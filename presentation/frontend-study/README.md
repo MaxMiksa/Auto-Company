@@ -2,9 +2,21 @@
 
 2026-10-02 · `frontend-task-first-v1`
 
-**The new prompt bundle won two of three fixed-product comparisons; the third was a tie.** All 12 common browser scenarios passed (three products × two versions × desktop/mobile). The primary agent reviewed the actual input, working and result screens and retained B for future frontend work. The manually refined public examples are a separate deliverable, not the outputs used to decide this comparison.
+**In a non-blind review of refinement outputs, B scored higher for two products and tied for one.** All 12 common browser scenarios passed (three products × two versions × desktop/mobile). This records the review outcome, not an isolated causal result. A later session audit found cross-workspace reads of experiment materials; see the correction below. The manually refined public examples are a separate deliverable.
 
-**新版在三个固定产品中两胜一平。** 三个产品、两版提示词、桌面与手机组成的 12 次共同浏览器验收全部通过。父代理查看真实输入、工作中及结果页面后，选择保留 B。公开案例的人工精修与本次实验独立，不能拿人工精修后的效果充当提示词胜出的证据。
+**非盲评的精修产物中，B 两项评分较高、一项持平。** 三个产品、两版提示词、桌面与手机组成的 12 次共同浏览器验收全部通过。这是产物评分记录，不是隔离实验的因果结论；后续会话审计发现模型越过各运行目录读取实验材料，详见下面的更正。公开案例的人工精修是另一项交付。
+
+## Audit correction / 审计更正
+
+See the [public read-boundary audit summary / 读取边界审计摘要](READ-BOUNDARY-AUDIT.md). Original session bodies and machine paths remain private.
+
+The original preparation copied the repository, including historical `projects/`, into each arm. Some model calls enumerated those files. The two Family Art Show arms also successfully read parent-directory CASE/manifests; A read the study protocol and freeze checks, and B read session settings. The protocol was read before any arm had completed and contained the planned procedure, not another arm's generated result. The audited calls did not establish reads of another A/B arm's generated frontend. File availability, filename enumeration and content reads are distinct observations.
+
+原准备器将含历史 `projects/` 的仓库复制到每个运行目录，部分调用列出了这些文件。小展会两臂还成功读取父目录的 CASE/清单；A 读取过实验协议与冻结检查，B 读取过会话设置。A 读协议时尚无任何一臂完成，协议包含预定流程，不含其他臂产物。已审调用未证明六臂读取过另一臂生成的前端。文件可见、文件名枚举和成功读取内容是不同层次的证据。
+
+The task referred to `CASE.md` but supplied its content inline rather than creating that file, a visible trigger for searching parent directories. Separate directories and `workspace-write` did not provide read isolation. We withdraw the strict single-variable/independent-run characterization; the real screenshots and functional outcomes remain valid. The follow-up redesign supplies the actual CASE file and only the current product in each input root, and audits observed reads separately. This reduces input contamination without claiming an operating-system read boundary.
+
+任务要求读取 `CASE.md`，却只把内容内嵌在任务中、没有生成该文件，是向父目录寻找资料的可见诱因。独立目录与 `workspace-write` 没有提供读取隔离。撤回严格单变量、独立运行的表述；真实截图及功能结果仍有效。后续重做实验补齐 CASE 文件，每个输入根目录只带当前产品，并单独核对实际读取；这减少输入污染，但不声称实现了操作系统级读取隔离。
 
 ## What changed / 改了什么
 
@@ -16,16 +28,16 @@ Historical file comparisons found **no change to the frontend skill/UI chain acr
 
 历史文件对照显示，之前三版商业提示调整期间前端技能与 UI 链路没有改变；早期 ScopeFence 也使用同一套前端规则。因此没有证据把相似绿色风格直接归因于商业提示改动。旧规则中“独特设计”与套用常见设计系统、创新须有 10 倍收益的要求相冲突，设计与实现的交接也不够具体；这些是此次检验的机制，不是已证明的历史因果。
 
-The adapted skill includes the original [Anthropic frontend-design source](https://github.com/anthropics/skills/blob/41bbe19d1a1a7eaab5e7bb9050a417e5c6cffc8f/skills/frontend-design/SKILL.md), attribution and [Apache-2.0 license](../../.claude/skills/frontend-design.LICENSE.txt), with additional reference to [OpenAI frontend guidance](https://developers.openai.com/api/docs/guides/frontend-prompt). The retained [local skill](../../.claude/skills/frontend-design.md) is an explicit project adaptation.
+The adapted skill includes the original [Anthropic frontend-design source](https://github.com/anthropics/skills/blob/41bbe19d1a1a7eaab5e7bb9050a417e5c6cffc8f/skills/frontend-design/SKILL.md), attribution and [Apache-2.0 license](../../.claude/skills/frontend-design.LICENSE.txt), with additional reference to [OpenAI frontend guidance](https://developers.openai.com/api/docs/guides/frontend-prompt). The [B skill as published for this study](https://github.com/MaxMiksa/Auto-Company/blob/1037a4bae0413e670b4d10a62ddda0e70d3616cb/.claude/skills/frontend-design.md) is an explicit project adaptation; later changes to the current skill do not change this frozen experiment.
 
 ## Controls and acceptance / 控制变量与验收
 
-- Three sealed existing products, one fresh independent run per version and product; the same task, starting source, fixtures, tooling and permissions within each pair. Only the frontend instruction bundle differed. Up to three runs executed concurrently, without an arbitrary cycle cutoff.
+- Three sealed existing products, one separate run directory per version and product; the task, starting product source, fixtures, tooling and permissions were matched within each pair. The intended changed variable was the frontend instruction bundle; the later audit above limits causal interpretation. Up to three runs executed concurrently, without an arbitrary cycle cutoff.
 - All six actual session settings were checked: `gpt-6.1-sol`, reasoning effort `high`. All six completed normally. No model substitution was used.
 - A common acceptance runner, prepared by the implementation agent and reviewed by the primary agent, used fresh browser contexts, identical inputs/actions, 1440×1000 and 390×844 viewports, actual downloads and source-integrity checks. All six product trees remained unchanged during this acceptance. The primary agent made the final visual judgment.
 - The adoption rule was set before results: no new core regression in any pair, B wins at least two pairs, and each win has concrete task/component benefits. Four dimensions use 0–4: blocked, poor, usable but rough, mature/clear, exceptional. Scores are reviewer judgments, not conversion or revenue metrics.
 
-三对使用封存的相同起点、相同任务与夹具，每版每项目各一次独立运行；模型及强度均核实为 `gpt-6.1-sol/high`。统一验收脚本由实施代理准备、父代理审阅，实际操作和下载保持对称，父代理负责最终视觉判断。预先约定：没有新增核心功能回退，且 B 至少两对胜出，并有具体任务或组件改善，才采用 B。
+三对使用封存的相同产品起点、相同任务与夹具，每版每项目各一个运行目录；模型及强度均核实为 `gpt-6.1-sol/high`。这并不构成读取隔离。统一验收脚本由实施代理准备、父代理审阅，实际操作和下载保持对称，父代理负责最终视觉判断。原先约定的采用规则是：没有新增核心功能回退，且 B 至少两对胜出，并有具体任务或组件改善。
 
 ## Primary-agent review / 父代理评分
 

@@ -1,0 +1,19 @@
+{
+  "source": "examples/coi-chase-desk",
+  "variants": [
+    {
+      "file": "presentation/products/coi-chase-desk-zh.png",
+      "viewport": "desktop",
+      "sha256": "f4a2bb42d5213cf2f17ca19156141ccb206c951bc3453d60a2ff1c62210631b3"
+    },
+    {
+      "file": "presentation/products/coi-chase-desk-zh-mobile.png",
+      "viewport": "mobile",
+      "sha256": "6c988d1ba57571e50be9e9ce5b0a3757994ba0db7939617f65ec964083b09f58"
+    }
+  ],
+  "captureSessionAt": "2026-10-01T18:03:15.51Z",
+  "productId": "8afe69a9dd254abcb61ef82b3ffab923",
+  "timeBasis": "Preserved actual capture-session observation; exact per-image capture time retained where recorded.",
+  "language": "zh-CN"
+}

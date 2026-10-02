@@ -1715,6 +1715,8 @@ dialog .runtime-details {
 .screenshot-caption { display: flex; flex-wrap: wrap; gap: 4px 10px; }
 .screenshot-stale { color: #7d7568; }
 .screenshot-links { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: var(--text-caption); }
+.original-screenshot-links { margin-top: 12px; }
+.refinement-label { color: var(--ink); font-weight: var(--weight-medium); }
 .screenshot-retry { margin-top: 13px; font-size: var(--text-caption); }
 .artifact-link .ui-icon { margin-top: 3px; }
 .artifact-link .artifact-arrow { width: 14px; height: 14px; flex-basis: 14px; padding: 0; }

@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
   "pathBasis": "repository-root",
-  "capturedAt": "2026-10-01T17:57:35.884Z",
+  "capturedAt": "2026-10-02T03:09:01.854Z",
   "sourceLabels": "Logical identifiers for preserved recorded runs; not public directories.",
-  "interpretation": "Reviewed language overlays are display text only. Human-directed interface refinement does not add historical cycles or establish paid validation.",
+  "interpretation": "Reviewed language overlays are display text only. Published refinement is separately labeled and preserves original run screenshot links/times; it never replaces the original screenshot record. Human-directed refinement adds no historical cycles or paid validation.",
   "capture": {
     "script": "scripts/media/capture_showcase.cjs",
-    "mode": "actual read-only HTTP page; default newest report expanded and history collapsed",
+    "mode": "actual read-only HTTP page; newest report and product screenshot expanded by default, history collapsed; separate labeled language-matched published refinement",
     "platform": "win32",
     "chromiumBuild": 1243,
     "playwrightVersion": "1.63.0",
@@ -23,9 +23,11 @@
     "mockedRequests": false,
     "modifiedRecords": false,
     "pixelEditing": false,
-    "scriptSha256": "e6586c4bd3e3ddd28a1f971fe7ecfa910e542c550915667fe9db569ee402ccf1",
-    "scriptSha256AtCapture": "61b577c1072848f0e3cb5ddcfd41ce21632bda4fd17ae693f36d747bb4d5a3f3",
-    "artifactNormalization": "Published text files use LF line endings and one final newline. Original report digests and screenshot bytes are unchanged; overlay hashes at capture retain the prior byte representation. The current capture script also includes the documented portable CLI."
+    "scriptSha256": "40626122968843aee85b3b1fac1c0806671cafbc7ae1f1cd03dce569c5671aae",
+    "scriptSha256AtCapture": "40626122968843aee85b3b1fac1c0806671cafbc7ae1f1cd03dce569c5671aae",
+    "artifactNormalization": "Current script and image digests are capture-time bytes; original recorded report digests and identities remain unchanged.",
+    "disclosurePersistence": "Manual screenshot collapse/expansion retained after actual refresh and page reload within the same browser session.",
+    "mobileFullPage": "Native full-page capture after the expanded product image has loaded; complete original runtime/limitations/footer retained."
   },
   "products": [
     {
@@ -128,108 +130,200 @@
           "overlay": {
             "file": "presentation/showcase/translations/scopefence.en.json",
             "sha256": "f5a849f08a37e7c5b13066ab2b27782b5482b619fdf8675f5c02e3980843b112",
-            "sha256AtCapture": "77a38c4291b62023e68ffdaeb8769f4b0339237d2d465820fc462f5c470ac766"
+            "sha256AtCapture": "f5a849f08a37e7c5b13066ab2b27782b5482b619fdf8675f5c02e3980843b112"
           },
-          "capturedAt": "2026-10-01T17:57:36.089Z",
+          "capturedAt": "2026-10-02T03:09:04.444Z",
           "checks": "passed",
           "screenshots": [
             {
               "file": "presentation/showcase/scopefence-timeline-en.png",
-              "sha256": "39f579168203c3ced4efae721321c262283b55f03d869c01a825c555772c5127",
-              "capturedAt": "2026-10-01T17:57:37.081Z",
-              "viewport": {
-                "width": 1440,
-                "height": 1480
-              },
+              "sha256": "b48d4a040b668fa4e4286d3d959321e1fae747eeea9a88ad380ca0393e092498",
               "image": {
                 "width": 1440,
-                "height": 1480
+                "height": 1760
               },
-              "fullPage": false
+              "fullPage": false,
+              "capturedAt": "2026-10-02T03:09:06.510Z",
+              "viewport": {
+                "width": 1440,
+                "height": 1760
+              }
             },
             {
               "file": "presentation/showcase/scopefence-timeline-en-mobile.png",
               "sha256": "93839d2b6829b537d73c1db9944003e0a63199e9b05850a12212bccc36330eb6",
-              "capturedAt": "2026-10-01T17:57:37.148Z",
-              "viewport": {
-                "width": 390,
-                "height": 844
-              },
               "image": {
                 "width": 390,
                 "height": 844
               },
-              "fullPage": false
+              "fullPage": false,
+              "capturedAt": "2026-10-02T03:09:06.575Z",
+              "viewport": {
+                "width": 390,
+                "height": 844
+              }
             },
             {
               "file": "presentation/showcase/scopefence-timeline-en-mobile-full.png",
-              "sha256": "919c101e19c8369743924035db91c2a16668aec57f9cf56f8423ed0030ce460d",
-              "capturedAt": "2026-10-01T17:57:37.202Z",
+              "sha256": "f1af3b41d10ae5bbc297ef48214c126b63a57e8e01db16c0c2dd5561404998db",
+              "image": {
+                "width": 390,
+                "height": 4437
+              },
+              "fullPage": true,
+              "capturedAt": "2026-10-02T03:09:06.706Z",
               "viewport": {
                 "width": 390,
                 "height": 844
-              },
-              "image": {
-                "width": 390,
-                "height": 2669
-              },
-              "fullPage": true
+              }
             }
-          ]
+          ],
+          "disclosureChecks": {
+            "defaultExpanded": true,
+            "collapseAfterRefresh": true,
+            "collapseAfterReload": true,
+            "expandAfterRefresh": true
+          },
+          "publishedRefinement": {
+            "source": "examples/scopefence",
+            "variants": [
+              {
+                "file": "presentation/products/scopefence-en-result.png",
+                "viewport": "desktop",
+                "sha256": "64199bce3f84c88b9eca240896bd376c4b0f612a7431921719e96245341b1037",
+                "href": "/api/product-media/d071699b7dd442fda31439230062ed43/refinement-64199bce3f84c88b9eca240896bd376c4b0f612a7431921719e96245341b1037.png",
+                "width": 1440,
+                "height": 1245
+              },
+              {
+                "file": "presentation/products/scopefence-en-mobile.png",
+                "viewport": "mobile",
+                "sha256": "eff702a18bb9bffe4fba9906cee3cc723bb86fd303390050b2d6d841dc831f41",
+                "href": "/api/product-media/d071699b7dd442fda31439230062ed43/refinement-eff702a18bb9bffe4fba9906cee3cc723bb86fd303390050b2d6d841dc831f41.png",
+                "width": 390,
+                "height": 1735
+              }
+            ],
+            "captureSessionAt": "2026-10-01T18:03:15.51Z",
+            "productId": "d071699b7dd442fda31439230062ed43",
+            "timeBasis": "Preserved actual capture-session observation; exact per-image capture time retained where recorded.",
+            "language": "en"
+          },
+          "originalRunScreenshot": {
+            "state": "success",
+            "capturedAt": "2026-09-19T11:36:45.412154+00:00",
+            "resources": [
+              {
+                "href": "/api/product-media/d071699b7dd442fda31439230062ed43/01e4de78f25a68e2aba8d87af710afb421c162f24a0978cd67ca98cc7f166763.png",
+                "sha256": "01e4de78f25a68e2aba8d87af710afb421c162f24a0978cd67ca98cc7f166763"
+              },
+              {
+                "href": "/api/product-media/d071699b7dd442fda31439230062ed43/a69f7f959381b83529c1a5603af8e5bb3fdf30b48cefd2b5dc64363a8d9973a5.png",
+                "sha256": "a69f7f959381b83529c1a5603af8e5bb3fdf30b48cefd2b5dc64363a8d9973a5"
+              }
+            ],
+            "recordPreserved": true
+          }
         },
         {
           "language": "zh-CN",
           "overlay": {
             "file": "presentation/showcase/translations/scopefence.zh-CN.json",
             "sha256": "24c3e10866fc1e208ecfdfa877b7100d52bb0071e229db65fb3b1a5229a6983f",
-            "sha256AtCapture": "8eb47d8ef81ff78ad57e3dddd7f8f9959cd6f13464a49bd97154c7217e14f506"
+            "sha256AtCapture": "24c3e10866fc1e208ecfdfa877b7100d52bb0071e229db65fb3b1a5229a6983f"
           },
-          "capturedAt": "2026-10-01T17:57:37.294Z",
+          "capturedAt": "2026-10-02T03:09:02.023Z",
           "checks": "passed",
           "screenshots": [
             {
               "file": "presentation/showcase/scopefence-timeline-zh-CN.png",
-              "sha256": "7d80a3495463ac1332e93980ccd47693f2feb242ce7614a525374249dfd571a9",
-              "capturedAt": "2026-10-01T17:57:38.228Z",
-              "viewport": {
-                "width": 1440,
-                "height": 1440
-              },
+              "sha256": "e82f8f209e2673c3fbfb46036bd7dbd552d16b4e6ce7c7487b0db74dd979594c",
               "image": {
                 "width": 1440,
-                "height": 1440
+                "height": 1760
               },
-              "fullPage": false
+              "fullPage": false,
+              "capturedAt": "2026-10-02T03:09:04.142Z",
+              "viewport": {
+                "width": 1440,
+                "height": 1760
+              }
             },
             {
               "file": "presentation/showcase/scopefence-timeline-zh-CN-mobile.png",
               "sha256": "02e17093335013bea4cf622576defeada6e15ab945a2235b04a55613d09e9cdf",
-              "capturedAt": "2026-10-01T17:57:38.281Z",
-              "viewport": {
-                "width": 390,
-                "height": 844
-              },
               "image": {
                 "width": 390,
                 "height": 844
               },
-              "fullPage": false
+              "fullPage": false,
+              "capturedAt": "2026-10-02T03:09:04.210Z",
+              "viewport": {
+                "width": 390,
+                "height": 844
+              }
             },
             {
               "file": "presentation/showcase/scopefence-timeline-zh-CN-mobile-full.png",
-              "sha256": "3088df0ccd15df5fbf203ae67b29dd7573585d7e5aef9e48b4e4492dc5b18381",
-              "capturedAt": "2026-10-01T17:57:38.333Z",
+              "sha256": "370914b5f86eeaf1aef2e6e272fe1fd16555a2df3a1d60f415fd559aae6680d0",
+              "image": {
+                "width": 390,
+                "height": 4031
+              },
+              "fullPage": true,
+              "capturedAt": "2026-10-02T03:09:04.334Z",
               "viewport": {
                 "width": 390,
                 "height": 844
-              },
-              "image": {
-                "width": 390,
-                "height": 2368
-              },
-              "fullPage": true
+              }
             }
-          ]
+          ],
+          "disclosureChecks": {
+            "defaultExpanded": true,
+            "collapseAfterRefresh": true,
+            "collapseAfterReload": true,
+            "expandAfterRefresh": true
+          },
+          "publishedRefinement": {
+            "source": "examples/scopefence",
+            "variants": [
+              {
+                "file": "presentation/products/scopefence-zh-result.png",
+                "viewport": "desktop",
+                "sha256": "719f39ca6cb396474e082c7cccd89e9c1613b2e8e216c68498742cc209140f4c",
+                "href": "/api/product-media/d071699b7dd442fda31439230062ed43/refinement-719f39ca6cb396474e082c7cccd89e9c1613b2e8e216c68498742cc209140f4c.png",
+                "width": 1440,
+                "height": 1256
+              },
+              {
+                "file": "presentation/products/scopefence-zh-mobile.png",
+                "viewport": "mobile",
+                "sha256": "a782f0162260dc2b2628595b9da2fd7b3896c988c821a45c675be51e1a7b2ad8",
+                "href": "/api/product-media/d071699b7dd442fda31439230062ed43/refinement-a782f0162260dc2b2628595b9da2fd7b3896c988c821a45c675be51e1a7b2ad8.png",
+                "width": 390,
+                "height": 1620
+              }
+            ],
+            "captureSessionAt": "2026-10-01T18:03:15.51Z",
+            "productId": "d071699b7dd442fda31439230062ed43",
+            "timeBasis": "Preserved actual capture-session observation; exact per-image capture time retained where recorded.",
+            "language": "zh-CN"
+          },
+          "originalRunScreenshot": {
+            "state": "success",
+            "capturedAt": "2026-09-19T11:36:45.412154+00:00",
+            "resources": [
+              {
+                "href": "/api/product-media/d071699b7dd442fda31439230062ed43/01e4de78f25a68e2aba8d87af710afb421c162f24a0978cd67ca98cc7f166763.png",
+                "sha256": "01e4de78f25a68e2aba8d87af710afb421c162f24a0978cd67ca98cc7f166763"
+              },
+              {
+                "href": "/api/product-media/d071699b7dd442fda31439230062ed43/a69f7f959381b83529c1a5603af8e5bb3fdf30b48cefd2b5dc64363a8d9973a5.png",
+                "sha256": "a69f7f959381b83529c1a5603af8e5bb3fdf30b48cefd2b5dc64363a8d9973a5"
+              }
+            ],
+            "recordPreserved": true
+          }
         }
       ]
     },
@@ -311,108 +405,202 @@
           "overlay": {
             "file": "presentation/showcase/translations/tujiandan.en.json",
             "sha256": "7308f2c5e206bfd0ee4de311551e31df19d32a16b61a3c67067cf717fea3bbf7",
-            "sha256AtCapture": "639070343a219e88263571b07e7814889d9525aca0cee3637189d34da4c99134"
+            "sha256AtCapture": "7308f2c5e206bfd0ee4de311551e31df19d32a16b61a3c67067cf717fea3bbf7"
           },
-          "capturedAt": "2026-10-01T17:57:38.424Z",
+          "capturedAt": "2026-10-02T03:09:06.808Z",
           "checks": "passed",
           "screenshots": [
             {
               "file": "presentation/showcase/tujiandan-timeline-en.png",
-              "sha256": "b010ea7c8f7ba4e9743d79b358af59bc69126fad7db76e6d9999d398908c332f",
-              "capturedAt": "2026-10-01T17:57:39.329Z",
-              "viewport": {
-                "width": 1440,
-                "height": 1400
-              },
+              "sha256": "e87550b6cc2da319f485d94256cd70e88b4f6defc0ef1dd6d98b50df35e4fe45",
               "image": {
                 "width": 1440,
-                "height": 1400
+                "height": 1960
               },
-              "fullPage": false
+              "fullPage": false,
+              "capturedAt": "2026-10-02T03:09:08.879Z",
+              "viewport": {
+                "width": 1440,
+                "height": 1960
+              }
             },
             {
               "file": "presentation/showcase/tujiandan-timeline-en-mobile.png",
               "sha256": "cf9986460337df7771b56bd8449baf741c2b3d611c983b9da0358e2d31b80c22",
-              "capturedAt": "2026-10-01T17:57:39.398Z",
-              "viewport": {
-                "width": 390,
-                "height": 844
-              },
               "image": {
                 "width": 390,
                 "height": 844
               },
-              "fullPage": false
+              "fullPage": false,
+              "capturedAt": "2026-10-02T03:09:08.941Z",
+              "viewport": {
+                "width": 390,
+                "height": 844
+              }
             },
             {
               "file": "presentation/showcase/tujiandan-timeline-en-mobile-full.png",
-              "sha256": "eba95da8a5191b0e3e0577c8d0ee5701799d98c037e7b7e7a33c269a317c4de2",
-              "capturedAt": "2026-10-01T17:57:39.451Z",
+              "sha256": "af7b2e1a3c4f4bc3e6ac00192df0d48f3da5a224d86c7f2d9b7d329fa4373036",
+              "image": {
+                "width": 390,
+                "height": 3711
+              },
+              "fullPage": true,
+              "capturedAt": "2026-10-02T03:09:09.065Z",
               "viewport": {
                 "width": 390,
                 "height": 844
-              },
-              "image": {
-                "width": 390,
-                "height": 2721
-              },
-              "fullPage": true
+              }
             }
-          ]
+          ],
+          "disclosureChecks": {
+            "defaultExpanded": true,
+            "collapseAfterRefresh": true,
+            "collapseAfterReload": true,
+            "expandAfterRefresh": true
+          },
+          "publishedRefinement": {
+            "source": "examples/tujiandan",
+            "variants": [
+              {
+                "file": "presentation/products/tujiandan-en.png",
+                "capturedAt": "2026-10-01T17:50:50.047Z",
+                "viewport": "desktop",
+                "sha256": "e266ee580937ba900c776c5606f1c53417e4d64e22e9c16933583e87e8a3ee17",
+                "href": "/api/product-media/cdc5a3b498044434b684dd99db1b4e0f/refinement-e266ee580937ba900c776c5606f1c53417e4d64e22e9c16933583e87e8a3ee17.png",
+                "width": 1440,
+                "height": 1897
+              },
+              {
+                "file": "presentation/products/tujiandan-en-mobile.png",
+                "viewport": "mobile",
+                "sha256": "9ec2439b8b9a7250f20cf3cc9e1105e359bca6f0d07e2f10ee9e444348d50ab5",
+                "href": "/api/product-media/cdc5a3b498044434b684dd99db1b4e0f/refinement-9ec2439b8b9a7250f20cf3cc9e1105e359bca6f0d07e2f10ee9e444348d50ab5.png",
+                "width": 390,
+                "height": 844
+              }
+            ],
+            "captureSessionAt": "2026-10-01T17:50:51.86Z",
+            "productId": "cdc5a3b498044434b684dd99db1b4e0f",
+            "timeBasis": "Preserved actual capture-session observation; exact per-image capture time retained where recorded.",
+            "language": "en"
+          },
+          "originalRunScreenshot": {
+            "state": "stale",
+            "capturedAt": "2026-09-26T16:38:44.071064+00:00",
+            "resources": [
+              {
+                "href": "/api/product-media/cdc5a3b498044434b684dd99db1b4e0f/46a49e7e5d9074e3765dae9e8acc0358b3415e11e284f147689915436a09ea40.png",
+                "sha256": "46a49e7e5d9074e3765dae9e8acc0358b3415e11e284f147689915436a09ea40"
+              },
+              {
+                "href": "/api/product-media/cdc5a3b498044434b684dd99db1b4e0f/42efae00271798b633db4893e345df275a31a1a0a2200fc5d334b9d7b7be0333.png",
+                "sha256": "42efae00271798b633db4893e345df275a31a1a0a2200fc5d334b9d7b7be0333"
+              }
+            ],
+            "recordPreserved": true
+          }
         },
         {
           "language": "zh-CN",
           "overlay": {
             "file": "presentation/showcase/translations/tujiandan.zh-CN.json",
             "sha256": "486aa6afc1692bd8f6f724b6048a4c1ffd59094fb8c08edabb4ace809e88f057",
-            "sha256AtCapture": "0198317e65b30a9e4fe7556177c70e25fd9f7d9d20ef4b83fcd21d543683270b"
+            "sha256AtCapture": "486aa6afc1692bd8f6f724b6048a4c1ffd59094fb8c08edabb4ace809e88f057"
           },
-          "capturedAt": "2026-10-01T17:57:39.543Z",
+          "capturedAt": "2026-10-02T03:09:09.165Z",
           "checks": "passed",
           "screenshots": [
             {
               "file": "presentation/showcase/tujiandan-timeline-zh-CN.png",
-              "sha256": "f8de6611bce6e07bf6baab8be47602eaf6b1f40e1f0d5216ea040e52e14c9beb",
-              "capturedAt": "2026-10-01T17:57:40.458Z",
-              "viewport": {
-                "width": 1440,
-                "height": 1360
-              },
+              "sha256": "c6930c7dbfbcd86ab08f6333a93d7608c24b55ba06b93708f2bc36af5082a3e9",
               "image": {
                 "width": 1440,
-                "height": 1360
+                "height": 1960
               },
-              "fullPage": false
+              "fullPage": false,
+              "capturedAt": "2026-10-02T03:09:11.257Z",
+              "viewport": {
+                "width": 1440,
+                "height": 1960
+              }
             },
             {
               "file": "presentation/showcase/tujiandan-timeline-zh-CN-mobile.png",
               "sha256": "be630504e201058c667bcb61dd56848b3e50656b811b5a85cf0f890a3b95c5f4",
-              "capturedAt": "2026-10-01T17:57:40.515Z",
-              "viewport": {
-                "width": 390,
-                "height": 844
-              },
               "image": {
                 "width": 390,
                 "height": 844
               },
-              "fullPage": false
+              "fullPage": false,
+              "capturedAt": "2026-10-02T03:09:11.324Z",
+              "viewport": {
+                "width": 390,
+                "height": 844
+              }
             },
             {
               "file": "presentation/showcase/tujiandan-timeline-zh-CN-mobile-full.png",
-              "sha256": "273f935509625cf8e828a1ae3ef98a88caeb50ecf4cc4f36a6c1b0580a0359eb",
-              "capturedAt": "2026-10-01T17:57:40.563Z",
+              "sha256": "8495c3cd2ae2e8a8c83cc03831f5b4451676e914c28351d3a0b9bd106cf0428e",
+              "image": {
+                "width": 390,
+                "height": 3230
+              },
+              "fullPage": true,
+              "capturedAt": "2026-10-02T03:09:11.439Z",
               "viewport": {
                 "width": 390,
                 "height": 844
-              },
-              "image": {
-                "width": 390,
-                "height": 2241
-              },
-              "fullPage": true
+              }
             }
-          ]
+          ],
+          "disclosureChecks": {
+            "defaultExpanded": true,
+            "collapseAfterRefresh": true,
+            "collapseAfterReload": true,
+            "expandAfterRefresh": true
+          },
+          "publishedRefinement": {
+            "source": "examples/tujiandan",
+            "variants": [
+              {
+                "file": "presentation/products/tujiandan-zh.png",
+                "capturedAt": "2026-10-01T17:50:46.229Z",
+                "viewport": "desktop",
+                "sha256": "78eaef7b478795c04e971bc145039000d30d74a27aafbef122c919ed764f0c1f",
+                "href": "/api/product-media/cdc5a3b498044434b684dd99db1b4e0f/refinement-78eaef7b478795c04e971bc145039000d30d74a27aafbef122c919ed764f0c1f.png",
+                "width": 1440,
+                "height": 1898
+              },
+              {
+                "file": "presentation/products/tujiandan-zh-mobile.png",
+                "viewport": "mobile",
+                "sha256": "5ae9d03e9c1e87dc6b84a990b6d52b7505096bc450619ceea448b5b8280ad0a1",
+                "href": "/api/product-media/cdc5a3b498044434b684dd99db1b4e0f/refinement-5ae9d03e9c1e87dc6b84a990b6d52b7505096bc450619ceea448b5b8280ad0a1.png",
+                "width": 390,
+                "height": 844
+              }
+            ],
+            "captureSessionAt": "2026-10-01T17:50:51.86Z",
+            "productId": "cdc5a3b498044434b684dd99db1b4e0f",
+            "timeBasis": "Preserved actual capture-session observation; exact per-image capture time retained where recorded.",
+            "language": "zh-CN"
+          },
+          "originalRunScreenshot": {
+            "state": "stale",
+            "capturedAt": "2026-09-26T16:38:44.071064+00:00",
+            "resources": [
+              {
+                "href": "/api/product-media/cdc5a3b498044434b684dd99db1b4e0f/46a49e7e5d9074e3765dae9e8acc0358b3415e11e284f147689915436a09ea40.png",
+                "sha256": "46a49e7e5d9074e3765dae9e8acc0358b3415e11e284f147689915436a09ea40"
+              },
+              {
+                "href": "/api/product-media/cdc5a3b498044434b684dd99db1b4e0f/42efae00271798b633db4893e345df275a31a1a0a2200fc5d334b9d7b7be0333.png",
+                "sha256": "42efae00271798b633db4893e345df275a31a1a0a2200fc5d334b9d7b7be0333"
+              }
+            ],
+            "recordPreserved": true
+          }
         }
       ]
     },
@@ -494,108 +682,200 @@
           "overlay": {
             "file": "presentation/showcase/translations/coi-chase-desk.en.json",
             "sha256": "a6c91a79d3c5d544c027d02aaed124f6f095b34ebec50332be7fd7c6ce89bacd",
-            "sha256AtCapture": "449270f979b8a2a5fe4e1a30406587e0d0654dc34959f4996341b2a80f3431a6"
+            "sha256AtCapture": "a6c91a79d3c5d544c027d02aaed124f6f095b34ebec50332be7fd7c6ce89bacd"
           },
-          "capturedAt": "2026-10-01T17:57:40.672Z",
+          "capturedAt": "2026-10-02T03:09:11.540Z",
           "checks": "passed",
           "screenshots": [
             {
               "file": "presentation/showcase/coi-chase-desk-timeline-en.png",
-              "sha256": "b752607760fa1c026ff3d8bd470f6b1464d2de0d7ad037f6fcb8db884b5f5e1f",
-              "capturedAt": "2026-10-01T17:57:41.541Z",
-              "viewport": {
-                "width": 1440,
-                "height": 1280
-              },
+              "sha256": "59d37eb359212f00cbf7af87a330f76c21ede8e9d70d4ea1c8cc0e461c224068",
               "image": {
                 "width": 1440,
-                "height": 1280
+                "height": 1720
               },
-              "fullPage": false
+              "fullPage": false,
+              "capturedAt": "2026-10-02T03:09:13.550Z",
+              "viewport": {
+                "width": 1440,
+                "height": 1720
+              }
             },
             {
               "file": "presentation/showcase/coi-chase-desk-timeline-en-mobile.png",
               "sha256": "d0c581c7794b2203b5e9ba90211e06250d501f3eb8e04c15fe1bd4885c95344a",
-              "capturedAt": "2026-10-01T17:57:41.596Z",
-              "viewport": {
-                "width": 390,
-                "height": 844
-              },
               "image": {
                 "width": 390,
                 "height": 844
               },
-              "fullPage": false
+              "fullPage": false,
+              "capturedAt": "2026-10-02T03:09:13.608Z",
+              "viewport": {
+                "width": 390,
+                "height": 844
+              }
             },
             {
               "file": "presentation/showcase/coi-chase-desk-timeline-en-mobile-full.png",
-              "sha256": "2394d2809662656e17ee976ebd0c8d533aa77b0e91bc1f6781019c23399c7d0f",
-              "capturedAt": "2026-10-01T17:57:41.646Z",
+              "sha256": "67aa422466eb111f2dba12f5f329f4b600bde2aa621e38ce76d3ed00a68dcd7b",
+              "image": {
+                "width": 390,
+                "height": 5297
+              },
+              "fullPage": true,
+              "capturedAt": "2026-10-02T03:09:13.748Z",
               "viewport": {
                 "width": 390,
                 "height": 844
-              },
-              "image": {
-                "width": 390,
-                "height": 2467
-              },
-              "fullPage": true
+              }
             }
-          ]
+          ],
+          "disclosureChecks": {
+            "defaultExpanded": true,
+            "collapseAfterRefresh": true,
+            "collapseAfterReload": true,
+            "expandAfterRefresh": true
+          },
+          "publishedRefinement": {
+            "source": "examples/coi-chase-desk",
+            "variants": [
+              {
+                "file": "presentation/products/coi-chase-desk-en.png",
+                "viewport": "desktop",
+                "sha256": "bada4344dfcf2ff2174d0df99a1f2ad72224aa4db7d95d3f337ebfcd955c46e5",
+                "href": "/api/product-media/8afe69a9dd254abcb61ef82b3ffab923/refinement-bada4344dfcf2ff2174d0df99a1f2ad72224aa4db7d95d3f337ebfcd955c46e5.png",
+                "width": 1440,
+                "height": 1000
+              },
+              {
+                "file": "presentation/products/coi-chase-desk-en-mobile.png",
+                "viewport": "mobile",
+                "sha256": "1be20a47d04ddd2629f25fd9e56cfba7ee5954284c7ac08fb0f974f4973c88fa",
+                "href": "/api/product-media/8afe69a9dd254abcb61ef82b3ffab923/refinement-1be20a47d04ddd2629f25fd9e56cfba7ee5954284c7ac08fb0f974f4973c88fa.png",
+                "width": 390,
+                "height": 2860
+              }
+            ],
+            "captureSessionAt": "2026-10-01T18:03:15.51Z",
+            "productId": "8afe69a9dd254abcb61ef82b3ffab923",
+            "timeBasis": "Preserved actual capture-session observation; exact per-image capture time retained where recorded.",
+            "language": "en"
+          },
+          "originalRunScreenshot": {
+            "state": "stale",
+            "capturedAt": "2026-09-26T15:34:47.429396+00:00",
+            "resources": [
+              {
+                "href": "/api/product-media/8afe69a9dd254abcb61ef82b3ffab923/ffdc96f996109f50031aa5a737fc1b68ba600b0e2d70cfc8e4f5ca4af1f3d623.png",
+                "sha256": "ffdc96f996109f50031aa5a737fc1b68ba600b0e2d70cfc8e4f5ca4af1f3d623"
+              },
+              {
+                "href": "/api/product-media/8afe69a9dd254abcb61ef82b3ffab923/e4f9689559b4818d3880800e11b56b9bcd83c0411a675c66408a296696838bcb.png",
+                "sha256": "e4f9689559b4818d3880800e11b56b9bcd83c0411a675c66408a296696838bcb"
+              }
+            ],
+            "recordPreserved": true
+          }
         },
         {
           "language": "zh-CN",
           "overlay": {
             "file": "presentation/showcase/translations/coi-chase-desk.zh-CN.json",
             "sha256": "542a1dd645f25c5cadd41b288261c6f0aadd7ab5cdb79db6d3d31bc9368f897b",
-            "sha256AtCapture": "3cfcb2019e8426c9bbe15d6f5ca2c07245774a0069d62009a911eb9d13dac3de"
+            "sha256AtCapture": "542a1dd645f25c5cadd41b288261c6f0aadd7ab5cdb79db6d3d31bc9368f897b"
           },
-          "capturedAt": "2026-10-01T17:57:41.721Z",
+          "capturedAt": "2026-10-02T03:09:13.833Z",
           "checks": "passed",
           "screenshots": [
             {
               "file": "presentation/showcase/coi-chase-desk-timeline-zh-CN.png",
-              "sha256": "8584823f0eb9b5fd23459b9aa1d4b1a03d3faeefe132a7238f29d35b7575e58d",
-              "capturedAt": "2026-10-01T17:57:42.623Z",
-              "viewport": {
-                "width": 1440,
-                "height": 1240
-              },
+              "sha256": "4788b3f447a06bb373b2ba7b005993a80f64585da6b36e6523b80e3bef49aa82",
               "image": {
                 "width": 1440,
-                "height": 1240
+                "height": 1720
               },
-              "fullPage": false
+              "fullPage": false,
+              "capturedAt": "2026-10-02T03:09:15.833Z",
+              "viewport": {
+                "width": 1440,
+                "height": 1720
+              }
             },
             {
               "file": "presentation/showcase/coi-chase-desk-timeline-zh-CN-mobile.png",
               "sha256": "26fb3158005c445c1f5e517eee84d4f6ff1544acf0e88534bc87677eba5492f6",
-              "capturedAt": "2026-10-01T17:57:42.681Z",
-              "viewport": {
-                "width": 390,
-                "height": 844
-              },
               "image": {
                 "width": 390,
                 "height": 844
               },
-              "fullPage": false
+              "fullPage": false,
+              "capturedAt": "2026-10-02T03:09:15.890Z",
+              "viewport": {
+                "width": 390,
+                "height": 844
+              }
             },
             {
               "file": "presentation/showcase/coi-chase-desk-timeline-zh-CN-mobile-full.png",
-              "sha256": "90f55f325f4ef1f9cd801a37feb5f056928a0ddef29442ab36234795b34943c4",
-              "capturedAt": "2026-10-01T17:57:42.729Z",
+              "sha256": "0178cc655c24ff6286f6a5ca8bfc5c60d8ab68df0f37631ee52ca371ed9c1211",
+              "image": {
+                "width": 390,
+                "height": 4816
+              },
+              "fullPage": true,
+              "capturedAt": "2026-10-02T03:09:16.025Z",
               "viewport": {
                 "width": 390,
                 "height": 844
-              },
-              "image": {
-                "width": 390,
-                "height": 2129
-              },
-              "fullPage": true
+              }
             }
-          ]
+          ],
+          "disclosureChecks": {
+            "defaultExpanded": true,
+            "collapseAfterRefresh": true,
+            "collapseAfterReload": true,
+            "expandAfterRefresh": true
+          },
+          "publishedRefinement": {
+            "source": "examples/coi-chase-desk",
+            "variants": [
+              {
+                "file": "presentation/products/coi-chase-desk-zh.png",
+                "viewport": "desktop",
+                "sha256": "f4a2bb42d5213cf2f17ca19156141ccb206c951bc3453d60a2ff1c62210631b3",
+                "href": "/api/product-media/8afe69a9dd254abcb61ef82b3ffab923/refinement-f4a2bb42d5213cf2f17ca19156141ccb206c951bc3453d60a2ff1c62210631b3.png",
+                "width": 1440,
+                "height": 1000
+              },
+              {
+                "file": "presentation/products/coi-chase-desk-zh-mobile.png",
+                "viewport": "mobile",
+                "sha256": "6c988d1ba57571e50be9e9ce5b0a3757994ba0db7939617f65ec964083b09f58",
+                "href": "/api/product-media/8afe69a9dd254abcb61ef82b3ffab923/refinement-6c988d1ba57571e50be9e9ce5b0a3757994ba0db7939617f65ec964083b09f58.png",
+                "width": 390,
+                "height": 2703
+              }
+            ],
+            "captureSessionAt": "2026-10-01T18:03:15.51Z",
+            "productId": "8afe69a9dd254abcb61ef82b3ffab923",
+            "timeBasis": "Preserved actual capture-session observation; exact per-image capture time retained where recorded.",
+            "language": "zh-CN"
+          },
+          "originalRunScreenshot": {
+            "state": "stale",
+            "capturedAt": "2026-09-26T15:34:47.429396+00:00",
+            "resources": [
+              {
+                "href": "/api/product-media/8afe69a9dd254abcb61ef82b3ffab923/ffdc96f996109f50031aa5a737fc1b68ba600b0e2d70cfc8e4f5ca4af1f3d623.png",
+                "sha256": "ffdc96f996109f50031aa5a737fc1b68ba600b0e2d70cfc8e4f5ca4af1f3d623"
+              },
+              {
+                "href": "/api/product-media/8afe69a9dd254abcb61ef82b3ffab923/e4f9689559b4818d3880800e11b56b9bcd83c0411a675c66408a296696838bcb.png",
+                "sha256": "e4f9689559b4818d3880800e11b56b9bcd83c0411a675c66408a296696838bcb"
+              }
+            ],
+            "recordPreserved": true
+          }
         }
       ]
     }

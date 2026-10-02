@@ -262,12 +262,23 @@
     if ((!cycle.active && cycle.durationReliable === false) || cycle.status === 'interrupted') { row.title = message('recoveredEnd'); row.append(element('span', '', message('durationUnknown'))); }
     return row;
   }
-  function bindDisclosure(details, key) {
+  function bindDisclosure(details, key, defaultOpen = false) {
     details.dataset.disclosureKey = key;
+    const preferenceKey = key === 'product-media' ? `journal:product-media:${scope.entryId || state.data?.productMedia?.productId || ''}` : null;
+    const initializationKey = preferenceKey || key;
+    if (!state.disclosureInitialized) state.disclosureInitialized = new Set();
+    if (!state.disclosureInitialized.has(initializationKey)) {
+      state.disclosureInitialized.add(initializationKey);
+      let open = defaultOpen;
+      try { if (preferenceKey && sessionStorage.getItem(preferenceKey) !== null) open = sessionStorage.getItem(preferenceKey) === 'open'; } catch (_) {}
+      if (open) state.expanded.add(key);
+      else if (preferenceKey) state.expanded.delete(key);
+    }
     details.open = state.expanded.has(key);
     details.addEventListener('toggle', () => {
       if (details.open) state.expanded.add(key);
       else state.expanded.delete(key);
+      try { if (preferenceKey) sessionStorage.setItem(preferenceKey, details.open ? 'open' : 'closed'); } catch (_) {}
     });
     return details;
   }
@@ -728,12 +739,18 @@
     if (reference?.state === 'preserved') return 'iconReferencePreserved';
     return reference && !['inserted', 'linked', 'not_applicable'].includes(reference.state) ? 'iconReferenceUnconfirmed' : null;
   }
+  function publishedRefinement(media) {
+    return readOnly() && media?.publishedRefinement?.language === state.language ? media.publishedRefinement : null;
+  }
   function renderProductMedia(media) {
     if (!media?.productId) return null;
-    const section = readOnly() ? bindDisclosure(element('details', 'sidebar-block product-media'), 'product-media') : element('section', 'sidebar-block product-media');
+    const section = readOnly() ? bindDisclosure(element('details', 'sidebar-block product-media'), 'product-media', true) : element('section', 'sidebar-block product-media');
     section.append(element(readOnly() ? 'summary' : 'h2', '', message('productScreenshot')));
     const capture = media.screenshot || {};
-    const success = capture.latestSuccess;
+    const original = capture.latestSuccess;
+    const refinement = publishedRefinement(media);
+    const success = refinement || original;
+    if (refinement) section.append(element('p', 'sidebar-note refinement-label', message('publishedRefinement')));
     const variants = (success?.variants || []).filter((item) => mediaURL(item.href, media.productId));
     const desktop = variants.find((item) => item.viewport === 'desktop') || variants[0];
     if (desktop) {
@@ -751,9 +768,18 @@
       image.addEventListener('error', () => {
         link.replaceWith(element('p', 'sidebar-note status-failed', message('screenshotResourceUnavailable')));
       }, { once: true });
-      link.append(image); section.append(link);
-      const caption = element('p', 'sidebar-note screenshot-caption', message('capturedAt', { time: formatTime(success.capturedAt, true) }));
-      if (capture.currentVersion && success.version !== capture.currentVersion) caption.append(element('span', 'screenshot-stale', message('screenshotOldVersion')));
+      if (refinement) {
+        const mobile = variants.find((item) => item.viewport === 'mobile');
+        const picture = element('picture');
+        if (mobile) {
+          const source = element('source'); source.media = '(max-width: 760px)'; source.srcset = mediaURL(mobile.href, media.productId);
+          source.width = mobile.width; source.height = mobile.height; picture.append(source);
+        }
+        picture.append(image); link.append(picture);
+      } else link.append(image);
+      section.append(link);
+      const caption = element('p', 'sidebar-note screenshot-caption', message(refinement && !refinement.capturedAt ? 'captureSessionAt' : 'capturedAt', { time: formatTime(success.capturedAt || success.captureSessionAt, true) }));
+      if (!refinement && capture.currentVersion && success.version !== capture.currentVersion) caption.append(element('span', 'screenshot-stale', message('screenshotOldVersion')));
       section.append(caption);
       const links = element('div', 'screenshot-links');
       for (const variant of variants) {
@@ -762,6 +788,16 @@
         links.append(item);
       }
       section.append(links);
+      if (refinement && original) {
+        const originals = element('div', 'screenshot-links original-screenshot-links');
+        for (const variant of original.variants || []) {
+          const href = mediaURL(variant.href, media.productId);
+          if (!href) continue;
+          const item = element('a', '', message(variant.viewport === 'mobile' ? 'originalMobileScreenshot' : 'originalDesktopScreenshot'));
+          item.href = href; item.target = '_blank'; item.rel = 'noopener'; originals.append(item);
+        }
+        section.append(originals, element('p', 'sidebar-note screenshot-caption', message('originalCapturedAt', { time: formatTime(original.capturedAt, true) })));
+      }
     }
     if (!desktop || !['completed', 'ready', 'success', 'unchanged'].includes(capture.state)) {
       const key = { capturing: 'screenshotCapturing', running: 'screenshotCapturing', pending: 'screenshotCapturing',

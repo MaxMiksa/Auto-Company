@@ -1,0 +1,20 @@
+{
+  "source": "examples/tujiandan",
+  "variants": [
+    {
+      "file": "presentation/products/tujiandan-en.png",
+      "capturedAt": "2026-10-01T17:50:50.047Z",
+      "viewport": "desktop",
+      "sha256": "e266ee580937ba900c776c5606f1c53417e4d64e22e9c16933583e87e8a3ee17"
+    },
+    {
+      "file": "presentation/products/tujiandan-en-mobile.png",
+      "viewport": "mobile",
+      "sha256": "9ec2439b8b9a7250f20cf3cc9e1105e359bca6f0d07e2f10ee9e444348d50ab5"
+    }
+  ],
+  "captureSessionAt": "2026-10-01T17:50:51.86Z",
+  "productId": "cdc5a3b498044434b684dd99db1b4e0f",
+  "timeBasis": "Preserved actual capture-session observation; exact per-image capture time retained where recorded.",
+  "language": "en"
+}
