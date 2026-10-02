@@ -750,7 +750,6 @@
     const original = capture.latestSuccess;
     const refinement = publishedRefinement(media);
     const success = refinement || original;
-    if (refinement) section.append(element('p', 'sidebar-note refinement-label', message('publishedRefinement')));
     const variants = (success?.variants || []).filter((item) => mediaURL(item.href, media.productId));
     const desktop = variants.find((item) => item.viewport === 'desktop') || variants[0];
     if (desktop) {
@@ -788,16 +787,6 @@
         links.append(item);
       }
       section.append(links);
-      if (refinement && original) {
-        const originals = element('div', 'screenshot-links original-screenshot-links');
-        for (const variant of original.variants || []) {
-          const href = mediaURL(variant.href, media.productId);
-          if (!href) continue;
-          const item = element('a', '', message(variant.viewport === 'mobile' ? 'originalMobileScreenshot' : 'originalDesktopScreenshot'));
-          item.href = href; item.target = '_blank'; item.rel = 'noopener'; originals.append(item);
-        }
-        section.append(originals, element('p', 'sidebar-note screenshot-caption', message('originalCapturedAt', { time: formatTime(original.capturedAt, true) })));
-      }
     }
     if (!desktop || !['completed', 'ready', 'success', 'unchanged'].includes(capture.state)) {
       const key = { capturing: 'screenshotCapturing', running: 'screenshotCapturing', pending: 'screenshotCapturing',
@@ -938,14 +927,6 @@
     renderSidebar();
     renderRuntime();
     renderLanguage();
-    const notes = clear($('sourceNotes'));
-    if (data.warnings?.length) {
-      const disclosure = bindDisclosure(element('details'), 'warnings');
-      const list = element('ul');
-      data.warnings.forEach((warning) => list.append(element('li', '', clean(warning))));
-      disclosure.append(element('summary', '', `${message('warning')} · ${data.warnings.length}`), list);
-      notes.append(disclosure);
-    }
     $('sourceName').textContent = message('sourceLabel', { name: data.sourceName || 'Auto Company' });
     if (!$('usageDate').value) $('usageDate').value = datePart(data.cycles.find((cycle) => !cycle.active)?.endedAt) || new Date().toISOString().slice(0, 10);
     renderUsage();
