@@ -91,7 +91,7 @@ The [example catalog](examples/README.md) contains 22 independently runnable pub
 
 The examples cover professional data review, image delivery, shared meals, travel pacing and family creation. Published copies preserve the original product direction while refining components and repairing real interactions; original reports and unsuccessful conclusions are not rewritten for the showcase.
 
-Frontend work uses a task-led skill adapted from Anthropic, distinguishing targeted refinement from an explicitly requested redesign. See [three-product redesign captures and acceptance](presentation/frontend-redesign/README.md) and the [corrected earlier refinement study](presentation/frontend-study/README.md), which now includes a read-boundary audit. These small, non-blind case studies do not establish universal prompt superiority.
+Frontend work uses the B design baseline adapted from Anthropic, followed by a [dedicated finishing pass](.claude/skills/frontend-polish/SKILL.md) once the core flow works. The pass preserves the product’s identity and improves components, copy and responsive behavior. The [refinement study](presentation/frontend-study/README.md) and [redesign comparison](presentation/frontend-redesign/README.md) retain their original evidence and limits.
 
 ## Where To Start (By Platform)
 
