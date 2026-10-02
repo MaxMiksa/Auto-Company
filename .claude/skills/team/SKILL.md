@@ -53,7 +53,9 @@ Use the Agent Teams feature to assemble the temporary team:
 - Use the Task tool to spawn each teammate with `subagent_type` set to `general-purpose`; inject the full content of the corresponding agent file into the prompt as its role definition
 - When spawning a teammate, state in the prompt: its role definition, the task to complete, the cycle's runtime `Language` instruction, and that output documents belong under `docs/<role>/`
 
-For frontend work, name one selected member as design owner without expanding the team just for a title. The owner and implementer must read `.claude/skills/frontend-design.md`. Select refinement or redesign/new-build mode from the user's intent; an existing codebase alone does not select refinement. Pass the mode, user task, functional contracts, agreed visual direction, key component decisions and acceptance states with the implementation handoff. In an explicit redesign, do not reintroduce earlier refinement-only identity, palette or layout constraints. The owner checks the implemented screens, not only a written design.
+For frontend work, name one selected member as design owner without expanding the team just for a title. The owner and implementer must read `.claude/skills/frontend-design.md`. Pass the user task, agreed visual direction, key component decisions and acceptance states with the implementation handoff; the owner checks the implemented screens, not only a written design.
+
+For a dedicated frontend finishing cycle, the design owner, implementer and verifier also use `.claude/skills/frontend-polish/SKILL.md`. Hand off the current product's screenshots and known functional behavior, the identity to retain, concrete defects to fix and the interface version already reviewed. Share only materials within the permitted project workspace. Complete and record the pass once for that version; later targeted reviews do not restart a full redesign.
 
 ### 3. Coordinate and Consolidate
 

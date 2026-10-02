@@ -91,7 +91,7 @@ make center
 
 案例覆盖专业数据核验、图片交付、双人饮食、旅行节奏、家庭共同创作等任务。展示副本保留原产品方向，修复真实交互问题并统一组件细节；原始运行报告与失败结论不会随宣传图改写。
 
-前端采用基于 Anthropic 技能改编的设计规则，区分局部精修与明确要求的重新设计。[三个固定产品的重做实拍](presentation/frontend-redesign/README.md)记录布局、风格与功能验收；[上轮精修实验](presentation/frontend-study/README.md)已补充读取边界审计。这些小样本、非盲评案例不代表提示词普遍更优。
+前端恢复采用基于 Anthropic 技能改编的 B 版设计规则，在核心流程可用后安排一轮[独立精修](.claude/skills/frontend-polish/SKILL.md)，保留产品风格，改善组件、文案和响应式体验。[精修实验](presentation/frontend-study/README.md)与[重做对照](presentation/frontend-redesign/README.md)保留原始证据与适用边界。
 
 ## 你该看哪一节（按平台）
 

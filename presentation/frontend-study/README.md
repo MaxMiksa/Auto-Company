@@ -6,6 +6,12 @@
 
 **非盲评的精修产物中，B 两项评分较高、一项持平。** 三个产品、两版提示词、桌面与手机组成的 12 次共同浏览器验收全部通过。这是产物评分记录，不是隔离实验的因果结论；后续会话审计发现模型越过各运行目录读取实验材料，详见下面的更正。公开案例的人工精修是另一项交付。
 
+## Current adoption / 当前采用
+
+The user preferred B after the later B/C comparison. The B design baseline is restored, with a [dedicated finishing prompt](../../.claude/skills/frontend-polish/SKILL.md) added for the next frontend delivery workflow. This decision does not change the frozen experiment or establish a measured benefit for the additional prompt.
+
+用户在后续 B/C 对照中更认可 B，当前恢复 B 版设计基线，并在后续前端交付流程接入独立精修提示词。此决定不改写既有实验，也不代表新增提示词已经取得实测增益。
+
 ## Audit correction / 审计更正
 
 See the [public read-boundary audit summary / 读取边界审计摘要](READ-BOUNDARY-AUDIT.md). Original session bodies and machine paths remain private.
