@@ -77,6 +77,8 @@ actual.CompanyView = FixtureView
 actual.run_isolated = fixture_execute
 actual.runtime_binary = lambda: 'disposable-orchestration-double'
 run_engine = actual.run_engine
+copy_tree = actual.copy_tree
+regular_bytes = actual.regular_bytes
 if __name__ == '__main__':
     raise SystemExit(actual.main())
 ''')

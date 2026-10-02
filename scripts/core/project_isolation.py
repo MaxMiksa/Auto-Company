@@ -155,7 +155,7 @@ def seccomp_file(folder):
 
 
 def base_environment():
-    return {"PATH": "/opt/engine:/usr/bin:/bin", "HOME": "/home/agent", "USER": "agent",
+    return {"PATH": "/opt/runtime:/opt/engine:/usr/bin:/bin", "HOME": "/home/agent", "USER": "agent",
             "LANG": "C.UTF-8", "LC_ALL": "C.UTF-8", "TMPDIR": "/tmp",
             "XDG_CACHE_HOME": "/home/agent/.cache", "XDG_CONFIG_HOME": "/home/agent/.config",
             "CODEX_HOME": "/home/agent/.codex", "GIT_CONFIG_NOSYSTEM": "1",
@@ -181,6 +181,14 @@ def run_isolated(command, workspace, *, cwd="/workspace", home=None, readonly=()
         policy = seccomp_file(temporary)
         env = base_environment()
         env.update(environment or {})
+        node = shutil.which("node")
+        if node:
+            node = Path(node).resolve()
+            with node.open("rb") as executable:
+                if executable.read(4) != b"\x7fELF":
+                    raise IsolationError("Node runtime must be a native Linux executable")
+            if command and command[0] == "/usr/bin/node":
+                command = ["/opt/runtime/node", *command[1:]]
         if interactive:
             env["TERM"] = os.environ.get("TERM", "xterm-256color")
         libraries = os.environ.get("AUTO_COMPANY_LIBRARY_RUNTIME")
@@ -203,6 +211,10 @@ def run_isolated(command, workspace, *, cwd="/workspace", home=None, readonly=()
         for source in RUNTIME_PATHS:
             if Path(source).exists():
                 args += ["--ro-bind", str(Path(source).resolve()), source]
+        if node:
+            # NVM and CI tool caches are not public runtime mounts. Expose only
+            # the selected executable, never its parent directory or caches.
+            args += ["--ro-bind", str(node), "/opt/runtime/node"]
         if libraries:
             args += ["--ro-bind", str(library_root), "/opt/runtime-libs"]
         for name, target in (("/bin", "usr/bin"), ("/sbin", "usr/bin"), ("/lib", "usr/lib"), ("/lib64", "usr/lib64")):

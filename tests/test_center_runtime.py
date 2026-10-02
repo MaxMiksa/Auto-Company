@@ -1226,7 +1226,7 @@ class WindowsBridgeTests(unittest.TestCase):
                 subprocess.run(command, check=True, capture_output=True)
             revision = subprocess.check_output(["git", "-C", str(framework), "rev-parse", "HEAD"], text=True).strip()
             domain = {"platform": "wsl", "distribution": os.environ.get("AUTO_COMPANY_TEST_WSL_DISTRO", "Ubuntu"), "user": os.environ.get("AUTO_COMPANY_TEST_WSL_USER", "max")}
-            adapter = PosixAdapter(ROOT, domain)
+            adapter = PosixAdapter(framework, domain)
             adapter.clone(framework, target, revision, control)
             self.assertTrue((target / ".git").is_dir())
             result = adapter._execute(adapter._wsl() + ["--exec", "git", "-C", adapter.path(target), "rev-parse", "HEAD"])
@@ -1282,6 +1282,9 @@ class MediaIntegrationTests(unittest.TestCase):
             root.mkdir()
             shutil.copytree(ROOT / "scripts/core", root / "scripts/core")
             copy_control_entrypoints(root)
+            # The fake model is an orchestration fixture; media must still
+            # exercise the actual host-to-namespace boundary.
+            shutil.copy2(ROOT / "scripts/core/project_isolation.py", root / "scripts/core/project_isolation.py")
             shutil.copytree(ROOT / "i18n", root / "i18n")
             shutil.copytree(ROOT / "memories", root / "memories")
             shutil.copytree(ROOT / "examples/scopefence", root / "projects/scopefence")
@@ -1305,7 +1308,7 @@ class MediaIntegrationTests(unittest.TestCase):
             fake.chmod(0o755)
             store = CenterStore(folder / "center")
             catalog = CenterCatalog(store)
-            runtime = CenterRuntime(store, catalog, ROOT, {"platform": "posix"})
+            runtime = CenterRuntime(store, catalog, root, {"platform": "posix"})
             actual_media = runtime.adapter.media
             def checked_media(path):
                 try:

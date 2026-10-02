@@ -130,6 +130,20 @@ pathlib.Path('/workspace/success').write_text('yes')
         self.assertEqual(boundary.run_isolated(["/usr/bin/python3", "/workspace/check.py"], self.project), 0)
         self.assertEqual((self.project / "success").read_text(), "yes")
 
+    @unittest.skipUnless(shutil.which("node"), "Native Node runtime is required")
+    def test_selected_node_binary_is_mounted_without_its_tool_cache(self):
+        cache = self.base / "tool-cache"
+        cache.mkdir()
+        shutil.copy2(Path(shutil.which("node")).resolve(), cache / "node")
+        (cache / "private-cache-file").write_text("synthetic")
+        script = ("const fs=require('node:fs');"
+                  "if(process.execPath!=='/opt/runtime/node') process.exit(2);"
+                  f"if(fs.existsSync({json.dumps(str(cache / 'private-cache-file'))})) process.exit(3);"
+                  "fs.writeFileSync('/workspace/node-output','ok');")
+        with patch.dict(os.environ, {"PATH": str(cache) + os.pathsep + os.environ["PATH"]}):
+            self.assertEqual(boundary.run_isolated(["node", "-e", script], self.project), 0)
+        self.assertEqual((self.project / "node-output").read_text(), "ok")
+
     def test_root_link_and_external_hardlink_refuse(self):
         alias = self.base / "alias"
         alias.symlink_to(self.project)

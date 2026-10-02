@@ -17,6 +17,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / 'scripts/core'))
 sys.path.insert(0, str(ROOT / 'tests'))
 from isolation_fixture import install as install_fixture_boundary
 SPEC = importlib.util.spec_from_file_location("localization", ROOT / "scripts/core/localization.py")

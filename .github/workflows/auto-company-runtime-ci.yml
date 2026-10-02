@@ -235,6 +235,7 @@ jobs:
           export AUTO_COMPANY_BROWSER_RUNTIME="$HOME/.cache/ms-playwright"
           python3 scripts/ci/run.py product-media python3 tests/run_isolated_media_contracts.py
           python3 scripts/ci/run.py media-host-isolation python3 -m unittest discover -s tests -p test_isolated_media.py -v
+          AUTO_COMPANY_TEST_CENTER_MEDIA=1 AUTO_COMPANY_TEST_MEDIA_MODULES="$PWD/scripts/media/node_modules" python3 scripts/ci/run.py center-media python3 -m unittest tests.test_center_runtime.MediaIntegrationTests -v
       - name: Save failure evidence
         if: failure()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
