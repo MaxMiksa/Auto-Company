@@ -58,7 +58,7 @@ def validate_translation(translation):
 
 
 class ShowcaseSource(JournalSource):
-    def __init__(self, root, project, language, translation):
+    def __init__(self, root, project, language, translation, refinement=None):
         validate_translation(translation)
         original = JournalSource(root)
         identity = original.identity_state()['paths'][project]
@@ -66,6 +66,38 @@ class ShowcaseSource(JournalSource):
         self.translation = deepcopy(translation)
         if translation['productId'] != identity or translation['language'] != language:
             raise ValueError('Translation belongs to a different product or language')
+        self.refinement = None
+        self.refinement_resources = {}
+        if refinement is not None:
+            if refinement.get('productId') != identity or refinement.get('language') != language:
+                raise ValueError('Refinement belongs to a different product or language')
+            if not refinement.get('capturedAt') and not refinement.get('captureSessionAt'):
+                raise ValueError('Refinement requires its actual capture or capture-session time')
+            self.refinement = deepcopy(refinement)
+            for variant in self.refinement.get('variants', []):
+                relative = variant['file']
+                if not re.fullmatch(r'presentation/products/[a-z0-9-]+\.png', relative):
+                    raise ValueError('Only reviewed published product PNGs are allowed')
+                path = ROOT / relative
+                raw = path.read_bytes()
+                if path.is_symlink() or hashlib.sha256(raw).hexdigest() != variant['sha256'] or not raw.startswith(b'\x89PNG\r\n\x1a\n'):
+                    raise ValueError('Published refinement digest or PNG is invalid')
+                name = 'refinement-' + variant['sha256'] + '.png'
+                variant.update(href=f'/api/product-media/{identity}/{name}', width=int.from_bytes(raw[16:20], 'big'), height=int.from_bytes(raw[20:24], 'big'))
+                self.refinement_resources[name] = (path, variant['sha256'])
+            if {variant.get('viewport') for variant in self.refinement.get('variants', [])} != {'desktop', 'mobile'}:
+                raise ValueError('Refinement requires desktop and mobile variants')
+
+    def media_resource(self, product_id, name):
+        if name in self.refinement_resources:
+            if product_id != self.translation['productId']:
+                raise ValueError('Invalid refinement product')
+            path, digest = self.refinement_resources[name]
+            raw = path.read_bytes()
+            if path.is_symlink() or hashlib.sha256(raw).hexdigest() != digest:
+                raise ValueError('Published refinement changed after review')
+            return raw, 'image/png'
+        return super().media_resource(product_id, name)
 
     def snapshot(self, **kwargs):
         data = deepcopy(super().snapshot(**kwargs))
@@ -95,6 +127,8 @@ class ShowcaseSource(JournalSource):
             if label:
                 artifact['displayLabel'] = label
         data['sourceName'] = self.translation['viewLabel']
+        if self.refinement:
+            data['productMedia']['publishedRefinement'] = deepcopy(self.refinement)
         return data
 
 
@@ -104,10 +138,12 @@ def main():
     parser.add_argument('--project', required=True)
     parser.add_argument('--translation', required=True, type=Path)
     parser.add_argument('--port', type=int, default=0)
+    parser.add_argument('--refinement', type=Path, help='Reviewed published image metadata; independent of original run captures')
     args = parser.parse_args()
     translation = json.loads(args.translation.read_text(encoding='utf8'))
     validate_translation(translation)
-    source = ShowcaseSource(args.root, args.project, translation['language'], translation)
+    refinement = json.loads(args.refinement.read_text(encoding='utf8')) if args.refinement else None
+    source = ShowcaseSource(args.root, args.project, translation['language'], translation, refinement)
     source.snapshot()  # Validate before opening the listener.
     server = JournalServer(('127.0.0.1', args.port), source)
     print(f'http://127.0.0.1:{server.server_port}/journal', flush=True)

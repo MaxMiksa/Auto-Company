@@ -1,8 +1,8 @@
 # Recorded work timelines · 真实工作时间轴
 
-These six views show three products' real recorded work. Exploration and product work keep one continuous sequence, with the newest report open and earlier cycles collapsed. The screenshots preserve original cycle identities, timestamps, statuses, checks and recorded limitations.
+These six views show three products' real recorded work. Exploration and product work keep one continuous sequence, with the newest report and product screenshot open and earlier cycles collapsed. Manual screenshot collapse or expansion survives refresh and page reload within the browser session. The screenshots preserve original cycle identities, timestamps, statuses, checks and recorded limitations.
 
-六个视图展示三个产品的真实运行记录。探索和产品工作连续编号，最新报告展开、早期轮次保持默认折叠；原始轮次身份、时间、状态、检查与已记录的限制均保留。
+六个视图展示三个产品的真实运行记录。探索和产品工作连续编号，最新报告与产品实拍展开、早期轮次保持默认折叠；手动收起或展开实拍的选择在本次浏览器会话的刷新及重载后保留。原始轮次身份、时间、状态、检查与已记录的限制均保留。
 
 | Product / 产品 | Recorded cycles / 真实轮次 | English | 中文 |
 | --- | --- | --- | --- |
@@ -19,6 +19,10 @@ These six views show three products' real recorded work. Exploration and product
 The [English and Chinese overlays](translations/) translate presentation text only. The preview validates every original report digest and requires exact cycle coverage before serving; a changed report or missing cycle fails validation. These reviewed views cannot replace the original facts. A completed cycle does not establish product delivery, customer adoption, revenue or paid validation. Product interfaces were refined and translated under human direction after the recorded runs; that work adds **no historical cycles**. Tujiandan is a free local utility, and its recorded decision to stop investing in a standalone paid product remains visible.
 
 [中英文语言层](translations/)只翻译展示文字。预览服务在提供页面前校验每份原报告的哈希与完整轮次覆盖；报告改变或轮次缺失会使校验失败。经审校的视图不能替代原始事实。轮次完成不代表产品交付、客户采用、收入或付费验证。本轮人工指导的界面精修和翻译**不增加历史轮次**；图检单仍是免费本地工具，原记录中停止独立付费产品投入的结论保留。
+
+The expanded **Published refinement / 发布精修版** is a separate, language-matched display of the previously reviewed real product screenshots in [presentation/products](../products/). The [refinement metadata](refinements/) preserves their original digests, product-copy source and actual capture-session observation; exact per-image capture times are included where they were recorded. This display does not replace `latestSuccess` or any original run media. Original desktop and mobile images retain independent links and their original capture time. Desktop and mobile use the corresponding reviewed viewport image. A refinement with a different display language is never substituted.
+
+默认展开的**发布精修版**独立展示 [presentation/products](../products/) 中已审过的同语言真实产品实拍。[精修来源元数据](refinements/)保留原哈希、产品副本来源及当时实拍记录时间；已有逐图精确时间的保留精确时间。该展示层不替换 `latestSuccess` 或任何原运行媒体，原桌面与手机截图保留独立链接和原捕获时间。桌面与手机分别使用对应视口的已审图片；不同于当前展示语言的精修图不会替代原图。
 
 ## Capture / 捕获
 
@@ -47,7 +51,7 @@ Start a read-only translated preview against your preserved source. Replace the 
 对自行保留的来源启动只读翻译预览，替换运行位置，并选择匹配的产品与语言层：
 
 ```sh
-python scripts/media/showcase_preview.py --root "<your-preserved-run>" --project projects/scopefence --translation presentation/showcase/translations/scopefence.en.json --port 9001
+python scripts/media/showcase_preview.py --root "<your-preserved-run>" --project projects/scopefence --translation presentation/showcase/translations/scopefence.en.json --refinement presentation/showcase/refinements/scopefence.en.json --port 9001
 ```
 
 In the ignored `.auto-company/showcase-capture/` directory, provide the unmodified original journal JSON snapshot and a private `targets.json` array. This is an input schema example, not substitute run data:

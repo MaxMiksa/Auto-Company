@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 import sys
 import tempfile
+import hashlib
 import unittest
 from unittest.mock import patch
 
@@ -105,6 +106,40 @@ class ShowcasePreviewTests(unittest.TestCase):
         actual = self.source(translated).snapshot()
         self.assertEqual(actual["cycles"][0]["workReport"]["blocker"],
                          self.snapshot["cycles"][0]["workReport"]["blocker"])
+
+    def test_refinement_stays_separate_and_only_serves_reviewed_product_bytes(self):
+        image = ROOT / 'presentation/products/tujiandan-en.png'
+        raw = image.read_bytes()
+        published = self.root / 'presentation/products/example.png'
+        published.parent.mkdir(parents=True)
+        published.write_bytes(raw)
+        digest = hashlib.sha256(raw).hexdigest()
+        refinement = {
+            'productId': self.translation['productId'], 'language': 'zh-CN',
+            'captureSessionAt': '2026-10-01T17:50:51.860Z',
+            'source': 'examples/example',
+            'variants': [{'file': 'presentation/products/example.png', 'sha256': digest, 'viewport': viewport}
+                         for viewport in ('desktop', 'mobile')],
+        }
+        original = deepcopy(self.snapshot)
+        with patch.object(showcase, 'ROOT', self.root):
+            source = showcase.ShowcaseSource(self.root, self.project, 'zh-CN', self.translation, refinement)
+            with patch.object(showcase.JournalSource, 'snapshot', return_value=original):
+                result = source.snapshot()
+            self.assertEqual(result['productMedia']['screenshot'], original['productMedia']['screenshot'])
+            self.assertNotIn('publishedRefinement', original['productMedia'])
+            name = 'refinement-' + digest + '.png'
+            self.assertEqual(source.media_resource(self.translation['productId'], name), (raw, 'image/png'))
+            with self.assertRaises(ValueError):
+                source.media_resource('b' * 32, name)
+            published.write_bytes(raw + b'changed')
+            with self.assertRaisesRegex(ValueError, 'changed after review'):
+                source.media_resource(self.translation['productId'], name)
+            for changed in ({'language': 'en'}, {'productId': 'b' * 32},
+                            {'variants': [{**refinement['variants'][0], 'file': '../private.png'}]}):
+                with self.subTest(changed=changed), self.assertRaises(ValueError):
+                    showcase.ShowcaseSource(self.root, self.project, 'zh-CN', self.translation,
+                                            {**refinement, **changed})
 
     def test_success_changes_only_allowlisted_text_and_never_writes_original_objects(self):
         translated = deepcopy(self.translation)

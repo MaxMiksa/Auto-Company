@@ -22,7 +22,7 @@ function helpers() {
   // copied application logic, network request or production testing hook.
   const binding = app.indexOf("\n  document.querySelectorAll('[data-tab]').forEach");
   assert.ok(binding > 0, "Journal event wiring must follow its helper declarations");
-  vm.runInContext(app.slice(0, binding) + "\n globalThis.journal = { state, message, aggregate, duration, cycleTitle, statusLabel, formatTime, filterUsage, reportRows, liveDuration, checkCounts, checkPresentation, progressState, latestCycle, historyGroups, paddedCycleNumber, unavailableArtifact, mediaURL, mediaRetryError, iconPublicationWarning };\n})();", context);
+  vm.runInContext(app.slice(0, binding) + "\n globalThis.journal = { state, message, aggregate, duration, cycleTitle, statusLabel, formatTime, filterUsage, reportRows, liveDuration, checkCounts, checkPresentation, progressState, latestCycle, historyGroups, paddedCycleNumber, unavailableArtifact, mediaURL, mediaRetryError, iconPublicationWarning, publishedRefinement };\n})();", context);
   context.journal.state.language = "en";
   return { ...context.journal, messages: context.window.JOURNAL_MESSAGES, vocabulary: context.window.DashboardStatus, fields };
 }
@@ -46,6 +46,18 @@ test("media links must belong to the exact managed product", () => {
   const url = `/api/product-media/${id}/${'b'.repeat(64)}.png`;
   assert.equal(mediaURL(url, id), url);
   for (const value of [url.replace(id, 'c'.repeat(32)), 'https://example.com/image.png', 'javascript:alert(1)', `/api/product-media/${id}/../private.svg`, `${url}?path=private`]) assert.equal(mediaURL(value, id), null);
+});
+
+test("published refinements require a matching read-only display language", () => {
+  const { state, publishedRefinement } = helpers();
+  const refinement = {language: 'en', source: 'examples/example'};
+  const media = {publishedRefinement: refinement};
+  state.data = {readOnly: true};
+  assert.equal(publishedRefinement(media), refinement);
+  state.language = 'zh-CN';
+  assert.equal(publishedRefinement(media), null);
+  state.language = 'en'; state.data.readOnly = false;
+  assert.equal(publishedRefinement(media), null);
 });
 
 test("unconfirmed starts never become completed cycles", () => {

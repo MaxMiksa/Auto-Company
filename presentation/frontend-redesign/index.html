@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>前端重做 · 实拍对照</title>
+<style>
+  :root{font-family:"Segoe UI","Microsoft YaHei",sans-serif;color:#18212c;background:#f5f6f8}
+  *{box-sizing:border-box}body{margin:0}header,main{max-width:1720px;margin:auto;padding:28px 32px}
+  header{padding-bottom:18px}h1{font-size:28px;margin:0 0 12px;letter-spacing:-.5px}p{line-height:1.7;margin:0}
+  nav{display:flex;gap:24px;flex-wrap:wrap;margin-top:22px}label{display:grid;gap:7px;font-weight:600}
+  select{font:inherit;color:inherit;background:white;border:1px solid #a8b3c2;border-radius:5px;padding:10px 36px 10px 12px;min-width:155px}
+  select:focus-visible,a:focus-visible{outline:3px solid #2563eb;outline-offset:3px}main{padding-top:10px}
+  .comparison{display:grid;grid-template-columns:1fr 1fr;gap:24px}figure{margin:0;min-width:0}
+  figcaption{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:14px 0;font-size:18px;font-weight:600}
+  figcaption small{font-size:14px;font-weight:400}a{color:#174cb5}figure>a{display:block;background:#e7eaf0;border:1px solid #d1d8e1;line-height:0}
+  img{display:block;width:100%;height:auto}body[data-viewport="mobile"] figure>a{max-width:390px;margin:auto}
+  footer{padding-top:22px;line-height:1.8}.unavailable{padding:20px;color:#a32727;background:white;line-height:1.6}
+  @media(max-width:850px){header,main{padding:20px}.comparison{grid-template-columns:1fr}h1{font-size:24px}nav{gap:14px}}
+</style>
+<header>
+  <h1>前端重做 · 实拍对照</h1>
+  <p>同样的业务输入，比较上轮精修与本轮重新设计。图片来自真实页面，未经像素编辑。</p>
+  <nav aria-label="选择对比">
+    <label>产品<select id="product"><option value="everyday">一桌双味</option><option value="professional">图证工作台</option><option value="experience">家里的小展会</option></select></label>
+    <label>页面状态<select id="stage"><option value="initial">开始使用</option><option value="result">工作结果</option></select></label>
+    <label>设备<select id="viewport"><option value="desktop">桌面 · 1440 × 1000</option><option value="mobile">手机 · 390 × 844</option></select></label>
+  </nav>
+</header>
+<main>
+  <div class="comparison" aria-live="polite">
+    <figure><figcaption><span>B · 上轮精修</span><small>保留原身份与结构</small></figcaption><a id="beforeLink" target="_blank" rel="noopener"><img id="before" alt=""></a></figure>
+    <figure><figcaption><span>C · 本轮重新设计</span><small>允许重做布局、色彩和流程</small></figcaption><a id="afterLink" target="_blank" rel="noopener"><img id="after" alt=""></a></figure>
+  </div>
+  <footer>点击图片查看原尺寸。工作结果采用同一业务状态；布局变化时不强制相同滚动位置。<br>这是重设计前后对照，同时改变了任务授权和输入上下文，不是严格单变量实验。<a href="README.md">查看验收说明</a></footer>
+</main>
+<script>
+  const product = document.querySelector('#product'), stage = document.querySelector('#stage'), viewport = document.querySelector('#viewport');
+  function render(){
+    document.body.dataset.viewport = viewport.value;
+    for(const [arm,id] of [['B','before'],['C','after']]){
+      const image = document.getElementById(id), link = document.getElementById(id+'Link');
+      const file = product.value+'-'+arm+'-'+viewport.value+'-'+stage.value+'.png';
+      image.alt = product.selectedOptions[0].text+' · '+arm+' · '+stage.selectedOptions[0].text+' · '+viewport.selectedOptions[0].text;
+      image.src = file; link.href = file; link.setAttribute('aria-label','打开原图：'+image.alt);
+    }
+  }
+  for(const input of [product,stage,viewport]) input.addEventListener('change',render);
+  render();
+</script>
+</html>

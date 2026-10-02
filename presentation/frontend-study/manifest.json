@@ -1,6 +1,8 @@
 {
   "name": "frontend-task-first-v1",
-  "comparison": "Three fixed existing products; one independent generation per arm and product. Not a blinded or statistical study.",
+  "comparison": "Three fixed existing products; one generation per arm and product in separate directories. Later audit found parent-directory experiment-material reads; not read-isolated, blinded, statistical, or a strict causal comparison.",
+  "publicationCommit": "1037a4bae0413e670b4d10a62ddda0e70d3616cb",
+  "auditCorrection": "2026-10-02: historical projects were included in the input roots. Family Art Show arms read parent CASE/manifests; A also read the pre-result protocol and freeze checks, B read session settings. Observed evidence did not establish reads of another arm's generated frontend. Screenshot and functional evidence remains valid.",
   "baseCommit": "8becd542a3c76d286b21b27e15b99d71a4f2d0ca",
   "frozenCandidateFiles": {
     "PROMPT.md": "50f1b1184162013e0900f7210b91b186db12598935e53df0f7711de99965d99b",

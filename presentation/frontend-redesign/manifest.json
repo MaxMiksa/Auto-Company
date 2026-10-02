@@ -1,0 +1,398 @@
+{
+  "date": "2026-10-02",
+  "comparison": "B previous refinement vs C explicit redesign; not a single-variable A/B or blind aesthetic evaluation",
+  "actualModel": "gpt-6.1-sol",
+  "actualEffort": "high",
+  "maxParallel": 3,
+  "naturalCompletion": true,
+  "functionalScenariosPassed": 12,
+  "oldBackupIntoNewProductScenariosPassed": 2,
+  "desktop": {
+    "width": 1440,
+    "height": 1000
+  },
+  "mobile": {
+    "width": 390,
+    "height": 844
+  },
+  "unalteredBrowserCaptures": [
+    {
+      "publicName": "everyday-B-desktop-initial.png",
+      "sha256": "6617e87310fc784101bcfff242ffdfd04f6b4ed6baf31b0b8fd249aeeaffd973",
+      "case": "everyday",
+      "arm": "B",
+      "viewport": "desktop",
+      "state": "初始"
+    },
+    {
+      "publicName": "everyday-C-desktop-initial.png",
+      "sha256": "5ea2421c24a6b94fefb5ea4af0ee0fe8d76b4511f126ad55dc3aea79d1d932a3",
+      "case": "everyday",
+      "arm": "C",
+      "viewport": "desktop",
+      "state": "初始"
+    },
+    {
+      "publicName": "everyday-B-desktop-result.png",
+      "sha256": "91d44a26016c40f1d7ed1b14a04cd985d95687cfbcd2cdf93b7c6024bcaaea04",
+      "case": "everyday",
+      "arm": "B",
+      "viewport": "desktop",
+      "state": "工作结果"
+    },
+    {
+      "publicName": "everyday-C-desktop-result.png",
+      "sha256": "6108fa306905a51911a7e0a6bd33b31bb657fa9282d7d30eab3fecaed3ac2c27",
+      "case": "everyday",
+      "arm": "C",
+      "viewport": "desktop",
+      "state": "工作结果"
+    },
+    {
+      "publicName": "everyday-B-mobile-initial.png",
+      "sha256": "76d3984ededcf77445979f9cf0f4cea565484490639d8d89c60964774bc0601c",
+      "case": "everyday",
+      "arm": "B",
+      "viewport": "mobile",
+      "state": "初始"
+    },
+    {
+      "publicName": "everyday-C-mobile-initial.png",
+      "sha256": "f799e055ff04cc0f708fed251bc1aa44f5664d5d157eddc13c69367137c2688e",
+      "case": "everyday",
+      "arm": "C",
+      "viewport": "mobile",
+      "state": "初始"
+    },
+    {
+      "publicName": "everyday-B-mobile-result.png",
+      "sha256": "2aa576fcf124c0d083a7181eb083f186d92c5d8708c606b6b8526176368b6e13",
+      "case": "everyday",
+      "arm": "B",
+      "viewport": "mobile",
+      "state": "工作结果"
+    },
+    {
+      "publicName": "everyday-C-mobile-result.png",
+      "sha256": "f609ae5407178aa42096ee4cf12a2fd1bffa6d75cbd99129449a5fe805d0db61",
+      "case": "everyday",
+      "arm": "C",
+      "viewport": "mobile",
+      "state": "工作结果"
+    },
+    {
+      "publicName": "professional-B-desktop-initial.png",
+      "sha256": "21b2d81bb5832d2e0a671c8f70d01c7e7243660bea7c63aa45e74c46df29232d",
+      "case": "professional",
+      "arm": "B",
+      "viewport": "desktop",
+      "state": "初始"
+    },
+    {
+      "publicName": "professional-C-desktop-initial.png",
+      "sha256": "5e52b8508f37fcad0082ae80dace84b3459300c000fbefb043879c769ea54dba",
+      "case": "professional",
+      "arm": "C",
+      "viewport": "desktop",
+      "state": "初始"
+    },
+    {
+      "publicName": "professional-B-desktop-result.png",
+      "sha256": "1977bc2341f2263480fcb14791b8e8303409e14865bdcb56a840563b8c16e42c",
+      "case": "professional",
+      "arm": "B",
+      "viewport": "desktop",
+      "state": "工作结果"
+    },
+    {
+      "publicName": "professional-C-desktop-result.png",
+      "sha256": "379d6e155baa5d13113b690de0575157448339a9694dcbed007b3f51ec2684d8",
+      "case": "professional",
+      "arm": "C",
+      "viewport": "desktop",
+      "state": "工作结果"
+    },
+    {
+      "publicName": "professional-B-mobile-initial.png",
+      "sha256": "3dc419eeaa73f4f1dcdf3582169564896d295142e2fa6ce92586e90e63c9eed7",
+      "case": "professional",
+      "arm": "B",
+      "viewport": "mobile",
+      "state": "初始"
+    },
+    {
+      "publicName": "professional-C-mobile-initial.png",
+      "sha256": "e4b73ea7017a60d292f257b79dee1c9d6232a962e02fe9ba75699f80f5cacdcc",
+      "case": "professional",
+      "arm": "C",
+      "viewport": "mobile",
+      "state": "初始"
+    },
+    {
+      "publicName": "professional-B-mobile-result.png",
+      "sha256": "801b20e4a7a9aca07697a06850e4e978961885af87d214bdcc80eeef987d83c8",
+      "case": "professional",
+      "arm": "B",
+      "viewport": "mobile",
+      "state": "工作结果"
+    },
+    {
+      "publicName": "professional-C-mobile-result.png",
+      "sha256": "8d386c523971e2d99556df75da2a5694323a317ff15fe4668999237d0ee8f872",
+      "case": "professional",
+      "arm": "C",
+      "viewport": "mobile",
+      "state": "工作结果"
+    },
+    {
+      "publicName": "experience-B-desktop-initial.png",
+      "sha256": "8f830eb4c6164b8f3bd4db089cfbcbbc6f7ccc95f9911fe4b5e96870c21f05da",
+      "case": "experience",
+      "arm": "B",
+      "viewport": "desktop",
+      "state": "初始"
+    },
+    {
+      "publicName": "experience-C-desktop-initial.png",
+      "sha256": "5634d7dd45ffb83df35ab85bca97817c33540c10ba4544d060a3fe196211a474",
+      "case": "experience",
+      "arm": "C",
+      "viewport": "desktop",
+      "state": "初始"
+    },
+    {
+      "publicName": "experience-B-desktop-result.png",
+      "sha256": "ec07078ab34dfc65c45c54d74c71221da7b2c4e20c2150382f6955e952b90a02",
+      "case": "experience",
+      "arm": "B",
+      "viewport": "desktop",
+      "state": "工作结果"
+    },
+    {
+      "publicName": "experience-C-desktop-result.png",
+      "sha256": "96a2a4260bb61260957626cc8de347ecc02d558881b2696cb177cfeb6d1513c5",
+      "case": "experience",
+      "arm": "C",
+      "viewport": "desktop",
+      "state": "工作结果"
+    },
+    {
+      "publicName": "experience-B-mobile-initial.png",
+      "sha256": "959474768af70bad2f45a752f18434055dcdedc1e89cd9e39310747491d1c7eb",
+      "case": "experience",
+      "arm": "B",
+      "viewport": "mobile",
+      "state": "初始"
+    },
+    {
+      "publicName": "experience-C-mobile-initial.png",
+      "sha256": "d4cf53e75ef2429ba81222f2292ee072a66f50b1410c6583fb2e0f2b633969a7",
+      "case": "experience",
+      "arm": "C",
+      "viewport": "mobile",
+      "state": "初始"
+    },
+    {
+      "publicName": "experience-B-mobile-result.png",
+      "sha256": "7b0818fd6b996d3bbb3aee0a6310e9b24727e0163b34682f70be4b221f996da6",
+      "case": "experience",
+      "arm": "B",
+      "viewport": "mobile",
+      "state": "工作结果"
+    },
+    {
+      "publicName": "experience-C-mobile-result.png",
+      "sha256": "4b827bef503ca10ce314de2718fffa06893626a3dfea2fd52781927155d95382",
+      "case": "experience",
+      "arm": "C",
+      "viewport": "mobile",
+      "state": "工作结果"
+    }
+  ],
+  "retainedPrompt": {
+    "name": "intent-selected-frontend-v2",
+    "files": [
+      {
+        "path": ".claude/skills/frontend-design.md",
+        "sha256": "a0bc3776b84885f5ebc58b7c1d5a236da2fcfda52b3b8e6cf7c537a67d7c5870"
+      },
+      {
+        "path": ".claude/agents/ui-duarte.md",
+        "sha256": "1d06e9d7dc7cc0ffe3917dc3e432b9f5a39b013b669b98ff78a53c190e124595"
+      },
+      {
+        "path": "i18n/en/.claude/agents/ui-duarte.md",
+        "sha256": "d610e8aca4c4e8ca3422d15a150a54ff3e9dabff7fd0e40955ec8db5d548f7ff"
+      },
+      {
+        "path": "PROMPT.md",
+        "sha256": "a53c8b261723cad1e63b653a2bfcb74f4d689b067bc26ad9ae8711788e9c6b7d"
+      },
+      {
+        "path": "i18n/en/PROMPT.md",
+        "sha256": "c0e26e1b376278889d779cac16dd54985fff2d2cfc731ac78f1e47d5c1e197c3"
+      },
+      {
+        "path": ".claude/skills/team/SKILL.md",
+        "sha256": "da156565f89dc7503ba1f853b5b1821954c2a0e674abee0e10a2a17aca57f2c1"
+      },
+      {
+        "path": "i18n/source-hashes.json",
+        "sha256": "0af9c29acddd7287104b7a645721b5f89e84039d212b7060eca423668f697004"
+      }
+    ],
+    "frozenRunDifference": "Only the final Source and modifications attribution sentence was clarified after C input freeze; no behavior instruction changed."
+  },
+  "inputSource": [
+    {
+      "case": "professional",
+      "matchesPreviousOriginalInput": true,
+      "files": {
+        ".gitignore": "83a3a520b811c230c42abb1352176acf4cdb6fb9496a4282390b7f56359953be",
+        "app.js": "4e66807214824bfc3339675c7372a37ac05976c7662a88b831b7223d12209274",
+        "auto-company-icon.svg": "e33fc2a9388be51b6e2d1c4319df9e9dea6a16d9ae8682d5a787249b1973e232",
+        "core.js": "fe90ee2d50aefe552df365dcdd77bb6e1679e71849ceb44747c0395e51964473",
+        "DELIVERY.md": "b15669d1107c3d20f92d54521949b6f61282f46503883d367a2c5e18e2b1cec7",
+        "icon.svg": "e33fc2a9388be51b6e2d1c4319df9e9dea6a16d9ae8682d5a787249b1973e232",
+        "index.html": "be13dbbfbcfb9810a1a9e4c38716c3e85c3dc59e0ab29747ceb11b168d8652a8",
+        "package-lock.json": "b10be7906ed9e6e5a90230cfe21d5d6f77817b47b759ba7322642bc52ffce847",
+        "package.json": "95e9c97224777b3c4498991807e2a07c277dd0f8b90963f7179d9e301bd4ab36",
+        "playwright.config.js": "b0a806bee8c133d3f32df2ed4ef1b264795c779f11948ea55d5f0abe7e82e3fa",
+        "README.md": "22fe8a48f0a1fe43af6ef31168b6389ad639656db3fbaefab97dc05dc7b0a145",
+        "styles.css": "1d3f2dee647c9c5e72109a7fb73506ff327777f4a3ac19f43d8c7e901e3590ab",
+        "examples/gaps-and-estimates.csv": "844aca0a42b2f358f9559f5dda1c350d72b311c2ed8fd5e490135c3b7fb45c55",
+        "examples/quoted-and-negative.csv": "bd94b55500e82f2869ed9a24f75a0bbff010ea7b54ad6c7d514151a84c28ca2b",
+        "examples/template.csv": "ed6824661c2effceca856faacd91b4e956445a88f59f32a4790208a40e30d2d5",
+        "tests/browser.spec.js": "2cff2bbb61eb7a5deb4a4e6c1e3434f926d82903081b9793623e378d7dea43d9",
+        "tests/core.test.cjs": "7e7e65f1f5d3cb66cfe16d132435f5ffd08bd104c60bab6d89e3b11ffbafc1c6"
+      }
+    },
+    {
+      "case": "everyday",
+      "matchesPreviousOriginalInput": true,
+      "files": {
+        ".gitignore": "4a91af86b645b4d761871c142c6cf195bc444d777c1e31f5c61d7e8563fdad52",
+        "app.js": "cffa2cbff90509ad395265c210bc9be37f900938ac0899503f7c2a040b11177b",
+        "auto-company-icon.svg": "4438fecb70d4ff734bd23fe1f0084ea9bf485d34239f76579d9dbc720cc52916",
+        "catalog.js": "c97d403727dd48f3022d93253088ba9881285ed07de65147c8797be3228dc08e",
+        "DELIVERY.md": "df0fde449e66b01fe614b027274ebab17b43a539fc8cf9bd78bdb3e6523a9e3e",
+        "engine.js": "2770404a62c486873428d71db8f89e9cf7b5ec7a45b1247bcb4fc2b8f5ecfb40",
+        "icon.svg": "4438fecb70d4ff734bd23fe1f0084ea9bf485d34239f76579d9dbc720cc52916",
+        "index.html": "d25c025c090eada8b3344d29c09c45d2613365a0ca520a777f54c1391ae8665c",
+        "package-lock.json": "4edc4c20636db4f414703c9939f7ddb2f9254d5b20e7c59fa13f95d9d1b1e80c",
+        "package.json": "7144e78c9ffb5ca76335b008da4fba74ecbabc1106f1e5cc3baaf1cc678b2181",
+        "README.md": "8965fa789bd2e2d529460993c7cea0f865655cd25476cfa1324c0e8745abb139",
+        "style.css": "ddeb59b4754bc412123677e3f98dc37bfba8a2ad390578ae5254a201078ebb1e",
+        "docs/engine.md": "46501d23012e7f5abafc3c526812228df2ff349a43b4ef815a6e0cc5d04dc3b3",
+        "docs/qa.md": "947a905192d7a132e2102aa6f95e967d393e64552966531a77bdc06c73728e73",
+        "tests/browser.test.js": "e476efe5606b164e1af0c502327f9f1f39bbc1d405921c48aaa7cdfed2e39f92",
+        "tests/engine.test.js": "5573fb46f1d46c52372ddf2ec5be3066d9bf71a525d555bc86e78714a0929f12"
+      }
+    },
+    {
+      "case": "experience",
+      "matchesPreviousOriginalInput": true,
+      "files": {
+        ".gitignore": "2c31aa5d8b4831698b40fe0abfb9cc8d5eb94ebf5c3f4d38f30837f449f5dc30",
+        "app.js": "ff2c184c45ae3115d9f353ff5fe6cc853a68922de71330a4eacdc307ecdcb9ef",
+        "auto-company-icon.svg": "4fddf2ae935f21d28e5ed05ba9d532065e931cfdccd0e56101a2e1884a6a2263",
+        "DELIVERY.md": "f11c579df0ebb70e26e418835f9209b59ab88866447add15e31391c7e026a3c5",
+        "icon.svg": "4fddf2ae935f21d28e5ed05ba9d532065e931cfdccd0e56101a2e1884a6a2263",
+        "index.html": "61f2b7d0c691bb002179518e1b1a03f4cb0c2aee08bcffa4099a7907f91343e3",
+        "package-lock.json": "6caf1e8d0b1c72c6ef298ea0bb9e1c12bd84ddf1f349d10e732156080632ae6f",
+        "package.json": "656c934a9e84791fdbced5a17013acd82fcbea8131f57c6c231040364f15a56d",
+        "playwright.config.cjs": "ae9697e010678415ec95e78caa2e8db5e1e9c4521f0c98049e64ee9c74d12dff",
+        "README.md": "1e91fea856ade7e13479cb76089277ea29176b7eba92679c259d2a3a4956ce8b",
+        "styles.css": "dba826de024c27a27c05557fca69c6bdc372f36606fb790efaaf914f80a48019",
+        "tests/accessible-layout.spec.cjs": "78e57e38152fadbbd840298db32db491a5208b5c8f24e41e15b2e60adf2ffa21",
+        "tests/core-flow.spec.cjs": "01071415fa1581a4746831d0711937fa222453058240a0348ca716153bdaa346",
+        "tests/helpers.cjs": "464bfc59d75b75da20790c32717e3f107da26f38f73cbd686a273faa7e622ed1",
+        "tests/input-recovery.spec.cjs": "b189165924c0f50fd33675d112eaa233c35226783883b8c8c4c578f0f9e9229e"
+      }
+    }
+  ],
+  "frozenOutputs": [
+    {
+      "case": "everyday",
+      "state": "completed",
+      "exitCode": 0,
+      "modelEndedAt": 1790911707.5419934,
+      "frozenAt": "2026-10-02T03:28:52.828521+00:00",
+      "files": {
+        ".gitignore": "01ef5f3d01a5fb037e504da6bcd0d52ae3d3bea1556f696557c588e1efc761e8",
+        "app.js": "77d8a0fb7e7f4d83fabaa492cc5fae9cbfcc367b4d4f1c749528dec55a62936d",
+        "auto-company-icon.svg": "4438fecb70d4ff734bd23fe1f0084ea9bf485d34239f76579d9dbc720cc52916",
+        "catalog.js": "c97d403727dd48f3022d93253088ba9881285ed07de65147c8797be3228dc08e",
+        "DELIVERY.md": "ee88c84c2cda9b89d0577ac3f5dba34775c6acfb290fea6833497be4286821d0",
+        "engine.js": "2770404a62c486873428d71db8f89e9cf7b5ec7a45b1247bcb4fc2b8f5ecfb40",
+        "icon.svg": "4438fecb70d4ff734bd23fe1f0084ea9bf485d34239f76579d9dbc720cc52916",
+        "index.html": "42a5f9416b56effd7918a868c381b39ddde60198aca943c5cddb2abe77467bc3",
+        "kitchen-icon.svg": "6b2e65ed838235498a2e72031bbfab4b38bc4a0c415b3df0db560d35580852b9",
+        "package-lock.json": "4edc4c20636db4f414703c9939f7ddb2f9254d5b20e7c59fa13f95d9d1b1e80c",
+        "package.json": "7144e78c9ffb5ca76335b008da4fba74ecbabc1106f1e5cc3baaf1cc678b2181",
+        "README.md": "67ed8bfa27a9aa9d61271da164eea50230f4120322e0d7cf1d4b23bd1ac725b9",
+        "style.css": "e35690d06d481b47c5d4dd2c5c9957476962945ab8c81790fbb82701cf27706c",
+        "docs/engine.md": "46501d23012e7f5abafc3c526812228df2ff349a43b4ef815a6e0cc5d04dc3b3",
+        "docs/qa.md": "947a905192d7a132e2102aa6f95e967d393e64552966531a77bdc06c73728e73",
+        "tests/browser.test.js": "e476efe5606b164e1af0c502327f9f1f39bbc1d405921c48aaa7cdfed2e39f92",
+        "tests/engine.test.js": "5573fb46f1d46c52372ddf2ec5be3066d9bf71a525d555bc86e78714a0929f12"
+      }
+    },
+    {
+      "case": "professional",
+      "state": "completed",
+      "exitCode": 0,
+      "modelEndedAt": 1790911538.8351078,
+      "frozenAt": "2026-10-02T03:26:33.455051+00:00",
+      "files": {
+        ".gitignore": "c383848b1e6fa3d19f3f460840f6f586840c8418c7e3a6ad755ef8e04027e91c",
+        "app.js": "db8d17ef31223548345e8a2a0facbc31352e776186581865c2be5fe7fd2456be",
+        "auto-company-icon.svg": "e33fc2a9388be51b6e2d1c4319df9e9dea6a16d9ae8682d5a787249b1973e232",
+        "core.js": "fe90ee2d50aefe552df365dcdd77bb6e1679e71849ceb44747c0395e51964473",
+        "DELIVERY.md": "9eaa32e71153ae2b197e5b8f2a8750e5394c69645aa4e75a756f8e0b177a0a60",
+        "icon.svg": "49fe70742450c1d055e4336cf0f27cf463c5605775a951e2a483131698bad249",
+        "index.html": "e7fefbfa9acd1c79570e2481dc702bce7a1d3e7b05f9c24bc35b3a1c181a4bf7",
+        "package-lock.json": "b10be7906ed9e6e5a90230cfe21d5d6f77817b47b759ba7322642bc52ffce847",
+        "package.json": "95e9c97224777b3c4498991807e2a07c277dd0f8b90963f7179d9e301bd4ab36",
+        "playwright.config.js": "b0a806bee8c133d3f32df2ed4ef1b264795c779f11948ea55d5f0abe7e82e3fa",
+        "README.md": "33e848d6841b7a40dbbddbb883748363db6ae4991e8d0ecaad93ed84887e4535",
+        "styles.css": "8c10abafeb9ed2f0f1b5388cd36d6cc64a1cdc93ccceabb457efd8d6d825cf89",
+        "examples/gaps-and-estimates.csv": "844aca0a42b2f358f9559f5dda1c350d72b311c2ed8fd5e490135c3b7fb45c55",
+        "examples/quoted-and-negative.csv": "bd94b55500e82f2869ed9a24f75a0bbff010ea7b54ad6c7d514151a84c28ca2b",
+        "examples/template.csv": "ed6824661c2effceca856faacd91b4e956445a88f59f32a4790208a40e30d2d5",
+        "tests/browser.spec.js": "2cff2bbb61eb7a5deb4a4e6c1e3434f926d82903081b9793623e378d7dea43d9",
+        "tests/core.test.cjs": "7e7e65f1f5d3cb66cfe16d132435f5ffd08bd104c60bab6d89e3b11ffbafc1c6"
+      }
+    },
+    {
+      "case": "experience",
+      "state": "completed",
+      "exitCode": 0,
+      "modelEndedAt": 1790911428.3733022,
+      "frozenAt": "2026-10-02T03:24:31.267719+00:00",
+      "files": {
+        ".gitignore": "2c31aa5d8b4831698b40fe0abfb9cc8d5eb94ebf5c3f4d38f30837f449f5dc30",
+        "app.js": "8d9e324f3b8d98ddcf0df2d6670201d7177b5c5967c33e4b00fcb63edc5a0902",
+        "auto-company-icon.svg": "4fddf2ae935f21d28e5ed05ba9d532065e931cfdccd0e56101a2e1884a6a2263",
+        "DELIVERY.md": "52a1b31399fc1df2bd3a3d4d3aaf5d02d7a6400cfbe45f825a33d32dd99465d1",
+        "icon.svg": "68442d8236f7f9160c841a6ba4a284359bc3c4df21a94dcd2dcd3787c48c02c6",
+        "index.html": "9178e2576dcee65558fe30eaf53ab51e99e698ead4a1943fa2389a59b7a5fb52",
+        "package-lock.json": "6caf1e8d0b1c72c6ef298ea0bb9e1c12bd84ddf1f349d10e732156080632ae6f",
+        "package.json": "656c934a9e84791fdbced5a17013acd82fcbea8131f57c6c231040364f15a56d",
+        "playwright.config.cjs": "ae9697e010678415ec95e78caa2e8db5e1e9c4521f0c98049e64ee9c74d12dff",
+        "README.md": "24101076df6db99c48c19cf729d83eaa4dd6bfa403b65071d2463b59a232425c",
+        "styles.css": "6040b257892e540360f50d8a8754d8d84aa6f85654ce2c637723a05e34cc304f",
+        "tests/accessible-layout.spec.cjs": "78e57e38152fadbbd840298db32db491a5208b5c8f24e41e15b2e60adf2ffa21",
+        "tests/core-flow.spec.cjs": "01071415fa1581a4746831d0711937fa222453058240a0348ca716153bdaa346",
+        "tests/helpers.cjs": "464bfc59d75b75da20790c32717e3f107da26f38f73cbd686a273faa7e622ed1",
+        "tests/input-recovery.spec.cjs": "b189165924c0f50fd33675d112eaa233c35226783883b8c8c4c578f0f9e9229e"
+      }
+    }
+  ],
+  "limits": [
+    "Task authorization, context scope, reading order and prompt mode changed together.",
+    "All three designs still converge on warm paper and red-brown accents.",
+    "No real-user preference or hard operating-system read isolation is established.",
+    "The generated candidates do not replace published product examples."
+  ]
+}
