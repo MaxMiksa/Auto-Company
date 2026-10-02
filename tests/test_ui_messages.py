@@ -14,6 +14,8 @@ from unittest import mock
 
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / 'tests'))
+from isolation_fixture import install as install_fixture_boundary
 SPEC = importlib.util.spec_from_file_location("ui_localization", ROOT / "scripts/core/localization.py")
 LOCALIZATION = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(LOCALIZATION)
@@ -132,6 +134,7 @@ class ShellOperatorMessageTests(unittest.TestCase):
         self.root = Path(self.temp.name) / 'repo {1} & test'
         self.root.mkdir()
         shutil.copytree(ROOT / "scripts", self.root / "scripts")
+        install_fixture_boundary(self.root)
         shutil.copytree(ROOT / "i18n", self.root / "i18n")
         shutil.copy2(ROOT / "Makefile", self.root / "Makefile")
         self.bin = self.root / "bin"

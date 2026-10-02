@@ -148,6 +148,9 @@ class Recorder:
 
 
 def run(root, cycle, command):
+    from project_isolation import inside_boundary
+    if not inside_boundary():
+        raise ValueError("Engine observation may only launch commands inside project isolation")
     recorder = Recorder(root, cycle)
     recorder.emit("process.started")
     stopping = False

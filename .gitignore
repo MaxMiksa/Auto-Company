@@ -218,6 +218,7 @@ docs/*/*
 !docs/product-media.md
 !docs/product-cycles.md
 !docs/product-center.md
+!docs/project-isolation.md
 .auto-company-center.json
 # Ignore all memories (keep folder marker only)
 memories/*

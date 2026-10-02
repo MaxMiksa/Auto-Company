@@ -5,6 +5,7 @@ import os
 import shutil
 import stat
 import subprocess
+import sys
 import tempfile
 import threading
 import time
@@ -16,6 +17,8 @@ from typing import Any
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(REPO_ROOT / 'tests'))
+from isolation_fixture import install as install_fixture_boundary
 ADAPTER_PATH = REPO_ROOT / "scripts" / "core" / "engine-adapters.sh"
 OPENAI_AGENT_PATH = REPO_ROOT / "scripts" / "core" / "openai-compatible-agent.py"
 
@@ -157,6 +160,8 @@ class EngineAdapterTests(unittest.TestCase):
         self.addCleanup(self.temp_dir.cleanup)
         self.workspace = Path(self.temp_dir.name) / "workspace"
         self.workspace.mkdir()
+        shutil.copytree(REPO_ROOT / 'scripts/core', self.workspace / 'scripts/core')
+        install_fixture_boundary(self.workspace)
         self.record = Path(self.temp_dir.name) / "record.json"
 
     def make_cli(self, body: str) -> Path:
@@ -169,7 +174,7 @@ class EngineAdapterTests(unittest.TestCase):
         env = os.environ.copy()
         env.update(
             {
-                "ADAPTER_PATH": str(ADAPTER_PATH),
+                "ADAPTER_PATH": str(self.workspace / 'scripts/core/engine-adapters.sh'),
                 "PROJECT_DIR": str(self.workspace),
                 "TEST_RECORD": str(self.record),
                 "ENGINE": engine,
@@ -235,7 +240,8 @@ printf '%s\n' "$ADAPTER_OUTPUT"
         return module
 
     def start_fake_loop(self, cli_body: str, **overrides: str) -> subprocess.Popen[str]:
-        shutil.copytree(REPO_ROOT / "scripts" / "core", self.workspace / "scripts" / "core")
+        shutil.copytree(REPO_ROOT / "scripts" / "core", self.workspace / "scripts" / "core", dirs_exist_ok=True)
+        install_fixture_boundary(self.workspace)
         (self.workspace / "memories").mkdir()
         shutil.copy2(REPO_ROOT / "memories" / "consensus.template.md", self.workspace / "memories" / "consensus.template.md")
         shutil.copy2(REPO_ROOT / ".gitignore", self.workspace / ".gitignore")
@@ -474,8 +480,8 @@ printf '%s\n' "$ADAPTER_OUTPUT"
         )
         self.run_adapter("claude", CLAUDE_BIN=str(cli), FAKE_ARGS=str(args_file))
         args = args_file.read_text(encoding="utf-8").splitlines()
-        self.assertEqual(args[0:3], ["-p", "contract prompt", "--output-format"])
-        self.assertEqual(args[3], "json")
+        self.assertEqual(args[0:3], ["-p", "--output-format", "json"])
+        self.assertEqual(args[-1], "contract prompt")
         self.assertIn("--model", args)
         self.assertIn("--permission-mode", args)
         record = self.read_record()
@@ -502,7 +508,8 @@ printf '%s\n' "$ADAPTER_OUTPUT"
         )
         self.run_adapter("codex", CODEX_BIN=str(cli), FAKE_ARGS=str(args_file))
         args = args_file.read_text(encoding="utf-8").splitlines()
-        self.assertEqual(args[0:3], ["exec", "-c", 'sandbox_mode="danger-full-access"'])
+        self.assertEqual(args[0], "exec")
+        self.assertIn('sandbox_mode="danger-full-access"', args)
         self.assertIn("-o", args)
         self.assertIn("-m", args)
         self.assertIn("--json", args)
@@ -607,7 +614,7 @@ printf '%s\n' "$ADAPTER_OUTPUT"
                 agent.run_tool("run_command", {"argv": ["git", "status", "--short"]}, self.workspace, commands, False)
 
     @wsl_bash_contract
-    def test_cursor_defaults_to_sandbox_without_force(self) -> None:
+    def test_cursor_refuses_until_native_isolation_is_supported(self) -> None:
         args_file = Path(self.temp_dir.name) / "cursor.args"
         cli = self.make_cli(
             'printf "%s\\n" "$@" > "$FAKE_ARGS"\n'
@@ -619,10 +626,8 @@ printf '%s\n' "$ADAPTER_OUTPUT"
             CURSOR_BIN=str(cli),
             FAKE_ARGS=str(args_file),
         )
-        args = args_file.read_text(encoding="utf-8").splitlines()
-        self.assertEqual(args[0:5], ["--print", "--output-format", "json", "--sandbox", "enabled"])
-        self.assertNotIn("--force", args)
-        self.assertEqual(self.read_record()["result"], "cursor done")
+        self.assertFalse(args_file.exists())
+        self.assertEqual(self.read_record()["status"], "error")
 
     @wsl_bash_contract
     def test_cursor_rejects_force_with_disabled_sandbox(self) -> None:

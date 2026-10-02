@@ -465,6 +465,9 @@ class UsageTotals:
 
 
 def main() -> int:
+    from project_isolation import inside_boundary
+    if not inside_boundary():
+        raise AdapterError("Direct host execution is forbidden; start this adapter through Auto Company project isolation")
     parser = argparse.ArgumentParser()
     parser.add_argument("--endpoint", required=True)
     parser.add_argument("--model", required=True)

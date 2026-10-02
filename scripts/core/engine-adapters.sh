@@ -130,6 +130,12 @@ adapter_openai_host_is_loopback() {
 }
 
 engine_adapter_validate() {
+    engine_adapter_validate_options || return 1
+    # Model permission modes are an inner policy, never a host read boundary.
+    python3 "$ENGINE_ADAPTER_DIR/project_isolation.py" --check || return 1
+}
+
+engine_adapter_validate_options() {
     case "$ENGINE" in
         claude)
             adapter_validate_claude_permission_mode
@@ -383,83 +389,22 @@ adapter_execute() {
     fi
 }
 
-adapter_run_claude() {
-    local prompt="$1"
-    local claude_cmd=("$RESOLVED_ENGINE_BIN" "-p" "$prompt" "--output-format" "json")
-    if [ -n "${MODEL:-}" ]; then
-        claude_cmd+=("--model" "$MODEL")
-    fi
-    if [ -n "${CLAUDE_PERMISSION_MODE:-}" ]; then
-        claude_cmd+=("--permission-mode" "$CLAUDE_PERMISSION_MODE")
-    fi
-    adapter_execute "${claude_cmd[@]}"
-    ADAPTER_RESULT_SOURCE="$ADAPTER_OUTPUT"
-}
-
-adapter_run_codex() {
-    local prompt="$1"
-    local message_file
-    message_file=$(mktemp)
-    local codex_cmd=("$RESOLVED_ENGINE_BIN" "exec" "-c" "sandbox_mode=\"${CODEX_SANDBOX_MODE}\"" "--json" "-o" "$message_file")
-    if [ -n "${MODEL:-}" ]; then
-        codex_cmd+=("-m" "$MODEL")
-    fi
-    if [ -n "${CODEX_REASONING_EFFORT:-}" ]; then
-        codex_cmd+=("-c" "model_reasoning_effort=\"${CODEX_REASONING_EFFORT}\"")
-    fi
-    codex_cmd+=("$prompt")
-    if [ -n "${AUTO_COMPANY_CYCLE_ID:-}" ]; then
-        adapter_execute python3 "$ENGINE_ADAPTER_DIR/runtime_events.py" \
-            --root "$PROJECT_DIR" --cycle "$AUTO_COMPANY_CYCLE_ID" -- "${codex_cmd[@]}"
-    else
-        adapter_execute "${codex_cmd[@]}"
-    fi
-    ADAPTER_RESULT_SOURCE=$(adapter_redact < "$message_file" 2>/dev/null || true)
-    rm -f "$message_file"
-}
-
-adapter_run_cursor() {
-    local prompt="$1"
-    local cursor_cmd=("$RESOLVED_ENGINE_BIN" "--print" "--output-format" "json" "--sandbox" "$CURSOR_SANDBOX_MODE")
-    if [ "$CURSOR_FORCE" = "1" ]; then
-        cursor_cmd+=("--force")
-    fi
-    if [ -n "${MODEL:-}" ]; then
-        cursor_cmd+=("--model" "$MODEL")
-    fi
-    cursor_cmd+=("$prompt")
-    adapter_execute "${cursor_cmd[@]}"
-    ADAPTER_RESULT_SOURCE="$ADAPTER_OUTPUT"
-}
-
-adapter_run_openai_compatible() {
-    local prompt="$1"
-    local prompt_file
-    prompt_file=$(mktemp)
-    printf '%s' "$prompt" > "$prompt_file"
-    adapter_execute \
-        "$RESOLVED_ENGINE_BIN" \
-        "$ENGINE_ADAPTER_DIR/openai-compatible-agent.py" \
-        --endpoint "$OPENAI_COMPATIBLE_ENDPOINT" \
-        --model "$OPENAI_COMPATIBLE_MODEL" \
-        --workspace "$PROJECT_DIR" \
-        --prompt-file "$prompt_file" \
-        --request-timeout "$OPENAI_COMPATIBLE_REQUEST_TIMEOUT_SECONDS" \
-        --max-turns "$OPENAI_COMPATIBLE_MAX_TURNS"
-    rm -f "$prompt_file"
-    ADAPTER_RESULT_SOURCE="$ADAPTER_OUTPUT"
-}
-
 engine_adapter_run() {
     local prompt="$1"
+    local adapter_model="${MODEL:-}"
+    [ "$ENGINE" != "openai-compatible" ] || adapter_model="$OPENAI_COMPATIBLE_MODEL"
     adapter_reset_result
-    case "$ENGINE" in
-        claude) adapter_run_claude "$prompt" ;;
-        codex) adapter_run_codex "$prompt" ;;
-        cursor) adapter_run_cursor "$prompt" ;;
-        openai-compatible) adapter_run_openai_compatible "$prompt" ;;
-        *) echo "Error: Unsupported ENGINE '$ENGINE'" >&2; return 1 ;;
-    esac
+    # A single mandatory entry also covers callers sourcing this adapter
+    # directly. There is no environment escape hatch or unsafe fallback.
+    export CLAUDE_PERMISSION_MODE CODEX_SANDBOX_MODE OPENAI_COMPATIBLE_ENDPOINT OPENAI_COMPATIBLE_MODEL
+    export OPENAI_COMPATIBLE_REQUEST_TIMEOUT_SECONDS OPENAI_COMPATIBLE_MAX_TURNS
+    export OPENAI_COMPATIBLE_ALLOW_SHELL OPENAI_COMPATIBLE_ALLOW_INSECURE_HTTP
+    adapter_execute python3 "$ENGINE_ADAPTER_DIR/isolation_workspace.py" \
+        --root "$PROJECT_DIR" --project "${ACTIVE_PROJECT:-}" --engine "$ENGINE" \
+        --binary "$RESOLVED_ENGINE_BIN" --model "$adapter_model" \
+        --effort "${CODEX_REASONING_EFFORT:-}" "$prompt"
+    ADAPTER_RESULT_SOURCE="$ADAPTER_OUTPUT"
+    [ "$ENGINE" != "codex" ] || ADAPTER_RESULT_SOURCE=""
 }
 
 adapter_normalize_number() {

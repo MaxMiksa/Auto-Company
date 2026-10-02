@@ -6,12 +6,15 @@ from pathlib import Path
 import plistlib
 import shutil
 import subprocess
+import sys
 import tempfile
 import unittest
 from unittest import mock
 
 
 REPO = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(REPO / 'tests'))
+from isolation_fixture import install as install_fixture_boundary
 LABEL = "com.autocompany.loop"
 SETTINGS = {"ENGINE": "codex", "MODEL": "custom-model", "CYCLE_TIMEOUT_SECONDS": "77",
             "LOOP_INTERVAL": "91", "USAGE_BUDGET_PERIOD": "week", "USAGE_WARNING_USD": "2",
@@ -27,6 +30,7 @@ class MacosStartTests(unittest.TestCase):
         self.root = Path(self.temp.name)
         self.project = self.root / 'Repo & "trial"'
         shutil.copytree(REPO / "scripts", self.project / "scripts")
+        install_fixture_boundary(self.project)
         (self.project / "dashboard").mkdir()
         for name in ("server.py", "journal_data.py", "observability_data.py"):
             shutil.copy2(REPO / "dashboard" / name, self.project / "dashboard" / name)

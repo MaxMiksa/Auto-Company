@@ -8,13 +8,15 @@ Run the commands below from the repository root.
 
 Claude remains the default. Cursor and OpenAI-compatible support are opt-in so an existing installation does not change behavior after an upgrade.
 
+**Execution now requires project isolation.** Every model cycle and interactive team enters the same Linux/WSL2 namespace boundary; product checks and screenshot subprocesses also use it. Missing bubblewrap/libseccomp/kernel capabilities fail closed. Native Windows/macOS and unverified Cursor packaging are refused. See [setup, visible inputs, network policy and recovery](docs/project-isolation.md). The engine-specific options below are additional policies inside this boundary, not substitutes for it. Host-local/private endpoints remain inaccessible even when an adapter transport setting allows HTTP.
+
 ## Selection and safety
 
 | Engine | Required opt-in/config | Default safety posture |
 | --- | --- | --- |
 | `claude` | None | An explicit permission mode is validated before startup. `default` is the safer documented first-run override. |
-| `codex` | `ENGINE=codex` | Existing sandbox-mode behavior is preserved. |
-| `cursor` | `ENGINE=cursor`, `CURSOR_ADAPTER_ENABLED=1` | `--sandbox enabled`, without `--force`. A disabled sandbox needs `CURSOR_ALLOW_UNSANDBOXED=1`; disabled sandbox plus `--force` is always rejected. |
+| `codex` | `ENGINE=codex` | The selected inner sandbox policy is preserved inside mandatory OS isolation. Global plugins, MCP configuration and history are absent. |
+| `cursor` | `ENGINE=cursor`, `CURSOR_ADAPTER_ENABLED=1` | Currently refused: isolated packaging/authentication is not verified. No host execution fallback. |
 | `openai-compatible` | `ENGINE=openai-compatible`, `OPENAI_COMPATIBLE_ADAPTER_ENABLED=1`, exact `OPENAI_COMPATIBLE_ENDPOINT`, and `OPENAI_COMPATIBLE_MODEL` (or `MODEL`) | HTTPS and loopback HTTP are accepted. Non-loopback HTTP is blocked unless `OPENAI_COMPATIBLE_ALLOW_INSECURE_HTTP=1`. Built-in file tools resolve paths before access, stay inside the project directory, and reject Git metadata and known credential paths. Commands use exact argv allowlisting without a shell. Arbitrary bash is absent unless `OPENAI_COMPATIBLE_ALLOW_SHELL=1`. |
 
 Claude permission modes accepted by the adapter match the current CLI contract: `acceptEdits`, `auto`, `bypassPermissions`, `default`, `dontAsk`, and `plan`. An empty value leaves selection to the CLI. Any other explicit value fails adapter validation before the loop or daemon starts.

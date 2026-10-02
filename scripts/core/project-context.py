@@ -52,7 +52,8 @@ def _read_config(root):
 def git(root, *arguments):
     environment = {key: value for key, value in os.environ.items() if not key.startswith("GIT_")}
     result = subprocess.run(
-        ["git", "-C", str(root), *arguments], env=environment,
+        ["git", "-c", "core.fsmonitor=false", "-c", "core.hooksPath=/dev/null",
+         "-c", "core.untrackedCache=false", "-C", str(root), *arguments], env=environment,
         capture_output=True, text=True,
     )
     if result.returncode:

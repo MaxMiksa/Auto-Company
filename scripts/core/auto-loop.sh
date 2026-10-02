@@ -102,6 +102,11 @@ BUDGET_PAUSE_POLL_SECONDS="${BUDGET_PAUSE_POLL_SECONDS:-10}"
 RESOLVED_ENGINE_BIN=""
 
 source "$SCRIPT_DIR/engine-adapters.sh"
+if ! command -v python3 >/dev/null 2>&1; then
+    echo "Error: python3 is required for process ownership and structured usage accounting."
+    ui_message python.required
+    exit 1
+fi
 if [ "$ENGINE" = "openai-compatible" ]; then
     MODEL_LABEL="$OPENAI_COMPATIBLE_MODEL"
 fi
@@ -506,7 +511,7 @@ resolve_engine_bin() {
 run_engine_cycle() {
     local prompt="$1"
     center_admission_check || cleanup 1 center_admission_lost
-    # This is workflow context, not an OS sandbox or an authentication boundary.
+    # The mandatory adapter creates the OS boundary and maps this context.
     export AUTO_COMPANY_ROOT="$PROJECT_DIR"
     export AUTO_COMPANY_CYCLE=1
     export AUTO_COMPANY_CYCLE_ID="$(basename "$cycle_log" .log)"
@@ -624,7 +629,7 @@ log "$(ui_message loop.started "$$")"
 log "Project: $PROJECT_DIR"
 log "$(engine_adapter_description)"
 log "Engine bin: $RESOLVED_ENGINE_BIN"
-engine_version=$("$RESOLVED_ENGINE_BIN" --version 2>/dev/null | head -n1 | adapter_redact || true)
+engine_version=$(python3 "$SCRIPT_DIR/project_isolation.py" --engine-version "$RESOLVED_ENGINE_BIN" 2>/dev/null | head -n1 | adapter_redact || true)
 case "$RESOLVED_ENGINE_BIN" in
     /mnt/c/*)
         log "Warning: $ENGINE binary resolves to a Windows-mounted path. Prefer a WSL-local runtime for stability."
@@ -756,7 +761,7 @@ while true; do
 - Bound ACTIVE_PROJECT: \`${ACTIVE_PROJECT:-none (framework exploration)}\` (source: $PROJECT_CONTEXT_SOURCE)
 - Selected product repository: \`${ACTIVE_PROJECT_PATH:-none}\`
 - If a project is selected, perform all product source work there and use \`git -C \"$ACTIVE_PROJECT_PATH\"\` for product Git operations. Keep product commits and remotes out of the framework repository.
-- Framework cwd remains available for company coordination and consensus. Project selection is workflow routing, not an OS filesystem or network sandbox.
+- The isolated framework view contains this product and its company coordination files. Other products, host files and host-local services are unavailable.
 
 $REPORT_INSTRUCTIONS
 

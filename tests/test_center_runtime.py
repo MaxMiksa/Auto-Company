@@ -15,12 +15,15 @@ import uuid
 from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / 'tests'))
+from isolation_fixture import install as install_fixture_boundary
 sys.path.insert(0, str(ROOT / "dashboard"))
 from center_runtime import CenterRuntime, CenterError, PosixAdapter, atomic_json, config_fingerprint, OPEN, TERMINAL
 from center_store import CenterStore
 
 
 def copy_control_entrypoints(root):
+    install_fixture_boundary(root)
     for name in ("dashboard/server.py", "Makefile", "scripts/macos/start-daemon.sh", "scripts/macos/install-daemon.sh",
                  "scripts/wsl/dashboard-wsl.sh", "scripts/wsl/install-wsl-daemon.sh", "scripts/windows/start-win.ps1", "scripts/windows/stop-win.ps1"):
         target = root / name
@@ -925,7 +928,22 @@ if [ "${CREATE_ARTIFACT:-0}" = 1 ] && [ "$count" = 1 ]; then
   python3 "$AUTO_COMPANY_ROOT/scripts/core/runtime_artifacts.py" --root "$AUTO_COMPANY_ROOT" --project projects/doc-fixture document README.md && touch "$AUTO_COMPANY_ROOT/artifact-ok"
 fi
 if [ "${SPAWN_ORPHAN:-0}" = 1 ]; then
-    python3 -c 'import os,time; child=os.fork(); os._exit(0) if child else None; os.setsid(); open(os.environ["AUTO_COMPANY_ROOT"]+"/orphan","w").write(str(os.getpid())); time.sleep(120)' &
+    # Wait for the child to publish its identity before ending the fake engine;
+    # otherwise correct fast cleanup can kill it before the test has a PID.
+    python3 -c '
+import os,time
+from pathlib import Path
+reader,writer=os.pipe()
+if os.fork():
+    os.close(writer)
+    assert os.read(reader,1)==b"1"
+    os._exit(0)
+os.close(reader)
+os.setsid()
+Path(os.environ["AUTO_COMPANY_ROOT"]+"/orphan").write_text(str(os.getpid()))
+os.write(writer,b"1")
+os.close(writer)
+time.sleep(120)'
 fi
 if [ "${SLOW_ENGINE:-0}" = 1 ]; then sleep 120; fi
 if [ "${ADD_P1:-0}" = 1 ]; then
@@ -1223,7 +1241,7 @@ class WindowsBridgeTests(unittest.TestCase):
                 subprocess.run(command, check=True, capture_output=True)
             revision = subprocess.check_output(["git", "-C", str(framework), "rev-parse", "HEAD"], text=True).strip()
             domain = {"platform": "wsl", "distribution": os.environ.get("AUTO_COMPANY_TEST_WSL_DISTRO", "Ubuntu"), "user": os.environ.get("AUTO_COMPANY_TEST_WSL_USER", "max")}
-            adapter = PosixAdapter(ROOT, domain)
+            adapter = PosixAdapter(framework, domain)
             adapter.clone(framework, target, revision, control)
             self.assertTrue((target / ".git").is_dir())
             result = adapter._execute(adapter._wsl() + ["--exec", "git", "-C", adapter.path(target), "rev-parse", "HEAD"])
@@ -1279,6 +1297,9 @@ class MediaIntegrationTests(unittest.TestCase):
             root.mkdir()
             shutil.copytree(ROOT / "scripts/core", root / "scripts/core")
             copy_control_entrypoints(root)
+            # The fake model is an orchestration fixture; media must still
+            # exercise the actual host-to-namespace boundary.
+            shutil.copy2(ROOT / "scripts/core/project_isolation.py", root / "scripts/core/project_isolation.py")
             shutil.copytree(ROOT / "i18n", root / "i18n")
             shutil.copytree(ROOT / "memories", root / "memories")
             shutil.copytree(ROOT / "examples/scopefence", root / "projects/scopefence")
@@ -1302,7 +1323,7 @@ class MediaIntegrationTests(unittest.TestCase):
             fake.chmod(0o755)
             store = CenterStore(folder / "center")
             catalog = CenterCatalog(store)
-            runtime = CenterRuntime(store, catalog, ROOT, {"platform": "posix"})
+            runtime = CenterRuntime(store, catalog, root, {"platform": "posix"})
             actual_media = runtime.adapter.media
             def checked_media(path):
                 try:

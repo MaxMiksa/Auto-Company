@@ -6,11 +6,14 @@ import platform
 import shutil
 import signal
 import subprocess
+import sys
 import tempfile
 import time
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / 'tests'))
+from isolation_fixture import install as install_fixture_boundary
 
 
 @unittest.skipUnless(platform.system() == "Linux", "POSIX loop exercised under Linux/WSL")
@@ -20,6 +23,7 @@ class ProductCycleLoopTests(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
         shutil.copytree(ROOT / "scripts/core", self.root / "scripts/core")
+        install_fixture_boundary(self.root)
         shutil.copytree(ROOT / "i18n", self.root / "i18n")
         shutil.copytree(ROOT / "memories", self.root / "memories")
         shutil.copy2(ROOT / ".gitignore", self.root / ".gitignore")

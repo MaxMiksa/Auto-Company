@@ -42,6 +42,9 @@ class LaunchdRuntimeTests(unittest.TestCase):
         self.plist = self.home / f"Library/LaunchAgents/{self.label}.plist"
         self.plist.parent.mkdir(parents=True)
         shutil.copytree(REPO / "scripts", self.project / "scripts")
+        sys.path.insert(0, str(REPO / 'tests'))
+        from isolation_fixture import install as install_fixture_boundary
+        install_fixture_boundary(self.project)
         (self.project / "dashboard").mkdir()
         for name in ("server.py", "journal_data.py", "observability_data.py"):
             shutil.copy2(REPO / "dashboard" / name, self.project / "dashboard" / name)

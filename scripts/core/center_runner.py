@@ -25,6 +25,10 @@ MARKER = ".auto-company-center.json"
 MAX_JSON = 128 * 1024
 HEARTBEAT_TIMEOUT = 15
 CONTROL_FILES = ("scripts/core/auto-loop.sh", "scripts/core/center_runner.py", "scripts/core/stop-loop.sh",
+                 "scripts/core/engine-adapters.sh", "scripts/core/project_isolation.py", "scripts/core/isolation_workspace.py",
+                 "scripts/core/isolation_proxy.py", "scripts/core/isolation_entry.py",
+                 "scripts/core/isolation_media.py", "scripts/core/isolation-runtime-files.json", "scripts/core/runtime_events.py",
+                 "scripts/core/product_media.py", "scripts/core/product_media_worker.cjs",
                  "scripts/core/project-context.py", "scripts/core/product_identity.py",
                  "scripts/core/consensus-format.py", "scripts/core/consensus-guard.sh",
                  "scripts/core/localization.py", "scripts/core/runtime_artifacts.py", "dashboard/server.py", "Makefile",

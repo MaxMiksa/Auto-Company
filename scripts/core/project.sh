@@ -322,13 +322,14 @@ project_status() {
         esac
     done
 
-    local name target branch worktree remote publish_ready framework_tracking selected
+    local name target branch worktree remote publish_ready framework_tracking selected status
     name="$(resolve_name "$requested")"
     target="$(python3 "$CONTEXT_TOOL" validate --root "$FRAMEWORK_DIR" --project "$name")"
     selected="$(python3 "$CONTEXT_TOOL" name --root "$FRAMEWORK_DIR" --optional)"
 
     branch="$(git -C "$target" symbolic-ref --short HEAD 2>/dev/null || echo detached)"
-    if [ -n "$(git -C "$target" status --porcelain)" ]; then
+    status="$(python3 "$SCRIPT_DIR/project_isolation.py" --git-status "$target")" || die "isolated product Git status failed"
+    if [ -n "$status" ]; then
         worktree="dirty"
     else
         worktree="clean"
@@ -388,7 +389,9 @@ project_publish() {
     ensure_registry
     registry_has_project "$name" || die "project is missing from registry: $name"
     git -C "$target" rev-parse --verify HEAD >/dev/null 2>&1 || die "project needs at least one local commit before publishing"
-    [ -z "$(git -C "$target" status --porcelain)" ] || die "project worktree must be clean before publishing"
+    local status
+    status="$(python3 "$SCRIPT_DIR/project_isolation.py" --git-status "$target")" || die "isolated product Git status failed"
+    [ -z "$status" ] || die "project worktree must be clean before publishing"
 
     existing_remote="$(git -C "$target" remote get-url origin 2>/dev/null || true)"
     if [ -n "$existing_remote" ]; then

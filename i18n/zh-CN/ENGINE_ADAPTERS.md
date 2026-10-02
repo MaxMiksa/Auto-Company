@@ -10,11 +10,13 @@ Claude 仍是默认引擎。Cursor 和 OpenAI-compatible 支持必须显式启�
 
 ## 选择与安全
 
+**所有执行现在必须经过项目隔离。** 模型循环、交互团队、产品检查和截图子进程使用 Linux/WSL2 的同一内核隔离边界。缺少 bubblewrap、libseccomp 或内核能力时拒绝启动；原生 Windows/macOS 和尚未验证的 Cursor 打包暂不执行，不回退到宿主裸跑。详见[安装、可见输入、网络策略与恢复](../../docs/project-isolation.md)。下表的引擎权限是在此边界内的附加策略。即使适配器允许 HTTP，宿主本地或私有网络端点也不可访问。
+
 | 引擎 | 必要的启用设置与配置 | 默认安全行为 |
 | --- | --- | --- |
 | `claude` | 无 | 启动前校验显式设置的权限模式。首次试运行时，文档建议用较安全的 `default` 覆盖默认设置。 |
-| `codex` | `ENGINE=codex` | 保留现有沙箱模式行为。 |
-| `cursor` | `ENGINE=cursor`、`CURSOR_ADAPTER_ENABLED=1` | 使用 `--sandbox enabled`，不传 `--force`。关闭沙箱需要 `CURSOR_ALLOW_UNSANDBOXED=1`；关闭沙箱并同时传 `--force` 始终被拒绝。 |
+| `codex` | `ENGINE=codex` | 在强制内核隔离内保留所选沙箱策略；不导入全局插件、MCP 配置或会话历史。 |
+| `cursor` | `ENGINE=cursor`、`CURSOR_ADAPTER_ENABLED=1` | 当前拒绝执行：隔离打包与认证尚未验证，不回退到宿主运行。 |
 | `openai-compatible` | `ENGINE=openai-compatible`、`OPENAI_COMPATIBLE_ADAPTER_ENABLED=1`、完整的 `OPENAI_COMPATIBLE_ENDPOINT`，以及 `OPENAI_COMPATIBLE_MODEL`（或 `MODEL`） | 接受 HTTPS 和环回地址的 HTTP。非环回 HTTP 默认被拒绝，除非设置 `OPENAI_COMPATIBLE_ALLOW_INSECURE_HTTP=1`。内置文件工具先解析路径，再访问项目目录内的文件，并拒绝 Git 元数据及已知凭据路径。命令按完整 argv 精确白名单执行，不经过 shell。仅在设置 `OPENAI_COMPATIBLE_ALLOW_SHELL=1` 后才提供任意 Bash 执行能力。 |
 
 适配器接受的 Claude 权限模式与当前 CLI 契约一致：`acceptEdits`、`auto`、`bypassPermissions`、`default`、`dontAsk` 和 `plan`。空值表示由 CLI 自行选择。其他任何显式值都会在循环或守护进程启动前被适配器校验拒绝。

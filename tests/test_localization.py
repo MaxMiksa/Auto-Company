@@ -17,6 +17,9 @@ from concurrent.futures import ThreadPoolExecutor
 
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / 'scripts/core'))
+sys.path.insert(0, str(ROOT / 'tests'))
+from isolation_fixture import install as install_fixture_boundary
 SPEC = importlib.util.spec_from_file_location("localization", ROOT / "scripts/core/localization.py")
 LOCALIZATION = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(LOCALIZATION)
@@ -175,16 +178,18 @@ class LocalizationTests(unittest.TestCase):
     def test_interactive_session_blocks_transition_and_inherits_pin(self):
         LOCALIZATION.set_language(self.root, "en")
 
-        def interactive(arguments, **kwargs):
-            self.assertEqual(kwargs["env"]["AUTO_COMPANY_LANGUAGE"], "en")
-            self.assertIn("AUTO_COMPANY_LANGUAGE=en", arguments[1])
+        def interactive(root, selected, engine, executable, prompt, *settings, **kwargs):
+            self.assertEqual(engine, 'claude')
+            self.assertTrue(kwargs['interactive'])
+            self.assertEqual(kwargs['language'], 'en')
+            self.assertIn("AUTO_COMPANY_LANGUAGE=en", prompt)
             LOCALIZATION.set_language(self.root, "zh-CN")
             with self.assertRaises(LOCALIZATION.LanguageLockedError):
                 LOCALIZATION.next_product(self.root, "NEXT")
-            return subprocess.CompletedProcess(arguments, 0)
+            return 0
 
         with mock.patch.object(LOCALIZATION.shutil, "which", return_value="fake-claude"), \
-                mock.patch.object(LOCALIZATION.subprocess, "run", side_effect=interactive):
+                mock.patch('isolation_workspace.run_engine', side_effect=interactive):
             self.assertEqual(LOCALIZATION.interactive_team(self.root, "claude"), 0)
         self.assertFalse((self.root / ".auto-company.local.team-active").exists())
         self.assertEqual(LOCALIZATION.language_state(self.root)["language"], "en")
@@ -282,6 +287,7 @@ class LocalizationTests(unittest.TestCase):
             with self.subTest(language=language), tempfile.TemporaryDirectory() as temporary:
                 root = Path(temporary)
                 shutil.copytree(ROOT / "scripts/core", root / "scripts/core")
+                install_fixture_boundary(root)
                 shutil.copytree(ROOT / "i18n", root / "i18n")
                 shutil.copytree(ROOT / ".claude", root / ".claude")
                 (root / "memories").mkdir()
@@ -320,7 +326,7 @@ class LocalizationTests(unittest.TestCase):
                                 self.fail((root / "output").read_text())
                             time.sleep(0.05)
                         args = json.loads((root / "captured.json").read_text())
-                        prompt = args[args.index("-p") + 1]
+                        prompt = args[-1]
                         self.assertIn(f"AUTO_COMPANY_LANGUAGE={language}", prompt)
                         self.assertIn(".claude/skills/team/SKILL.md", prompt)
                         self.assertIn("## Human Overrides", prompt)

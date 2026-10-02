@@ -6,12 +6,15 @@ from pathlib import Path
 import shutil
 import signal
 import subprocess
+import sys
 import tempfile
 import time
 import unittest
 
 
 SOURCE_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(SOURCE_ROOT / 'tests'))
+from isolation_fixture import install as install_fixture_boundary
 
 
 @unittest.skipIf(os.name == "nt", "POSIX Bash behavior suite; run through WSL on Windows")
@@ -22,6 +25,7 @@ class GovernanceFixture(unittest.TestCase):
         self.root = Path(self.temp.name) / "framework"
         self.root.mkdir()
         shutil.copytree(SOURCE_ROOT / "scripts/core", self.root / "scripts/core")
+        install_fixture_boundary(self.root)
         (self.root / "memories").mkdir()
         shutil.copy2(SOURCE_ROOT / "memories/consensus.template.md", self.root / "memories")
         shutil.copy2(SOURCE_ROOT / ".gitignore", self.root)
@@ -573,8 +577,8 @@ class GovernanceLoopTest(GovernanceFixture):
         self.assertEqual(calls[0]["cwd"], str(self.root))
         self.assertEqual(calls[0]["project"], str(product))
         self.assertEqual(calls[0]["active"], "projects/selected")
-        self.assertIn(f"Selected product repository: `{product}`", calls[0]["argv"][2])
-        self.assertIn("Dashboard work report (version 2", calls[0]["argv"][2])
+        self.assertIn(f"Selected product repository: `{product}`", calls[0]["argv"][-1])
+        self.assertIn("Dashboard work report (version 2", calls[0]["argv"][-1])
         self.assertEqual(self.git("log", "-1", "--format=%s", cwd=product).strip(), "Fake product milestone")
         self.assertEqual(self.git("ls-files", "--", "projects/selected"), "")
         self.assertEqual(len(list((self.root / "memories/snapshots").glob("*.md"))), 1)

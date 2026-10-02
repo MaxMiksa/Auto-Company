@@ -124,6 +124,7 @@ cp "$SOURCE_ROOT/scripts/core/usage.py" "$FRAMEWORK/scripts/core/"
 cp "$SOURCE_ROOT/scripts/core/usage_lib.py" "$FRAMEWORK/scripts/core/"
 cp "$SOURCE_ROOT/memories/consensus.template.md" "$FRAMEWORK/memories/"
 cp "$SOURCE_ROOT/.gitignore" "$FRAMEWORK/"
+python3 "$SOURCE_ROOT/tests/isolation_fixture.py" "$FRAMEWORK"
 printf '# Integration prompt\n\nUpdate consensus safely.\n' > "$FRAMEWORK/PROMPT.md"
 
 AUTO_COMPANY_ROOT="$FRAMEWORK" "$FRAMEWORK/scripts/core/consensus-guard.sh" init
