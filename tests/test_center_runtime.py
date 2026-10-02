@@ -928,7 +928,22 @@ if [ "${CREATE_ARTIFACT:-0}" = 1 ] && [ "$count" = 1 ]; then
   python3 "$AUTO_COMPANY_ROOT/scripts/core/runtime_artifacts.py" --root "$AUTO_COMPANY_ROOT" --project projects/doc-fixture document README.md && touch "$AUTO_COMPANY_ROOT/artifact-ok"
 fi
 if [ "${SPAWN_ORPHAN:-0}" = 1 ]; then
-    python3 -c 'import os,time; child=os.fork(); os._exit(0) if child else None; os.setsid(); open(os.environ["AUTO_COMPANY_ROOT"]+"/orphan","w").write(str(os.getpid())); time.sleep(120)' &
+    # Wait for the child to publish its identity before ending the fake engine;
+    # otherwise correct fast cleanup can kill it before the test has a PID.
+    python3 -c '
+import os,time
+from pathlib import Path
+reader,writer=os.pipe()
+if os.fork():
+    os.close(writer)
+    assert os.read(reader,1)==b"1"
+    os._exit(0)
+os.close(reader)
+os.setsid()
+Path(os.environ["AUTO_COMPANY_ROOT"]+"/orphan").write_text(str(os.getpid()))
+os.write(writer,b"1")
+os.close(writer)
+time.sleep(120)'
 fi
 if [ "${SLOW_ENGINE:-0}" = 1 ]; then sleep 120; fi
 if [ "${ADD_P1:-0}" = 1 ]; then
