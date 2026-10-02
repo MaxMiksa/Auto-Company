@@ -20,9 +20,9 @@ The [English and Chinese overlays](translations/) translate presentation text on
 
 [中英文语言层](translations/)只翻译展示文字。预览服务在提供页面前校验每份原报告的哈希与完整轮次覆盖；报告改变或轮次缺失会使校验失败。经审校的视图不能替代原始事实。轮次完成不代表产品交付、客户采用、收入或付费验证。本轮人工指导的界面精修和翻译**不增加历史轮次**；图检单仍是免费本地工具，原记录中停止独立付费产品投入的结论保留。
 
-The expanded **Published refinement / 发布精修版** is a separate, language-matched display of the previously reviewed real product screenshots in [presentation/products](../products/). The [refinement metadata](refinements/) preserves their original digests, product-copy source and actual capture-session observation; exact per-image capture times are included where they were recorded. This display does not replace `latestSuccess` or any original run media. Original desktop and mobile images retain independent links and their original capture time. Desktop and mobile use the corresponding reviewed viewport image. A refinement with a different display language is never substituted.
+The expanded product screenshot is a language-matched display of the previously reviewed real product screenshots in [presentation/products](../products/). The [refinement metadata](refinements/) preserves their original digests, product-copy source and actual capture-session observation; exact per-image capture times are included where they were recorded. This display does not replace `latestSuccess` or any original run media. Original desktop and mobile image references and capture times remain in the manifest and API; provenance labels are omitted from the timeline. Desktop and mobile use the corresponding reviewed viewport image. A refinement with a different display language is never substituted.
 
-默认展开的**发布精修版**独立展示 [presentation/products](../products/) 中已审过的同语言真实产品实拍。[精修来源元数据](refinements/)保留原哈希、产品副本来源及当时实拍记录时间；已有逐图精确时间的保留精确时间。该展示层不替换 `latestSuccess` 或任何原运行媒体，原桌面与手机截图保留独立链接和原捕获时间。桌面与手机分别使用对应视口的已审图片；不同于当前展示语言的精修图不会替代原图。
+默认展开的产品实拍展示 [presentation/products](../products/) 中已审过的同语言真实产品实拍。[精修来源元数据](refinements/)保留原哈希、产品副本来源及当时实拍记录时间；已有逐图精确时间的保留精确时间。该展示层不替换 `latestSuccess` 或任何原运行媒体，原桌面与手机截图的引用和捕获时间保留在清单与 API 中，时间轴不再显示来源标签。桌面与手机分别使用对应视口的已审图片；不同于当前展示语言的精修图不会替代原图。
 
 ## Capture / 捕获
 
@@ -30,9 +30,9 @@ The expanded **Published refinement / 发布精修版** is a separate, language-
 
 捕获脚本读取真实本机只读页面与 API，校验原身份、时间顺序、状态、报告哈希及捕获前后不变的轮次清单；等待字体和可见图片加载，并检查混语、文字截断、图片失败与横向溢出。没有请求模拟、记录注入、界面隐藏或像素编辑，最终六视图均通过检查。
 
-Desktop width is 1440 px; height follows actual content through the complete footer. Mobile viewport is 390 × 844 px, with a separate native full-page capture. This set was captured with Windows Chromium build 1243, Playwright 1.63.0 and device scale 1. Rendered font inspection confirmed Segoe UI for English and Microsoft YaHei for Chinese. Capture times in the index are UTC; the visible journal uses its recorded local times. Runtime state, historical checks and limitations are shown as recorded, without inventing new results.
+Desktop width is 1440 px; height follows actual content through the complete footer. Mobile viewport is 390 × 844 px, with a separate native full-page capture. This set was captured with Windows Chromium build 1243, Playwright 1.63.0 and device scale 1. Rendered font inspection confirmed Segoe UI for English and Microsoft YaHei for Chinese. Capture times in the index are UTC; the visible journal uses its recorded local times. Runtime state, historical checks and report limitations remain as recorded. Runtime diagnostics are available in the Log tab; the former data-notes disclosure is removed.
 
-桌面宽 1440 像素，高度按真实内容扩至完整页脚；手机视口为 390 × 844，另保留浏览器原生完整页面截图。本组使用 Windows Chromium 1243、Playwright 1.63.0、像素比例 1；实际渲染字体检查确认英文为 Segoe UI、中文为微软雅黑。清单捕获时间使用 UTC，界面时间来自原记录。运行状态、历史检查与限制按记录展示，不补造结果。
+桌面宽 1440 像素，高度按真实内容扩至完整页脚；手机视口为 390 × 844，另保留浏览器原生完整页面截图。本组使用 Windows Chromium 1243、Playwright 1.63.0、像素比例 1；实际渲染字体检查确认英文为 Segoe UI、中文为微软雅黑。清单捕获时间使用 UTC，界面时间来自原记录。运行状态、历史检查与报告中的限制按记录展示。运行诊断移入日志页，原数据说明折叠区已移除。
 
 ## Reproduction / 复现
 

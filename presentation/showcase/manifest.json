@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
   "pathBasis": "repository-root",
-  "capturedAt": "2026-10-02T03:09:01.854Z",
+  "capturedAt": "2026-10-02T07:59:11.413Z",
   "sourceLabels": "Logical identifiers for preserved recorded runs; not public directories.",
-  "interpretation": "Reviewed language overlays are display text only. Published refinement is separately labeled and preserves original run screenshot links/times; it never replaces the original screenshot record. Human-directed refinement adds no historical cycles or paid validation.",
+  "interpretation": "Reviewed language overlays are display text only. Product refinements preserve original media references and capture times in this manifest and the API; provenance captions are omitted from the timeline. Human-directed refinement adds no historical cycles or paid validation.",
   "capture": {
     "script": "scripts/media/capture_showcase.cjs",
-    "mode": "actual read-only HTTP page; newest report and product screenshot expanded by default, history collapsed; separate labeled language-matched published refinement",
+    "mode": "actual read-only HTTP page; newest report and language-matched reviewed product screenshot expanded, history collapsed; runtime diagnostics in Log, data-notes disclosure removed",
     "platform": "win32",
     "chromiumBuild": 1243,
     "playwrightVersion": "1.63.0",
@@ -23,11 +23,11 @@
     "mockedRequests": false,
     "modifiedRecords": false,
     "pixelEditing": false,
-    "scriptSha256": "40626122968843aee85b3b1fac1c0806671cafbc7ae1f1cd03dce569c5671aae",
-    "scriptSha256AtCapture": "40626122968843aee85b3b1fac1c0806671cafbc7ae1f1cd03dce569c5671aae",
+    "scriptSha256": "fb34d2250ba6cc269918f794d945b55e9ca29c928b2ee7072b6f3973052f0fac",
+    "scriptSha256AtCapture": "fb34d2250ba6cc269918f794d945b55e9ca29c928b2ee7072b6f3973052f0fac",
     "artifactNormalization": "Current script and image digests are capture-time bytes; original recorded report digests and identities remain unchanged.",
     "disclosurePersistence": "Manual screenshot collapse/expansion retained after actual refresh and page reload within the same browser session.",
-    "mobileFullPage": "Native full-page capture after the expanded product image has loaded; complete original runtime/limitations/footer retained."
+    "mobileFullPage": "Native full-page capture after the expanded product image has loaded; complete timeline, original report limitations and footer retained."
   },
   "products": [
     {
@@ -132,21 +132,21 @@
             "sha256": "f5a849f08a37e7c5b13066ab2b27782b5482b619fdf8675f5c02e3980843b112",
             "sha256AtCapture": "f5a849f08a37e7c5b13066ab2b27782b5482b619fdf8675f5c02e3980843b112"
           },
-          "capturedAt": "2026-10-02T03:09:04.444Z",
+          "capturedAt": "2026-10-02T07:59:11.607Z",
           "checks": "passed",
           "screenshots": [
             {
               "file": "presentation/showcase/scopefence-timeline-en.png",
-              "sha256": "b48d4a040b668fa4e4286d3d959321e1fae747eeea9a88ad380ca0393e092498",
+              "sha256": "94afa61b6147c45bfb47ba136186a4e08dc245d97de4d17645c2f67e34e33e3d",
               "image": {
                 "width": 1440,
-                "height": 1760
+                "height": 1560
               },
               "fullPage": false,
-              "capturedAt": "2026-10-02T03:09:06.510Z",
+              "capturedAt": "2026-10-02T07:59:13.965Z",
               "viewport": {
                 "width": 1440,
-                "height": 1760
+                "height": 1560
               }
             },
             {
@@ -157,7 +157,7 @@
                 "height": 844
               },
               "fullPage": false,
-              "capturedAt": "2026-10-02T03:09:06.575Z",
+              "capturedAt": "2026-10-02T07:59:14.025Z",
               "viewport": {
                 "width": 390,
                 "height": 844
@@ -165,13 +165,13 @@
             },
             {
               "file": "presentation/showcase/scopefence-timeline-en-mobile-full.png",
-              "sha256": "f1af3b41d10ae5bbc297ef48214c126b63a57e8e01db16c0c2dd5561404998db",
+              "sha256": "195799fdc007dbbeae70dc8b23eb3e8d190bfd3675b41cbdd0a546f525271414",
               "image": {
                 "width": 390,
-                "height": 4437
+                "height": 4215
               },
               "fullPage": true,
-              "capturedAt": "2026-10-02T03:09:06.706Z",
+              "capturedAt": "2026-10-02T07:59:14.152Z",
               "viewport": {
                 "width": 390,
                 "height": 844
@@ -223,6 +223,11 @@
               }
             ],
             "recordPreserved": true
+          },
+          "timelineCleanupChecks": {
+            "removedLabels": true,
+            "removedDataNotes": true,
+            "diagnosticsOnlyInLog": true
           }
         },
         {
@@ -232,21 +237,21 @@
             "sha256": "24c3e10866fc1e208ecfdfa877b7100d52bb0071e229db65fb3b1a5229a6983f",
             "sha256AtCapture": "24c3e10866fc1e208ecfdfa877b7100d52bb0071e229db65fb3b1a5229a6983f"
           },
-          "capturedAt": "2026-10-02T03:09:02.023Z",
+          "capturedAt": "2026-10-02T07:59:14.261Z",
           "checks": "passed",
           "screenshots": [
             {
               "file": "presentation/showcase/scopefence-timeline-zh-CN.png",
-              "sha256": "e82f8f209e2673c3fbfb46036bd7dbd552d16b4e6ce7c7487b0db74dd979594c",
+              "sha256": "85b8f2d942189056eda85c72e9399d3501fdfeecacbb1219f6f39bc8e58f17ae",
               "image": {
                 "width": 1440,
-                "height": 1760
+                "height": 1520
               },
               "fullPage": false,
-              "capturedAt": "2026-10-02T03:09:04.142Z",
+              "capturedAt": "2026-10-02T07:59:16.495Z",
               "viewport": {
                 "width": 1440,
-                "height": 1760
+                "height": 1520
               }
             },
             {
@@ -257,7 +262,7 @@
                 "height": 844
               },
               "fullPage": false,
-              "capturedAt": "2026-10-02T03:09:04.210Z",
+              "capturedAt": "2026-10-02T07:59:16.557Z",
               "viewport": {
                 "width": 390,
                 "height": 844
@@ -265,13 +270,13 @@
             },
             {
               "file": "presentation/showcase/scopefence-timeline-zh-CN-mobile-full.png",
-              "sha256": "370914b5f86eeaf1aef2e6e272fe1fd16555a2df3a1d60f415fd559aae6680d0",
+              "sha256": "87b02e5bc222870025ea1ab22330c70eb6bc0ca8ff0f96d7dbfc6a91865aa7f6",
               "image": {
                 "width": 390,
-                "height": 4031
+                "height": 3809
               },
               "fullPage": true,
-              "capturedAt": "2026-10-02T03:09:04.334Z",
+              "capturedAt": "2026-10-02T07:59:16.663Z",
               "viewport": {
                 "width": 390,
                 "height": 844
@@ -323,6 +328,11 @@
               }
             ],
             "recordPreserved": true
+          },
+          "timelineCleanupChecks": {
+            "removedLabels": true,
+            "removedDataNotes": true,
+            "diagnosticsOnlyInLog": true
           }
         }
       ]
@@ -407,21 +417,21 @@
             "sha256": "7308f2c5e206bfd0ee4de311551e31df19d32a16b61a3c67067cf717fea3bbf7",
             "sha256AtCapture": "7308f2c5e206bfd0ee4de311551e31df19d32a16b61a3c67067cf717fea3bbf7"
           },
-          "capturedAt": "2026-10-02T03:09:06.808Z",
+          "capturedAt": "2026-10-02T07:59:16.752Z",
           "checks": "passed",
           "screenshots": [
             {
               "file": "presentation/showcase/tujiandan-timeline-en.png",
-              "sha256": "e87550b6cc2da319f485d94256cd70e88b4f6defc0ef1dd6d98b50df35e4fe45",
+              "sha256": "d7ecf53f1d8d9eb3e59c04160301de5c27731254208675f595e3c80088557c04",
               "image": {
                 "width": 1440,
-                "height": 1960
+                "height": 1760
               },
               "fullPage": false,
-              "capturedAt": "2026-10-02T03:09:08.879Z",
+              "capturedAt": "2026-10-02T07:59:19.087Z",
               "viewport": {
                 "width": 1440,
-                "height": 1960
+                "height": 1760
               }
             },
             {
@@ -432,7 +442,7 @@
                 "height": 844
               },
               "fullPage": false,
-              "capturedAt": "2026-10-02T03:09:08.941Z",
+              "capturedAt": "2026-10-02T07:59:19.156Z",
               "viewport": {
                 "width": 390,
                 "height": 844
@@ -440,13 +450,13 @@
             },
             {
               "file": "presentation/showcase/tujiandan-timeline-en-mobile-full.png",
-              "sha256": "af7b2e1a3c4f4bc3e6ac00192df0d48f3da5a224d86c7f2d9b7d329fa4373036",
+              "sha256": "c894f543e628298ec11a119fb67f07b05e7ed2a22cca3c59a55f031030e58fae",
               "image": {
                 "width": 390,
-                "height": 3711
+                "height": 3489
               },
               "fullPage": true,
-              "capturedAt": "2026-10-02T03:09:09.065Z",
+              "capturedAt": "2026-10-02T07:59:19.272Z",
               "viewport": {
                 "width": 390,
                 "height": 844
@@ -499,6 +509,11 @@
               }
             ],
             "recordPreserved": true
+          },
+          "timelineCleanupChecks": {
+            "removedLabels": true,
+            "removedDataNotes": true,
+            "diagnosticsOnlyInLog": true
           }
         },
         {
@@ -508,21 +523,21 @@
             "sha256": "486aa6afc1692bd8f6f724b6048a4c1ffd59094fb8c08edabb4ace809e88f057",
             "sha256AtCapture": "486aa6afc1692bd8f6f724b6048a4c1ffd59094fb8c08edabb4ace809e88f057"
           },
-          "capturedAt": "2026-10-02T03:09:09.165Z",
+          "capturedAt": "2026-10-02T07:59:19.377Z",
           "checks": "passed",
           "screenshots": [
             {
               "file": "presentation/showcase/tujiandan-timeline-zh-CN.png",
-              "sha256": "c6930c7dbfbcd86ab08f6333a93d7608c24b55ba06b93708f2bc36af5082a3e9",
+              "sha256": "31bc7c7bfb37513ed728b8f2874a299e021353a94c52aee027da9edafe63b128",
               "image": {
                 "width": 1440,
-                "height": 1960
+                "height": 1720
               },
               "fullPage": false,
-              "capturedAt": "2026-10-02T03:09:11.257Z",
+              "capturedAt": "2026-10-02T07:59:21.647Z",
               "viewport": {
                 "width": 1440,
-                "height": 1960
+                "height": 1720
               }
             },
             {
@@ -533,7 +548,7 @@
                 "height": 844
               },
               "fullPage": false,
-              "capturedAt": "2026-10-02T03:09:11.324Z",
+              "capturedAt": "2026-10-02T07:59:21.706Z",
               "viewport": {
                 "width": 390,
                 "height": 844
@@ -541,13 +556,13 @@
             },
             {
               "file": "presentation/showcase/tujiandan-timeline-zh-CN-mobile-full.png",
-              "sha256": "8495c3cd2ae2e8a8c83cc03831f5b4451676e914c28351d3a0b9bd106cf0428e",
+              "sha256": "5d9abf3b6b3a1cd14a2feb71bb5cf20b8d7957ba6e6b0370d8fdd2a905f31ef1",
               "image": {
                 "width": 390,
-                "height": 3230
+                "height": 3008
               },
               "fullPage": true,
-              "capturedAt": "2026-10-02T03:09:11.439Z",
+              "capturedAt": "2026-10-02T07:59:21.803Z",
               "viewport": {
                 "width": 390,
                 "height": 844
@@ -600,6 +615,11 @@
               }
             ],
             "recordPreserved": true
+          },
+          "timelineCleanupChecks": {
+            "removedLabels": true,
+            "removedDataNotes": true,
+            "diagnosticsOnlyInLog": true
           }
         }
       ]
@@ -684,21 +704,21 @@
             "sha256": "a6c91a79d3c5d544c027d02aaed124f6f095b34ebec50332be7fd7c6ce89bacd",
             "sha256AtCapture": "a6c91a79d3c5d544c027d02aaed124f6f095b34ebec50332be7fd7c6ce89bacd"
           },
-          "capturedAt": "2026-10-02T03:09:11.540Z",
+          "capturedAt": "2026-10-02T07:59:21.909Z",
           "checks": "passed",
           "screenshots": [
             {
               "file": "presentation/showcase/coi-chase-desk-timeline-en.png",
-              "sha256": "59d37eb359212f00cbf7af87a330f76c21ede8e9d70d4ea1c8cc0e461c224068",
+              "sha256": "284c13442aa4ab02c7403b6c27b9831e1b912a80a4de9c51f1c27c100a2792c2",
               "image": {
                 "width": 1440,
-                "height": 1720
+                "height": 1480
               },
               "fullPage": false,
-              "capturedAt": "2026-10-02T03:09:13.550Z",
+              "capturedAt": "2026-10-02T07:59:24.057Z",
               "viewport": {
                 "width": 1440,
-                "height": 1720
+                "height": 1480
               }
             },
             {
@@ -709,7 +729,7 @@
                 "height": 844
               },
               "fullPage": false,
-              "capturedAt": "2026-10-02T03:09:13.608Z",
+              "capturedAt": "2026-10-02T07:59:24.123Z",
               "viewport": {
                 "width": 390,
                 "height": 844
@@ -717,13 +737,13 @@
             },
             {
               "file": "presentation/showcase/coi-chase-desk-timeline-en-mobile-full.png",
-              "sha256": "67aa422466eb111f2dba12f5f329f4b600bde2aa621e38ce76d3ed00a68dcd7b",
+              "sha256": "9df0ea7f4aa61b717f465cafb8e6f0758d2bb87458f551a27daef831fb70ae58",
               "image": {
                 "width": 390,
-                "height": 5297
+                "height": 5074
               },
               "fullPage": true,
-              "capturedAt": "2026-10-02T03:09:13.748Z",
+              "capturedAt": "2026-10-02T07:59:24.268Z",
               "viewport": {
                 "width": 390,
                 "height": 844
@@ -775,6 +795,11 @@
               }
             ],
             "recordPreserved": true
+          },
+          "timelineCleanupChecks": {
+            "removedLabels": true,
+            "removedDataNotes": true,
+            "diagnosticsOnlyInLog": true
           }
         },
         {
@@ -784,21 +809,21 @@
             "sha256": "542a1dd645f25c5cadd41b288261c6f0aadd7ab5cdb79db6d3d31bc9368f897b",
             "sha256AtCapture": "542a1dd645f25c5cadd41b288261c6f0aadd7ab5cdb79db6d3d31bc9368f897b"
           },
-          "capturedAt": "2026-10-02T03:09:13.833Z",
+          "capturedAt": "2026-10-02T07:59:24.373Z",
           "checks": "passed",
           "screenshots": [
             {
               "file": "presentation/showcase/coi-chase-desk-timeline-zh-CN.png",
-              "sha256": "4788b3f447a06bb373b2ba7b005993a80f64585da6b36e6523b80e3bef49aa82",
+              "sha256": "dd40f198d16dfdae4d27d44d3a6cc472f50f00c4abcdbedec3697a79387bbe1a",
               "image": {
                 "width": 1440,
-                "height": 1720
+                "height": 1480
               },
               "fullPage": false,
-              "capturedAt": "2026-10-02T03:09:15.833Z",
+              "capturedAt": "2026-10-02T07:59:26.557Z",
               "viewport": {
                 "width": 1440,
-                "height": 1720
+                "height": 1480
               }
             },
             {
@@ -809,7 +834,7 @@
                 "height": 844
               },
               "fullPage": false,
-              "capturedAt": "2026-10-02T03:09:15.890Z",
+              "capturedAt": "2026-10-02T07:59:26.623Z",
               "viewport": {
                 "width": 390,
                 "height": 844
@@ -817,13 +842,13 @@
             },
             {
               "file": "presentation/showcase/coi-chase-desk-timeline-zh-CN-mobile-full.png",
-              "sha256": "0178cc655c24ff6286f6a5ca8bfc5c60d8ab68df0f37631ee52ca371ed9c1211",
+              "sha256": "f22f281d70fa9db9c09d1260794b12f663176f66e0ba8824f9bc9f7ecb5ff566",
               "image": {
                 "width": 390,
-                "height": 4816
+                "height": 4594
               },
               "fullPage": true,
-              "capturedAt": "2026-10-02T03:09:16.025Z",
+              "capturedAt": "2026-10-02T07:59:26.755Z",
               "viewport": {
                 "width": 390,
                 "height": 844
@@ -875,6 +900,11 @@
               }
             ],
             "recordPreserved": true
+          },
+          "timelineCleanupChecks": {
+            "removedLabels": true,
+            "removedDataNotes": true,
+            "diagnosticsOnlyInLog": true
           }
         }
       ]

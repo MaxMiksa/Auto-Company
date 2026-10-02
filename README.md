@@ -23,20 +23,18 @@ Optional Cursor and OpenAI-compatible adapters require explicit configuration. S
 
 ## Dashboard and Product Preview
 
-[![ScopeFence · seven continuous work cycles](presentation/showcase/scopefence-timeline-en.png)](presentation/showcase/scopefence-timeline-en.png)
+[![ScopeFence · work timeline](presentation/showcase/scopefence-timeline-en.png)](presentation/showcase/scopefence-timeline-en.png)
 
-ScopeFence across **7 real completed cycles: 3 exploration + 4 product cycles**. Exploration, delivery and later work share one continuous timeline, with original identities, timestamps, checks and logs preserved.
-
-The timeline uses a reviewed English presentation overlay, with product screenshots expanded by default. The labeled **Published refinement** shows the reviewed English product copy; the original run captures remain linked separately. These changes do not add historical cycles or establish paid demand. Open an image at full size; see [capture provenance and reproduction](presentation/showcase/README.md).
+Click an image to view it at full size. [Capture sources and reproduction](presentation/showcase/README.md).
 
 <table>
-<tr><th colspan="2"><a href="examples/scopefence/">ScopeFence</a> · 7 · 3 exploration + 4 product</th></tr>
+<tr><th colspan="2"><a href="examples/scopefence/">ScopeFence</a></th></tr>
 <tr><td colspan="2">Communicate scope, price and schedule changes through an editable decision link.</td></tr>
 <tr><td width="50%" valign="top"><a href="presentation/products/scopefence-en-result.png"><img src="presentation/products/scopefence-en-result.png" alt="ScopeFence · product interface" width="100%" /></a></td><td width="50%" valign="top"><a href="presentation/showcase/scopefence-timeline-en.png"><img src="presentation/showcase/scopefence-timeline-en.png" alt="ScopeFence · recorded work timeline" width="100%" /></a></td></tr>
-<tr><th colspan="2"><a href="examples/tujiandan/">Image Checklist</a> · 5 · 3 exploration + 2 product</th></tr>
+<tr><th colspan="2"><a href="examples/tujiandan/">Image Checklist</a></th></tr>
 <tr><td colspan="2">Review image dimensions, size, format and names locally, then export a checklist.</td></tr>
 <tr><td width="50%" valign="top"><a href="presentation/products/tujiandan-en.png"><img src="presentation/products/tujiandan-en.png" alt="Image Checklist · product interface" width="100%" /></a></td><td width="50%" valign="top"><a href="presentation/showcase/tujiandan-timeline-en.png"><img src="presentation/showcase/tujiandan-timeline-en.png" alt="Image Checklist · recorded work timeline" width="100%" /></a></td></tr>
-<tr><th colspan="2"><a href="examples/coi-chase-desk/">COI Chase Desk</a> · 5 · 3 exploration + 2 product</th></tr>
+<tr><th colspan="2"><a href="examples/coi-chase-desk/">COI Chase Desk</a></th></tr>
 <tr><td colspan="2">Record follow-ups and document receipts, review the history and export session records.</td></tr>
 <tr><td width="50%" valign="top"><a href="presentation/products/coi-chase-desk-en-full.png"><img src="presentation/products/coi-chase-desk-en-full.png" alt="COI Chase Desk · product interface" width="100%" /></a></td><td width="50%" valign="top"><a href="presentation/showcase/coi-chase-desk-timeline-en.png"><img src="presentation/showcase/coi-chase-desk-timeline-en.png" alt="COI Chase Desk · recorded work timeline" width="100%" /></a></td></tr>
 </table>

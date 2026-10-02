@@ -95,7 +95,7 @@ async function saveShot(page, filename, fullPage = false) {
 (async () => {
   const previews = await readJSON(manifestFile);
   await fs.mkdir(outputDir,{recursive:true});await fs.mkdir(path.dirname(evidenceFile),{recursive:true});
-  const evidence = {observedAt:new Date().toISOString(),captureScript:path.relative(root,__filename).replaceAll('\\','/'),captureScriptSha256:sha(await fs.readFile(__filename)),manifestSha256:sha(await fs.readFile(manifestFile)),source:'Real read-only journal HTTP pages; default current report and product screenshot expanded, history collapsed; independently labeled reviewed published refinement; no mocked requests, modified records, injected UI or pixel edits.',captures:[]};
+  const evidence = {observedAt:new Date().toISOString(),captureScript:path.relative(root,__filename).replaceAll('\\','/'),captureScriptSha256:sha(await fs.readFile(__filename)),manifestSha256:sha(await fs.readFile(manifestFile)),source:'Real read-only journal HTTP pages; current report and reviewed product screenshot expanded, history collapsed; provenance preserved in manifest/API, diagnostics in Log; no mocked requests, modified records, injected UI or pixel edits.',captures:[]};
   const browser = await chromium.launch({headless:true});
   try {
     for (const target of previews) {
@@ -134,6 +134,19 @@ async function saveShot(page, filename, fullPage = false) {
         const historyIds=data.cycles.slice(1).map(cycle=>cycle.id);
         const initial=await inspect(page,target.language);assert.deepEqual(initial.historyIds,historyIds);assert.deepEqual(initial.openHistories,[]);assert.equal(initial.currentNumber,String(data.cycles[0].sequenceNumber??data.cycles[0].number).padStart(2,'0'));
         assert.equal(initial.productMediaOpen,true,'Product screenshot must be expanded by the actual frontend default');
+        assert.doesNotMatch(initial.visibleText,/Published refinement|发布精修版|Original (desktop|mobile) capture|Original run captured|原运行(桌面截图|手机截图|截取于)|About this data|数据说明|Runtime diagnostics|运行诊断/);
+        assert.equal(await page.locator('#sourceNotes').count(),0);
+        await page.locator('#tab-logs').click();
+        assert.equal(await page.locator('#panel-logs #runtimeDiagnostics').isVisible(),true,'Diagnostics must be accessible in Log');
+        await page.locator('#runtimeDiagnostics > summary').click();
+        assert.equal(await page.locator('#rawText').isVisible(),true);
+        assert.ok((await page.locator('#diagnosticSummary').innerText()).trim());
+        await page.locator('#tab-usage').click();
+        assert.equal(await page.locator('#runtimeDiagnostics').isVisible(),false);
+        await page.locator('#tab-work').click();
+        await settle(page,data.cycles.length);
+        assert.equal(await page.locator('#runtimeDiagnostics').isVisible(),false);
+        record.timelineCleanupChecks={removedLabels:true,removedDataNotes:true,diagnosticsOnlyInLog:true};
         // Exercise the actual disclosure and refresh controls before capture.
         await page.locator('.product-media > summary').click();
         await page.locator('#refreshButton').click();await settle(page,data.cycles.length);

@@ -68,7 +68,6 @@
             <div id="historyList"></div>
           </section>
         </div>
-        <div id="sourceNotes" class="source-notes"></div>
       </section>
       <section id="panel-usage" class="workspace-panel secondary-panel" role="tabpanel" aria-labelledby="tab-usage" hidden>
         <div class="panel-heading">
@@ -126,12 +125,12 @@
         </div>
         <p id="logStatus" class="muted" role="status"></p>
         <pre id="logText" class="log-text" tabindex="0"></pre>
+        <details id="runtimeDiagnostics" class="runtime-diagnostics">
+          <summary data-i18n="diagnostics">运行诊断</summary>
+          <div id="diagnosticSummary"></div>
+          <pre id="rawText" class="log-text" tabindex="0"></pre>
+        </details>
       </section>
-      <details id="runtimeDiagnostics" class="runtime-diagnostics">
-        <summary data-i18n="diagnostics">运行诊断</summary>
-        <div id="diagnosticSummary"></div>
-        <pre id="rawText" class="log-text" tabindex="0"></pre>
-      </details>
       <footer class="page-footer">
         <span id="sourceName"></span>
         <span id="refreshStatus" role="status"></span>

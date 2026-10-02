@@ -23,20 +23,18 @@
 
 ## 看板与产品实拍
 
-[![ScopeFence · 七轮连续工作记录](presentation/showcase/scopefence-timeline-zh-CN.png)](presentation/showcase/scopefence-timeline-zh-CN.png)
+[![ScopeFence · 工作时间轴](presentation/showcase/scopefence-timeline-zh-CN.png)](presentation/showcase/scopefence-timeline-zh-CN.png)
 
-ScopeFence 的 **7 个真实完成轮次：3 轮探索 + 4 轮产品工作**。探索、交付与后续工作在同一条时间轴中连续显示，原有身份、时间、检查与日志保持不变。
-
-时间轴使用经审校的中文翻译视图，产品实拍默认展开。标明**发布精修版**的图片来自已审校的中文产品副本；原运行截图保留独立查看入口。这些修复不增加历史轮次，也不代表已验证付费需求。点击图片查看原尺寸；[截图来源与复现](presentation/showcase/README.md)。
+点击图片查看原尺寸。[截图来源与复现](presentation/showcase/README.md)。
 
 <table>
-<tr><th colspan="2"><a href="examples/scopefence/">范围确认单</a> · 7 轮 · 3 探索 + 4 产品</th></tr>
+<tr><th colspan="2"><a href="examples/scopefence/">范围确认单</a></th></tr>
 <tr><td colspan="2">把范围、费用和交期变化整理成可返回的确认链接。</td></tr>
 <tr><td width="50%" valign="top"><a href="presentation/products/scopefence-zh-result.png"><img src="presentation/products/scopefence-zh-result.png" alt="范围确认单 · 产品页面" width="100%" /></a></td><td width="50%" valign="top"><a href="presentation/showcase/scopefence-timeline-zh-CN.png"><img src="presentation/showcase/scopefence-timeline-zh-CN.png" alt="范围确认单 · 真实工作时间轴" width="100%" /></a></td></tr>
-<tr><th colspan="2"><a href="examples/tujiandan/">图检单</a> · 5 轮 · 3 探索 + 2 产品</th></tr>
+<tr><th colspan="2"><a href="examples/tujiandan/">图检单</a></th></tr>
 <tr><td colspan="2">在本地核对图片尺寸、体积、格式和文件名，导出检查单。</td></tr>
 <tr><td width="50%" valign="top"><a href="presentation/products/tujiandan-zh.png"><img src="presentation/products/tujiandan-zh.png" alt="图检单 · 产品页面" width="100%" /></a></td><td width="50%" valign="top"><a href="presentation/showcase/tujiandan-timeline-zh-CN.png"><img src="presentation/showcase/tujiandan-timeline-zh-CN.png" alt="图检单 · 真实工作时间轴" width="100%" /></a></td></tr>
-<tr><th colspan="2"><a href="examples/coi-chase-desk/">保单跟进台</a> · 5 轮 · 3 探索 + 2 产品</th></tr>
+<tr><th colspan="2"><a href="examples/coi-chase-desk/">保单跟进台</a></th></tr>
 <tr><td colspan="2">记录追催和资料收件，查看过程并导出本次工作记录。</td></tr>
 <tr><td width="50%" valign="top"><a href="presentation/products/coi-chase-desk-zh-full.png"><img src="presentation/products/coi-chase-desk-zh-full.png" alt="保单跟进台 · 产品页面" width="100%" /></a></td><td width="50%" valign="top"><a href="presentation/showcase/coi-chase-desk-timeline-zh-CN.png"><img src="presentation/showcase/coi-chase-desk-timeline-zh-CN.png" alt="保单跟进台 · 真实工作时间轴" width="100%" /></a></td></tr>
 </table>
