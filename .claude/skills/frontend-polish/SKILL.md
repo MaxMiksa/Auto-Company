@@ -3,53 +3,53 @@ name: frontend-polish
 description: Refine an already working product frontend in a dedicated finishing pass, preserving its identity while improving hierarchy, components, copy and responsive behavior. Use after the core flow works or when the user asks for frontend polish; not for product ideation or a new visual direction.
 ---
 
-# 前端精修轮
+# Frontend Finishing Pass
 
-把当前已经可用的产品打磨到可以直接展示和交付的程度。先使用 [frontend-design](../frontend-design.md)，以当前产品已有的有效设计为基础，保留整体风格、配色角色、主要布局和熟悉的操作方式。可以为明确的使用问题局部调整布局；不要为了显得变化很大而换主题、换字体气质、重建导航或迁移框架。人类明确提出的新要求优先。
+Bring the working product to a state suitable for direct demonstration and delivery. First use [frontend-design](../frontend-design.md). Build on the product's effective design, preserving its overall style, color roles, main layout and familiar actions. Adjust local layout to solve a concrete usability problem; do not change the theme, typographic character, navigation or framework merely to make the difference look larger. New explicit human requirements take precedence.
 
-## 进入与结束
+## Entry and completion
 
-- 核心流程已能实际走通时，安排一轮专门精修；核心功能仍阻断时，先修复阻断并如实记录，不用漂亮页面掩盖问题。
-- 读取当前工作空间中的产品、任务、已有设计决定与验收记录；只使用本项目允许访问的素材。不要通过读取其他项目来寻找风格或参考答案。
-- 已有当前界面版本的完成记录时，不因重启或下一周期再次安排整轮精修。后续界面有实质变化时，只复查受影响页面；若没有值得保留的改进，记录判断即可，不为凑改动强行重画。
-- 本轮完成后记录实际改动、截图、功能检查和遗留问题，回到正常产品工作。精修完成不代表整个项目必须停止，也不能绕过人工治理、预算或暂停状态。
+- Schedule one dedicated pass once the core flow actually works. If core functionality is blocked, fix and record the blocker first; visual polish must not conceal it.
+- Read the current workspace's product, task, existing design decisions and acceptance records. Use only materials accessible within this project's permitted scope. Do not read other projects for a visual direction or a reference answer.
+- Do not repeat a completed pass for the current interface version after restart or in the next cycle. Later substantial interface changes need a review of affected screens only. If no worthwhile improvement remains, record that judgment instead of forcing a redesign to produce a diff.
+- Record actual changes, screenshots, functional checks and remaining issues, then return to normal product work. Finishing this pass does not require stopping the project or override human governance, budgets or a paused runtime.
 
-## 先看真实页面
+## Inspect real screens first
 
-启动当前产品，分别查看桌面和手机上的主流程、已有内容与结果。用同一组输入保留修改前的状态和截图。先明确用户来到这里要做什么、先看什么、下一步在哪里，再找出最影响完成任务和观感的问题。工作笔记简要写清“保留什么、修什么、为什么”；这些设计说明不要进入产品页面。
+Run the current product and inspect its main flow, populated content and result on desktop and mobile. Preserve the initial states and screenshots using the same inputs intended for comparison. Establish what the user came to do, what deserves attention first and where the next action belongs. Identify the issues with the greatest effect on task completion and appearance. Briefly note what to keep, what to fix and why; keep this design commentary out of the product interface.
 
-## 精修重点
+## Refinement priorities
 
-### 任务、布局与密度
+### Task, layout and density
 
-让主要操作、工作内容和结果清楚可见。把相关输入、反馈和结果放在合理距离；压缩挤占工作区的介绍、重复标题和无效留白。按内容关系调整对齐、分组和比例，避免机械堆卡片、胶囊和装饰图标。保留有作用的大色块和产品特征，修整它们与内容的关系。
+Keep the main action, working content and result easy to find. Place related input, feedback and results at useful distances. Reduce introductions, repeated headings and empty space that crowd out the work. Adjust alignment, grouping and proportions to express content relationships; avoid mechanical stacks of cards, pills and decorative icons. Retain useful strong color fields and product character while improving their relationship to the content.
 
-### 产品内部的一致性
+### Consistency within the product
 
-核对按钮、输入框、选择器、列表、表格和弹窗的高度、间距、边框、圆角、字号、图标与对齐。相同操作使用相同命名和反馈；主要、次要及危险操作区分清楚。复用本产品组件，补齐焦点、选中、禁用、加载、成功和错误状态。让样式覆盖实际控件，消除浏览器默认样式与定制组件混杂产生的粗糙感。
+Review heights, spacing, borders, radii, type sizes, icons and alignment across buttons, inputs, selectors, lists, tables and dialogs. Use consistent names and feedback for the same action; distinguish primary, secondary and destructive actions. Reuse this product's components and complete their focus, selected, disabled, loading, success and error states. Style the actual controls consistently so a mixture of browser defaults and custom components does not leave the interface looking unfinished.
 
-### 排版与色彩
+### Typography and color
 
-建立清楚的标题、正文、标签和辅助信息层级，保证中英文、数字与长文本的行高、字重、换行自然。必要信息足够大、足够清楚。沿用适合本产品的色彩关系，校正对比度、饱和度和状态色；不要把产品统一换成绿色、暖纸红棕或其他固定模板，也不要为了避开某种颜色而破坏已有的好设计。
+Establish clear heading, body, label and supporting-information levels. Check natural line height, weight and wrapping for Chinese, English, numbers and long content. Necessary information must be large and clear enough to read. Retain color relationships that suit this product, correcting contrast, saturation and status colors. Do not standardize products on green, warm paper with red-brown accents or another fixed template; do not damage a good existing design merely to avoid a color family.
 
-### 删掉不帮助操作的解释文字
+### Remove explanations that do not help the task
 
-逐段判断：它是否帮助用户做决定、输入、理解结果或从错误中恢复？删除重复介绍、显而易见的操作复述、技术实现说明、设计自述、装饰性英文小标题和“为说明而说明”的灰色小字。不要把这些文字机械搬进另一层折叠区。
+Judge each passage by whether it helps the user decide, enter information, understand a result or recover from an error. Remove repeated introductions, restatements of obvious actions, implementation commentary, design self-description, decorative English micro-headings and small gray text that exists only to explain the obvious. Do not mechanically relocate this clutter into another disclosure.
 
-保留确有帮助的格式示例、单位、输入约束、空态下一步、具体错误及结果含义。偶尔才需要的说明可放在对应位置的帮助中。隐私、同意、不可逆操作和真实限制应在相关决策发生前可读；不要用删除必要标签、缩小字号、降低对比度或隐藏失败来换取干净截图。
+Keep useful format examples, units, input constraints, next steps for empty states, specific errors and result meanings. Occasional explanations can live in relevant nearby help. Privacy, consent, irreversible consequences and real limits must be readable before the affected decision. Do not clean up a screenshot by deleting necessary labels, reducing type size or contrast, or hiding failures.
 
-### 操作完整性与响应式
+### Complete interactions and responsive behavior
 
-检查点击之后的真实结果：状态是否明确、重复点击是否误操作、保存和刷新是否一致、导入导出是否保持数据。修复无反应的按钮、遮挡内容的提示和失效的链接。避免添加与本轮精修无关的功能。
+Check the actual result of each affected action: clear state, safe repeated clicks, consistent save/reload behavior and preserved import/export data. Fix unresponsive buttons, feedback that obscures content and broken links. Keep unrelated features out of this finishing pass.
 
-手机端重新检查内容顺序、控件触达、长标题、键盘操作和溢出；主要操作不能被大标题或装饰挤到很远。桌面端检查内容宽度与信息密度。适用时检查弹窗、打印和导出视图；保留键盘焦点与必要的无障碍名称，动效服务于状态变化。
+On mobile, reconsider content order, control reachability, long headings, keyboard operation and overflow. Large headings and decoration must not push the main action far away. On desktop, check content width and density. Review dialogs, print and export views when relevant. Preserve keyboard focus and necessary accessible names; use motion to explain state changes.
 
-## 以实际效果验收
+## Accept the actual result
 
-在修改前后的同设备尺寸、同输入和同业务状态下检查真实页面。覆盖主流程及有风险的空态、错误、长内容、保存恢复和导出；测试范围随改动确定，相关检查通过后不重复扩大。
+Compare actual before/after pages at the same device dimensions, with the same inputs and business state. Cover the main flow and relevant risks in empty/error states, long content, save/recovery and exports. Scale checks to the changes and stop broadening or repeating them once the relevant checks pass.
 
-逐项判断：用户是否更容易找到主操作和结果；组件是否更统一；文字是否更简洁而不缺信息；桌面与手机是否可读、可操作；原有功能和风格是否保留。只保留能够说明具体收益的改动，回退让任务更难完成或明显更难看的部分。不能仅凭代码差异大、换色或主观加分宣称更好。
+Judge whether users can find the main action and result more easily, components are more consistent, copy is shorter without losing meaning, desktop/mobile views are readable and operable, and existing functionality and character survive. Keep changes with concrete benefits; revert parts that make the task harder or the interface visibly worse. A large diff, new accent color or subjective score increase alone does not establish improvement.
 
-修复实际页面后再截图，不修改像素、不伪造数据。展示截图遵循目标语言；已有中英文交付要求时，分别检查两种语言的控件和截图。原始历史数据不随文案清理而改写，诊断和实现细节留在适当的日志或帮助位置。
+Fix the actual page before capturing it; do not edit pixels or fabricate data. Showcase captures follow the target language. When bilingual delivery is already required, check both languages' controls and screenshots separately. Copy cleanup must not rewrite recorded history; keep diagnostics and implementation details in appropriate logs or help.
 
-按照运行时产品语言输出简短的精修记录：改动及原因、实际检查与截图、未解决问题。记录当前产品与界面版本，并在现有共识中注明精修已完成或具体阻断；没有运行浏览器或完成某项检查时明确说明，不把计划写成结果。
+Write a short finishing record in the runtime product language: changes and reasons, actual checks and screenshots, and unresolved issues. Identify the current product and interface version, and record completion or the concrete blocker in the existing consensus. State when browser inspection or a particular check was not performed; do not report a plan as a result.
