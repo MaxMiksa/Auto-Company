@@ -596,6 +596,16 @@ Raw=Loop not running
         gather.assert_called_once_with(period="week", target_date="2026-09-02")
         handler._json.assert_called_once_with(expected)
 
+    def test_shared_ui_assets_have_explicit_static_routes(self) -> None:
+        handler = dashboard_server.DashboardHandler.__new__(dashboard_server.DashboardHandler)
+        handler._request_allowed = mock.Mock(return_value=True)
+        handler._serve_file = mock.Mock()
+        for filename, mime in [("ui.js", "application/javascript; charset=utf-8"), ("ui.css", "text/css; charset=utf-8")]:
+            handler.path = "/ui-assets/" + filename
+            handler.do_GET()
+            handler._serve_file.assert_called_once_with(dashboard_server.DASHBOARD_DIR / "ui-assets" / filename, mime)
+            handler._serve_file.reset_mock()
+
     def test_frontend_translation_asset_uses_explicit_static_route(self) -> None:
         handler = dashboard_server.DashboardHandler.__new__(
             dashboard_server.DashboardHandler

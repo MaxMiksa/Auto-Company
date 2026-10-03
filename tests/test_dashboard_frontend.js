@@ -17,12 +17,14 @@ function helpers() {
     getElementById: (id) => { assert.ok(fields.has(id), `Unexpected DOM dependency: ${id}`); return fields.get(id); },
   } });
   vm.runInContext(fs.readFileSync(path.join(dashboard, "icons.js"), "utf8"), context);
+  vm.runInContext(fs.readFileSync(path.join(dashboard, "date-time.js"), "utf8"), context);
   vm.runInContext(i18n, context);
+  vm.runInContext(fs.readFileSync(path.join(dashboard, "date-time.js"), "utf8"), context);
   // Expose existing closures before event wiring. There is no simulated DOM,
   // copied application logic, network request or production testing hook.
   const binding = app.indexOf("\n  document.querySelectorAll('[data-tab]').forEach");
   assert.ok(binding > 0, "Journal event wiring must follow its helper declarations");
-  vm.runInContext(app.slice(0, binding) + "\n globalThis.journal = { state, message, aggregate, duration, cycleTitle, statusLabel, formatTime, filterUsage, reportRows, liveDuration, checkCounts, checkPresentation, progressState, latestCycle, historyGroups, paddedCycleNumber, unavailableArtifact, mediaURL, mediaRetryError, iconPublicationWarning, publishedRefinement };\n})();", context);
+  vm.runInContext(app.slice(0, binding) + "\n globalThis.journal = { state, message, aggregate, usageGroups, duration, cycleTitle, statusLabel, formatTime, fullTime, filterUsage, reportRows, liveDuration, checkCounts, checkPresentation, progressState, latestCycle, historyGroups, paddedCycleNumber, unavailableArtifact, mediaURL, mediaRetryError, iconPublicationWarning, publishedRefinement, readableLog };\n})();", context);
   context.journal.state.language = "en";
   return { ...context.journal, messages: context.window.JOURNAL_MESSAGES, vocabulary: context.window.DashboardStatus, fields };
 }
@@ -38,6 +40,17 @@ test("both languages cover rendered keys and preserve interpolation fields", () 
   }
   const keys = [...html.matchAll(/data-i18n="([^"]+)"/g), ...app.matchAll(/message\('([^']+)'/g)];
   for (const [, key] of keys) assert.ok(messages.en[key], `Missing rendered translation: ${key}`);
+});
+
+test('usage separates different engines and unknown model identities', () => {
+  const { usageGroups, formatTime, fullTime } = helpers();
+  const cycles = [{id: 'a', engine: 'codex', model: 'm1'}, {id: 'b', engine: 'codex', model: 'm1'}, {id: 'c', engine: 'other', model: 'm1'}, {id: 'd', engine: 'codex', model: 'unknown'}, {id: 'e', engine: 'codex', model: 'unknown'}];
+  const groups = usageGroups(cycles);
+  assert.deepEqual(Array.from(groups, group => group.cycles.length), [2, 1, 1, 1]);
+  assert.match(formatTime('2020-01-01T12:00:00Z', true), /2020/);
+  assert.match(fullTime('2020-01-01T12:00:00Z'), /2020/);
+  assert.equal(fullTime('2020-01-01T12:00:00Z'), formatTime('2020-01-01T12:00:00Z', true));
+  assert.match(fullTime('2020-01-01T12:00:00Z'), /^2020-01-01 \d{2}:\d{2}$/);
 });
 
 test("media links must belong to the exact managed product", () => {
@@ -170,7 +183,7 @@ test("day and week usage filters use ledger end dates and exclude active work", 
   assert.equal(filterUsage().length, 2);
   fields.get("usagePeriod").value = "week";
   assert.deepEqual(Array.from(filterUsage(), (cycle) => cycle.endedAt.slice(0, 10)), ["2026-09-14", "2026-09-18", "2026-09-20", "2026-09-18"]);
-  assert.equal(fields.get("usageRange").textContent, "2026-09-14 – 2026-09-20");
+  assert.equal(fields.get("usageRange").textContent, new Date().getFullYear() === 2026 ? "09-14 – 09-20" : "2026-09-14 – 2026-09-20");
   fields.get("usagePeriod").value = "all";
   assert.equal(filterUsage().length, 7);
   assert.equal(filterUsage().some((cycle) => cycle.active), false);
@@ -259,7 +272,8 @@ test("cycle progress distinguishes execution completion, pauses and unknown stat
   assert.equal(progressState("completed"), "completed");
   assert.equal(progressState("running"), "running");
   assert.equal(progressState("pending"), "pending");
-  for (const status of ["interrupted", "paused", "completed_with_timeout", "waiting_limit"]) assert.equal(progressState(status), "paused");
+  for (const status of ["interrupted", "paused", "completed_with_timeout"]) assert.equal(progressState(status), "paused");
+  for (const status of ["attention", "blocked", "waiting_limit", "circuit_break"]) assert.equal(progressState(status), "attention");
   assert.equal(progressState("failed"), "failed");
   assert.equal(progressState("unexpected"), "unknown");
   assert.equal(progressState(undefined), "unknown");
@@ -289,12 +303,13 @@ function scopedUsageHarness() {
     recordUsage: (usage) => renders.push(usage),
   });
   vm.runInContext(i18n, context);
+  vm.runInContext(fs.readFileSync(path.join(dashboard, "date-time.js"), "utf8"), context);
   const binding = app.indexOf("\n  document.querySelectorAll('[data-tab]').forEach");
   // Keep the real refresh, pagination, usage validation and response guards.
   // Replace only I/O, rendering and the background timer for deterministic races.
   vm.runInContext(app.slice(0, binding) + `
     fetchCenter = globalThis.request;
-    render = renderRuntime = refreshCenterContext = scheduleRefresh = () => {};
+    render = renderRuntime = refreshCenterContext = scheduleRefresh = connectionNotice = () => {};
     renderUsage = () => globalThis.recordUsage(state.scopedUsage);
     globalThis.journal = { state, refresh, refreshScopedUsage };
   })();`, context);
@@ -360,13 +375,14 @@ for (const change of ['new request', 'selection']) {
 }
 
 function logSourceHarness(center = true) {
-  const fields = new Map(['logText', 'copyLogButton', 'refreshLogButton', 'logStatus'].map((id) => [id, {}]));
+  const fields = new Map(['logText', 'copyLogButton', 'refreshLogButton', 'logStatus', 'newLogButton', 'followLog'].map((id) => [id, {}]));
   const reads = [];
   const context = vm.createContext({ window: {}, location: { pathname: center ? '/products/entry-a' : '/journal' },
     document: { getElementById(id) { assert.ok(fields.has(id), id); return fields.get(id); } },
     read: (url) => new Promise((resolve, reject) => reads.push({ url, resolve, reject })),
   });
   vm.runInContext(i18n, context);
+  vm.runInContext(fs.readFileSync(path.join(dashboard, "date-time.js"), "utf8"), context);
   const binding = app.indexOf("\n  document.querySelectorAll('[data-tab]').forEach");
   vm.runInContext(app.slice(0, binding) + '\n fetchScopedText = fetchJSON = globalThis.read; globalThis.journal = {state, loadLog};\n})();', context);
   const snapshot = (source, revision = 1, resource = 'log-same-cycle') => ({ entryId: 'entry-a', sourceId: source, sourceRevision: revision,
@@ -422,7 +438,10 @@ test('same log context deduplicates reads and retains its own text on failure', 
   h.state.data = h.snapshot('source-a'); // Normal poll replaces the object, not its identity fields.
   const retry = h.loadLog();
   assert.equal(h.fields.get('logText').textContent, 'CURRENT');
+  assert.equal(h.fields.get('copyLogButton').disabled, false);
+  assert.ok(h.state.logLoadedAt);
   h.reads[1].reject(new Error('current failure')); await retry;
+  assert.match(h.fields.get('logStatus').textContent, /Last successful read|最后成功读取/);
   assert.equal(h.state.logText, 'CURRENT');
   assert.equal(h.fields.get('logText').textContent, 'CURRENT');
 });
@@ -464,4 +483,24 @@ test("cycle labels use authoritative continuous numbers and retain legacy fallba
   assert.equal(paddedCycleNumber({ sequenceNumber: 7, number: 4 }), "07");
   assert.equal(paddedCycleNumber({ sequenceNumber: null, number: 4 }), "04");
   assert.equal(paddedCycleNumber({ number: 1 }), "01");
+});
+
+test('structured logs read as cycle text, commands and failures without transport JSON', () => {
+  const { readableLog } = helpers();
+  const events = [
+    { type: 'thread.started', thread_id: 'private-id' },
+    { type: 'item.started', item: { id: 'cmd', type: 'command_execution', command: 'check products' } },
+    { type: 'item.completed', item: { id: 'cmd', type: 'command_execution', command: 'check products', aggregated_output: '2 checks failed', exit_code: 1 } },
+    { type: 'item.completed', item: { type: 'agent_message', text: '<script>plain report text</script>' } },
+    { type: 'turn.failed', error: { message: 'connection lost' } },
+  ];
+  const text = readableLog('Reading additional input from stdin...\n' + events.map(event => JSON.stringify(event)).join('\n'), { number: 5, startedAt: '2026-09-27T01:32:16Z' });
+  assert.match(text, /#05/);
+  assert.equal(text.split('$ check products').length, 2);
+  assert.match(text, /2 checks failed/);
+  assert.match(text, /Exit code: 1/);
+  assert.match(text, /<script>plain report text<\/script>/);
+  assert.match(text, /connection lost/);
+  assert.doesNotMatch(text, /thread_id|aggregated_output|stdin/);
+  assert.equal(readableLog('Cycle #1\nnormal text'), 'Cycle #1\nnormal text');
 });

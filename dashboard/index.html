@@ -4,26 +4,40 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="color-scheme" content="light">
+    <style>@view-transition { navigation: auto; }</style>
+    <script src="/navigation.js"></script>
     <title>Auto Company · 工作记录</title>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="/design-system.css">
     <script src="/icons.js" defer></script>
+    <script src="/date-time.js" defer></script>
     <link rel="stylesheet" href="/styles.css">
     <script src="/i18n.js" defer></script>
+    <link rel="stylesheet" href="/ui-assets/ui.css">
+    <script src="/ui-assets/ui.js" defer></script>
     <script src="/app.js" defer></script>
   </head>
   <body>
     <a class="skip-link" href="#mainContent" data-i18n="skip">跳至工作区</a>
+    <div class="app-frame">
     <header class="site-header">
       <div class="topbar page-width">
-        <a class="brand" href="/">AUTO COMPANY</a>
+        <a class="brand" href="/"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 15 6 18m4-5 3 3c4-2 6-6 6-11-5 0-9 2-11 6l3 3Z"/><circle cx="15" cy="9" r="1.5"/><path d="m8 10-4 1 1 4 3-1m6 2-1 4-4-1 1-3M4 20l3-1-2-2-1 3Z"/></svg></span>AUTO COMPANY</a>
         <div id="centerContextNav" class="center-context-nav" hidden>
-          <a href="/center" class="center-back-link"><span data-icon="layout-grid"></span><span data-i18n="backToProducts">产品中心</span></a>
           <button id="productSwitcherButton" class="product-switcher-button" type="button" aria-haspopup="dialog" aria-controls="productSwitcherDialog">
             <span id="productSwitcherName" data-i18n="switchProduct">切换产品</span><span data-icon="chevron-down"></span>
           </button>
           <span id="centerRuntimeContext" class="center-runtime-context" role="status"></span>
         </div>
+      <div class="navline">
+        <a id="journalBackLink" class="journal-back-link" href="/center" hidden><span data-icon="arrow-left" aria-hidden="true"></span><span data-i18n="returnProducts">返回产品</span></a>
+        <nav class="tabs" aria-label="工作区" role="tablist">
+          <button id="tab-work" class="tab" role="tab" aria-selected="true" aria-controls="panel-work" tabindex="0" data-tab="work" data-i18n="work">工作记录</button>
+          <button id="tab-usage" class="tab" role="tab" aria-selected="false" aria-controls="panel-usage" tabindex="-1" data-tab="usage" data-i18n="usage">用量</button>
+          <button id="tab-logs" class="tab" role="tab" aria-selected="false" aria-controls="panel-logs" tabindex="-1" data-tab="logs" data-i18n="logs">日志</button>
+        </nav>
+        <a id="productInfoJump" class="product-info-jump" href="#projectSidebar" data-i18n="productInfo">产品信息</a>
+      </div>
         <div class="header-actions">
           <span id="runtimeState" class="runtime-state" role="status" data-i18n="unknown">未知</span>
           <button id="startButton" class="button start-button" disabled data-i18n="start">启动运行</button>
@@ -31,20 +45,7 @@
           <a class="quiet-link legacy-link" href="/legacy" data-i18n="legacy" hidden>旧版对照 ↗</a>
           <button id="settingsButton" class="text-button" data-i18n="settings">设置</button>
         </div>
-      </div>
-      <div class="navline page-width">
-        <nav class="tabs" aria-label="工作区" role="tablist">
-          <button id="tab-work" class="tab" role="tab" aria-selected="true" aria-controls="panel-work" tabindex="0" data-tab="work" data-i18n="work">工作记录</button>
-          <button id="tab-usage" class="tab" role="tab" aria-selected="false" aria-controls="panel-usage" tabindex="-1" data-tab="usage" data-i18n="usage">用量</button>
-          <button id="tab-logs" class="tab" role="tab" aria-selected="false" aria-controls="panel-logs" tabindex="-1" data-tab="logs" data-i18n="logs">日志</button>
-        </nav>
-        <div class="preview-note">
-          <span id="modeNote"></span>
-          <label class="auto-refresh"><input id="autoRefresh" type="checkbox" checked><span data-i18n="autoRefresh">自动刷新</span></label>
-          <button id="refreshButton" class="icon-button" title="刷新记录" aria-label="刷新记录">
-            <span data-icon="refresh-cw"></span>
-          </button>
-        </div>
+        <button id="profileButton" class="profile-button" type="button" aria-haspopup="dialog" aria-controls="settingsDialog"><span class="profile-avatar" aria-hidden="true" data-i18n="localInitial">本</span><span data-i18n="localWorkspace">本机</span><span class="profile-chevron" data-icon="chevron-down" aria-hidden="true"></span></button>
       </div>
     </header>
     <main id="mainContent" class="page-width" tabindex="-1">
@@ -59,7 +60,7 @@
           <div class="current-column">
             <div id="currentCycle"></div>
           </div>
-          <aside id="projectSidebar" class="project-sidebar" aria-label="项目概况"></aside>
+          <aside id="projectSidebar" class="project-sidebar" aria-label="项目概况" tabindex="-1"></aside>
           <section class="history-section" aria-labelledby="historyHeading">
             <div class="history-heading">
               <h2 id="historyHeading" data-i18n="history">此前轮次</h2>
@@ -72,10 +73,10 @@
       <section id="panel-usage" class="workspace-panel secondary-panel" role="tabpanel" aria-labelledby="tab-usage" hidden>
         <div class="panel-heading">
           <div>
-            <div class="section-eyebrow" data-i18n="ledger">运行用量账本</div>
+
             <h2 data-i18n="usageHeading">记录下来的用量</h2>
           </div>
-          <p data-i18n="usageExplanation">仅统计已记录的数据，缺失用量保持未知。</p>
+
         </div>
         <div class="usage-filters">
           <label for="usagePeriod" data-i18n="period">统计范围</label>
@@ -88,6 +89,7 @@
           <input id="usageDate" type="date" hidden>
           <span id="usageRange" class="muted"></span>
         </div>
+        <p id="usageSource" class="sidebar-note"></p>
         <div id="usageSummary" class="usage-summary"></div>
         <div id="budgetSummary" class="budget-summary"></div>
         <div class="table-scroll" tabindex="0" aria-label="用量明细">
@@ -107,21 +109,23 @@
             <tbody id="usageRows"></tbody>
           </table>
         </div>
-        <p class="fine-print" data-i18n="usageCaveat">账本不是完整账单；子代理覆盖范围、费用与账户配额无法据此确认。</p>
+        <p class="fine-print" data-i18n="usageCaveat">仅统计已记录用量。</p>
       </section>
       <section id="panel-logs" class="workspace-panel secondary-panel" role="tabpanel" aria-labelledby="tab-logs" hidden>
         <div class="panel-heading">
           <div>
-            <div class="section-eyebrow" data-i18n="originalLogs">原始执行记录</div>
+
             <h2 data-i18n="logsHeading">轮次日志</h2>
           </div>
-          <p data-i18n="logsExplanation">保留原始文本，日志可能已被轮转清理。</p>
+
         </div>
         <div class="log-toolbar">
-          <label for="logSelect" data-i18n="chooseLog">选择日志</label>
-          <select id="logSelect"></select>
+
+          <select id="logSelect" aria-label="选择日志" data-i18n-aria="chooseLog"></select>
           <button id="copyLogButton" class="button" disabled data-i18n="copy">复制日志</button>
           <button id="refreshLogButton" class="text-button" data-i18n="refreshLog">重新读取</button>
+          <label class="log-follow"><input id="followLog" type="checkbox"><span data-i18n="followLog">跟随新日志</span></label>
+          <button id="newLogButton" class="text-button" hidden data-i18n="newLog">有新日志，查看末尾</button>
         </div>
         <p id="logStatus" class="muted" role="status"></p>
         <pre id="logText" class="log-text" tabindex="0"></pre>
@@ -131,17 +135,26 @@
           <pre id="rawText" class="log-text" tabindex="0"></pre>
         </details>
       </section>
-      <footer class="page-footer">
-        <span id="sourceName"></span>
-        <span id="refreshStatus" role="status"></span>
-      </footer>
     </main>
+    </div>
+    <dialog id="stopConfirmDialog" data-confirmation="true" aria-labelledby="stopConfirmTitle" aria-describedby="stopConfirmMessage">
+      <div class="dialog-header"><h2 id="stopConfirmTitle" data-i18n="stopConfirmTitle">停止当前运行</h2><button id="closeStopConfirm" class="icon-button" data-safe-action data-i18n="close">关闭</button></div>
+      <p id="stopConfirmMessage"></p>
+      <div class="dialog-actions"><button id="cancelStopConfirm" class="button" data-safe-action data-i18n="cancel">取消</button><button id="acceptStopConfirm" class="button danger" data-i18n="stop">停止运行</button></div>
+    </dialog>
     <dialog id="settingsDialog" aria-labelledby="settingsTitle">
       <div class="dialog-header">
         <h2 id="settingsTitle" data-i18n="settings">设置</h2>
         <button id="closeSettingsButton" class="icon-button close-button" aria-label="关闭"><span data-icon="x"></span></button>
       </div>
       <p id="settingsDescription"></p>
+      <span id="sourceName" class="sidebar-note"></span>
+      <div class="preview-note">
+        <span id="modeNote"></span>
+        <label class="auto-refresh"><input id="autoRefresh" type="checkbox" checked><span data-i18n="autoRefresh">自动刷新</span></label>
+        <button id="refreshButton" class="icon-button" title="刷新记录" aria-label="刷新记录"><span data-icon="refresh-cw"></span></button>
+      </div>
+      <p id="refreshStatus" class="sidebar-note" role="status"></p>
       <dl class="runtime-details">
         <dt data-i18n="language">产品语言</dt>
         <dd id="settingsLanguage"></dd>
@@ -166,12 +179,8 @@
         <h2 id="productSwitcherTitle" data-i18n="switchProduct">切换产品</h2>
         <button id="closeProductSwitcherButton" class="icon-button close-button" aria-label="关闭"><span data-icon="x"></span></button>
       </div>
-      <label class="switcher-search" for="productSwitcherSearch">
-        <span class="visually-hidden" data-i18n="searchProducts">搜索产品</span>
-        <input id="productSwitcherSearch" type="search" autocomplete="off" data-i18n-placeholder="searchProducts" placeholder="搜索产品">
-      </label>
+      <div id="productSwitcherControls"></div>
       <p id="productSwitcherStatus" class="fine-print" role="status"></p>
-      <div id="productSwitcherList" class="product-switcher-list" role="listbox" aria-label="产品"></div>
     </dialog>
   </body>
 </html>

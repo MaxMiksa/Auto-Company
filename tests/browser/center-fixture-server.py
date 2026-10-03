@@ -54,9 +54,10 @@ try:
         # Keep the real create validation, persistence and HTTP response; replace
         # only the clone worker so the browser can observe a durable failure.
         with case.store.transaction() as tx:
-            operation = tx.get('operations', operation_id)
-            operation.update(state='failed', reason='FRAMEWORK_UNVERIFIED', revision=2)
-            tx.put('operations', operation_id, operation)
+            for identity in operation_id if isinstance(operation_id, list) else [operation_id]:
+                operation = tx.get('operations', identity)
+                operation.update(state='failed', reason='FRAMEWORK_UNVERIFIED', revision=2)
+                tx.put('operations', identity, operation)
 
     runtime._worker = preparation_failure
     # A health result is injected to test scoped links, not preview processes.

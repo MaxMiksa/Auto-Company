@@ -766,7 +766,11 @@ class DashboardHandler(BaseHTTPRequestHandler):
         if path in {"/", "/index.html", "/journal", "/journal/", "/journal/index.html"}:
             self._serve_file(DASHBOARD_DIR / "index.html", "text/html; charset=utf-8")
             return
-        if path in {"/app.js", "/i18n.js", "/icons.js", "/journal/app.js", "/journal/i18n.js", "/journal/icons.js"}:
+        if path in {"/ui-assets/ui.js", "/ui-assets/ui.css"}:
+            mime = "application/javascript; charset=utf-8" if path.endswith(".js") else "text/css; charset=utf-8"
+            self._serve_file(DASHBOARD_DIR / "ui-assets" / Path(path).name, mime)
+            return
+        if path in {"/app.js", "/i18n.js", "/icons.js", "/navigation.js", "/date-time.js", "/journal/date-time.js", "/journal/app.js", "/journal/i18n.js", "/journal/icons.js"}:
             self._serve_file(
                 DASHBOARD_DIR / path.rsplit("/", 1)[-1],
                 "application/javascript; charset=utf-8",

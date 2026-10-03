@@ -1,5 +1,16 @@
 import { test, expect } from "./fixtures.js";
 
+async function refreshRecords(page) {
+  await page.locator("#settingsButton").click();
+  await page.locator("#refreshButton").click();
+  await page.locator("#closeSettingsButton").click();
+}
+
+async function stopRun(page) {
+  await page.locator("#stopButton").click();
+  await page.getByRole("alertdialog").getByRole("button", { name: "Stop run", exact: true }).click();
+}
+
 test("opens the default work journal and refreshes through visible controls", async ({ page, dashboard }) => {
   await expect(page).toHaveTitle(/Work journal/);
   await expect(page.locator("#currentCycle")).toContainText("Browser smoke cycle completed");
@@ -10,10 +21,12 @@ test("opens the default work journal and refreshes through visible controls", as
   await page.locator("#tab-logs").click();
   await expect(page.locator("#logText")).toContainText("Browser fixture runtime log");
   await expect(page.locator("#rawText")).toBeHidden();
-  await page.locator("#runtimeDiagnostics > summary").click();
+  await page.locator("#runtimeDiagnostics .disclosure-trigger").click();
   await expect(page.locator("#rawText")).toContainText(/State=stopped|Loop: NOT RUNNING/);
   const status = page.waitForResponse((response) => response.url().endsWith("/api/journal"));
+  await page.locator("#settingsButton").click();
   await page.locator("#refreshButton").click();
+  await page.locator("#closeSettingsButton").click();
   expect((await status).status()).toBe(200);
   await expect(page.locator("#runtimeState")).toHaveText("Stopped");
 });
@@ -81,14 +94,14 @@ test("shows a failed journal request and recovers on refresh", async ({ page }) 
   await page.route("**/api/journal", (route) => route.fulfill({
     status: 503, contentType: "application/json", body: JSON.stringify({ error: "Smoke test unavailable" }),
   }));
-  await page.locator("#refreshButton").click();
+  await refreshRecords(page);
   await expect(page.locator("#connectionError")).toBeVisible();
   await expect(page.locator("#runtimeState")).toHaveText("Status unavailable");
   await expect(page.locator("#startButton")).toBeDisabled();
   await expect(page.locator("#stopButton")).toBeDisabled();
   await expect(page.locator("#currentCycle")).toContainText("Browser smoke cycle completed");
   await page.unroute("**/api/journal");
-  await page.locator("#refreshButton").click();
+  await refreshRecords(page);
   await expect(page.locator("#connectionError")).toBeHidden();
   await expect(page.locator("#runtimeState")).toHaveText("Stopped");
   await expect(page.locator("#startButton")).toBeEnabled();
@@ -105,7 +118,7 @@ test("a stale journal refresh cannot undo a confirmed shared-language save", asy
     await held;
     await route.fulfill({ response });
   }, { times: 1 });
-  await page.locator("#refreshButton").click();
+  await refreshRecords(page);
   await captured;
   await page.locator("#settingsButton").click();
   await page.locator("#languageSelect").selectOption("zh-CN");
@@ -129,7 +142,7 @@ test("unavailable bootstrap stays usable and can recover from visible controls",
   await expect(page.locator("#settingsDialog")).toBeVisible();
   await page.locator("#closeSettingsButton").click();
   await page.unroute("**/api/journal");
-  await page.locator("#refreshButton").click();
+  await refreshRecords(page);
   await expect(page.locator("#connectionError")).toBeHidden();
   await expect(page.locator("#currentCycle")).toContainText("Browser smoke cycle completed");
   await expect(page.locator("#runtimeState")).toHaveText("Stopped");
@@ -158,9 +171,9 @@ test.describe("host action boundary", () => {
       await stopGate;
       await route.continue();
     }, { times: 1 });
-    await page.locator("#refreshButton").click();
+    await refreshRecords(page);
     await statusReceived;
-    await page.locator("#stopButton").click();
+    await stopRun(page);
     await stopReceived;
     await expect(page.locator("#runtimeState")).toHaveText("Stopping");
     await expect(page.locator("#startButton")).toBeDisabled();
@@ -182,7 +195,7 @@ test.describe("host action boundary", () => {
     const running = await (await page.request.get(`${dashboard.url}/api/journal`)).json();
     expect(running).toMatchObject({ readOnly: false, runtime: { available: true, processState: "running" } });
     const stop = page.waitForResponse((response) => response.url().endsWith("/api/action/stop"));
-    await page.locator("#stopButton").click();
+    await stopRun(page);
     expect((await stop).request().method()).toBe("POST");
     await expect(page.locator("#runtimeState")).toHaveText("Stopped");
     await expect(page.locator("#stopButton")).toBeDisabled();
@@ -194,7 +207,7 @@ test.describe("a verified running cycle", () => {
   test.use({ scenario: "running-cycle" });
 
   test("failed stop remains visible after reload and permits retry only", async ({ page }) => {
-    await page.locator("#stopButton").click();
+    await stopRun(page);
     await expect(page.locator("#runtimeState")).toHaveText("Stop incomplete — retry Stop");
     await expect(page.locator("#startButton")).toBeDisabled();
     await expect(page.locator("#stopButton")).toBeEnabled();

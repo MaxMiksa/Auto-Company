@@ -32,7 +32,11 @@ IDENTIFIER = r"[A-Za-z0-9_-]{1,128}"
 RESOURCE_IDENTIFIER = r"[A-Za-z0-9][A-Za-z0-9_.-]{0,255}"
 MAX_BODY = 64 * 1024
 STATIC = {
+    "/navigation.js": ("navigation.js", "application/javascript; charset=utf-8"),
+    "/ui-assets/ui.js": ("ui-assets/ui.js", "application/javascript; charset=utf-8"),
+    "/ui-assets/ui.css": ("ui-assets/ui.css", "text/css; charset=utf-8"),
     "/icons.js": ("icons.js", "application/javascript; charset=utf-8"),
+    "/date-time.js": ("date-time.js", "application/javascript; charset=utf-8"),
     "/design-system.css": ("design-system.css", "text/css; charset=utf-8"),
     "/": ("center.html", "text/html; charset=utf-8"),
     "/center": ("center.html", "text/html; charset=utf-8"),
@@ -275,13 +279,17 @@ class CenterHandler(BaseHTTPRequestHandler):
             self.result(catalog.commit(body))
         elif route == "/explorations":
             self.result(runtime.create_exploration(body), 202)
+        elif route == "/explorations/batch":
+            self.result(runtime.create_batch(body), 202)
+        elif route == "/templates":
+            self.result(runtime.template_action(body))
         elif route == "/requests":
             self.result(runtime.create_request(body), 202)
         elif route == "/preferences":
             self.result(runtime.preferences(body))
         elif match := re.fullmatch(rf"/requests/({IDENTIFIER})/(cancel|stop|reconcile)", route):
             self.result(runtime.request_action(match[1], match[2], body), 202)
-        elif match := re.fullmatch(r"/queue/(order|pause|resume|stop-all)", route):
+        elif match := re.fullmatch(r"/queue/(order|pause|resume|stop-all|capacity)", route):
             self.result(runtime.queue_action(match[1], body))
         elif match := re.fullmatch(rf"/sources/({IDENTIFIER})/(takeover|release|reconnect)", route):
             if match[2] == "reconnect":

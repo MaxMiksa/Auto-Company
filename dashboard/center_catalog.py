@@ -12,6 +12,7 @@ from urllib.parse import quote
 
 from center_store import CenterError
 from journal_data import JournalSource, ProductScope, CYCLE_ID
+from center_readonly import ReadOnlyObserver, scoped_observation
 
 
 TERMINAL = {'completed', 'failed', 'cancelled', 'canceled', 'ended', 'stopped', 'interrupted', 'not_started'}
@@ -61,6 +62,7 @@ def root_path(value):
 class CenterCatalog:
     def __init__(self, store):
         self.store = store
+        self.readonly_observer = ReadOnlyObserver()
         self._refresh_index = 0
         self._stat_signatures = {}
         self._refresh_lock = threading.Lock()
@@ -285,13 +287,27 @@ class CenterCatalog:
             if identity:
                 source['identityFingerprint'] = digest({'id': identity, 'kind': source['kind']})
                 source['cycleEvidence'] = {key: digest(value) for key, value in state['cycles'].items() if value['identityId'] == identity}
-            snapshot = reader.snapshot()
-            cycles = [row for row in snapshot['cycles'] if row.get('identityKind') != 'exploration' or source['kind'] == 'exploration']
+            status = self.readonly_observer.status(reader) if not source.get('runtimeId') else None
+            observation = scoped_observation(reader, status)
+            # Only identity-bound active work may enter a scoped journal.
+            snapshot = reader.snapshot(status=status if observation and observation.get('currentCycleId') else None)
+            cycles = snapshot['cycles']
             latest = cycles[0] if cycles else {}
+            latest_work = self._latest_work(snapshot['cycles'], source['kind'], latest)
             metadata = snapshot['project']
             if source['kind'] == 'reference':
                 metadata = {**metadata, 'displayName': reader.root.name, 'description': ''}
             icon_name = ((snapshot.get('productMedia') or {}).get('icon') or {}).get('name')
+            capture = (snapshot.get('productMedia') or {}).get('screenshot') or {}
+            screenshot = next((item for item in (capture.get('latestSuccess') or {}).get('variants', [])
+                               if item.get('viewport') == 'desktop' and item.get('name')), {})
+            thumbnail_resource = None
+            if screenshot and source.get('productId'):
+                try:
+                    reader.media_resource(source['productId'], screenshot['name'])
+                    thumbnail_resource = 'media-' + screenshot['name']
+                except (OSError, ValueError):
+                    pass
             icon_resource = None
             if icon_name and source.get('productId'):
                 try:
@@ -301,14 +317,21 @@ class CenterCatalog:
                     pass
             projection = {'displayName': metadata['displayName'], 'description': metadata['description'],
                           'iconResourceId': icon_resource,
+                          'thumbnailResourceId': thumbnail_resource,
+                          'thumbnailCapturedAt': (capture.get('latestSuccess') or {}).get('capturedAt'),
+                          'thumbnailStale': bool(capture.get('currentVersion') and capture['currentVersion'] != (capture.get('latestSuccess') or {}).get('version')),
+                          'latestCycleStatus': latest.get('status', 'unknown'),
                           'productLanguage': snapshot['languageState'].get('productLanguage'),
                           'productLanguageStatus': snapshot['languageState'].get('productLanguageStatus', 'unknown'),
                           'languagePeriodId': snapshot['languageState'].get('languagePeriodId'),
-                          'latestTitle': (latest.get('workReport') or {}).get('title') if isinstance(latest.get('workReport'), dict) else None,
-                          'cycleNumber': latest.get('number'), 'reportedPhase': (latest.get('workReport') or {}).get('phase') if isinstance(latest.get('workReport'), dict) else None,
-                          'lastActivityAt': latest.get('endedAt') or latest.get('startedAt') or latest.get('reservedAt'),
+                          'latestTitle': latest_work['title'] if latest_work else None,
+                          'latestWork': latest_work,
+                          'readonlyObservation': observation,
+                          'cycleNumber': latest.get('sequenceNumber') or latest.get('number'), 'reportedPhase': (latest.get('workReport') or {}).get('phase') if isinstance(latest.get('workReport'), dict) else None,
+                          'lastActivityAt': (latest.get('endedAt') or latest.get('startedAt') or latest.get('reservedAt')
+                                             or (latest_work or {}).get('recordedAt')),
                           'warnings': snapshot['warnings']}
-            fingerprint = digest({'state': state, 'projection': projection})
+            fingerprint = digest({'state': state, 'projection': {key: value for key, value in projection.items() if key != 'readonlyObservation'}})
             if source.get('projectionFingerprint') != fingerprint:
                 source['sourceRevision'] = source.get('sourceRevision', 0) + 1
             source.update(projectionFingerprint=fingerprint, availability='available', lastVerifiedAt=now())
@@ -337,6 +360,30 @@ class CenterCatalog:
                 tx.put('sources', source_id, source)
             return source
 
+    @staticmethod
+    def _latest_work(cycles, kind, latest):
+        """Keep report provenance separate from the latest round's status."""
+        for cycle in cycles:
+            report = cycle.get('workReport')
+            valid = cycle.get('workReportStatus') == 'valid' and isinstance(report, dict)
+            title = report.get('title') if valid else None
+            provenance = 'work_report'
+            if not title and cycle.get('workReportStatus') in {'missing', None}:
+                # Legacy adapter result is already bounded/parsed by JournalSource.
+                # Invalid or identity-mismatched reports stay diagnostic data.
+                title = cycle.get('summary')
+                provenance = 'cycle_summary'
+                if isinstance(title, str) and title.lstrip().startswith(('{', '[')):
+                    title = None
+            if not isinstance(title, str) or not title.strip():
+                continue
+            return {'title': title.strip()[:500], 'cycleId': cycle['id'],
+                    'cycleNumber': cycle.get('sequenceNumber') or cycle.get('number'),
+                    'scope': 'exploration' if cycle.get('identityKind') == 'exploration' else kind,
+                    'provenance': provenance, 'isLatestCycle': cycle.get('id') == latest.get('id'),
+                    'recordedAt': cycle.get('reportObservedAt') or cycle.get('endedAt') or cycle.get('startedAt') or cycle.get('reservedAt')}
+        return None
+
     def _entry_view(self, tx, entry, source_id=None):
         source = tx.get('sources', source_id or entry.get('preferredSourceId')) or {}
         if source and source.get('entryId') != entry['entryId']:
@@ -348,10 +395,22 @@ class CenterCatalog:
         reason = 'ENTRY_ARCHIVED' if entry.get('archived') else 'SOURCE_UNAVAILABLE' if source.get('availability') != 'available' else 'READ_ONLY_SOURCE'
         return {**entry, **projection, 'sourceId': source.get('sourceId'), 'runtimeId': source.get('runtimeId'),
                 'sourceRevision': source.get('sourceRevision'), 'availability': source.get('availability', 'unknown'),
-                'capabilities': capabilities, 'capabilityReasons': {key: reason for key in ('execute', 'preview', 'capture') if not capabilities.get(key)}, 'executionSummary': {'state': 'unknown'},
+                'capabilities': capabilities, 'capabilityReasons': {key: reason for key in ('execute', 'preview', 'capture') if not capabilities.get(key)}, 'executionSummary': {'state': 'unknown' if source.get('runtimeId') or source.get('availability') != 'available' else 'read_only', 'reason': 'read_only_source'},
                 'iconUrl': '/api/center/v1/entries/' + quote(entry['entryId']) + '/resources/' + quote(projection['iconResourceId']) + '?sourceId=' + quote(source['sourceId'])
                 if projection.get('iconResourceId') and source.get('availability') == 'available' else None,
+                'thumbnailUrl': '/api/center/v1/entries/' + quote(entry['entryId']) + '/resources/' + quote(projection['thumbnailResourceId']) + '?sourceId=' + quote(source['sourceId'])
+                if projection.get('thumbnailResourceId') and source.get('availability') == 'available' else None,
                 'warnings': list(dict.fromkeys(projection.get('warnings', []) + source.get('warnings', [])))}
+
+    def _observe_readonly(self, entry):
+        if entry.get('runtimeId') or entry.get('availability') != 'available':
+            return entry
+        try:
+            _, _, reader = self.resolve_source(entry['entryId'], entry.get('sourceId'))
+            entry['readonlyObservation'] = scoped_observation(reader, self.readonly_observer.status(reader))
+        except (CenterError, OSError, ValueError, TypeError, KeyError, RecursionError):
+            entry['readonlyObservation'] = None
+        return entry
 
     def list_entries(self, query=None):
         query = query or {}
@@ -370,7 +429,7 @@ class CenterCatalog:
                  and (filter_value not in {'product', 'exploration', 'legacy', 'reference'} or row['kind'] == filter_value)
                  and (not search or search in ((row.get('displayName') or '') + ' ' + (row.get('description') or '')).casefold())]
         items.sort(key=lambda row: ((row.get('displayName') or '').casefold() if sort_value == 'name' else row.get('lastActivityAt') or '', row['entryId']), reverse=sort_value == 'activity')
-        snapshot = digest(items)
+        snapshot = digest([{key: value for key, value in row.items() if key != 'readonlyObservation'} for row in items])
         offset = 0
         if query.get('cursor'):
             try:
@@ -383,6 +442,21 @@ class CenterCatalog:
             except (ValueError, TypeError, KeyError) as error:
                 raise CenterError('CURSOR_EXPIRED', 'Catalog changed; reload the first page.', 409) from error
         selected = items[offset:offset + limit]
+        observable = []
+        for row in selected:
+            if row.get('runtimeId') or row.get('availability') != 'available':
+                continue
+            try:
+                _, _, reader = self.resolve_source(row['entryId'], row.get('sourceId'))
+                observable.append((row, reader))
+            except (CenterError, OSError, ValueError, TypeError, KeyError, RecursionError):
+                row['readonlyObservation'] = None
+        observations = self.readonly_observer.status_many([reader for _, reader in observable])
+        for (row, reader), observation in zip(observable, observations):
+            try:
+                row['readonlyObservation'] = scoped_observation(reader, observation)
+            except (CenterError, OSError, ValueError, TypeError, KeyError, RecursionError):
+                row['readonlyObservation'] = None
         cursor = base64.urlsafe_b64encode(json.dumps({'query': query_hash, 'snapshot': snapshot, 'offset': offset + limit}).encode()).decode() if offset + limit < len(items) else None
         return {'items': selected, 'nextCursor': cursor, 'total': len(items)}
 
@@ -401,12 +475,15 @@ class CenterCatalog:
                 result['sources'].append({**{key: value for key, value in row.items() if key not in {'root', 'fingerprint', 'identityFingerprint'}},
                                           'displayName': root_name, 'rootName': root_name, 'displayPath': display_path,
                                           'lastVerifiedAt': row.get('lastVerifiedAt')})
-            return result
+        return self._observe_readonly(result)
 
     def journal(self, entry_id, query=None):
         query = query or {}
         entry, source, reader = self.resolve_source(entry_id, query.get('sourceId'))
-        data = reader.snapshot()
+        status = self.readonly_observer.status(reader) if not source.get('runtimeId') else None
+        observation = scoped_observation(reader, status)
+        data = reader.snapshot(status=status if observation and observation.get('currentCycleId') else None)
+        data['readonlyObservation'] = observation
         exploration = query.get('section') == 'exploration'
         if entry['kind'] == 'product' and exploration:
             items = [row for row in data['cycles'] if row.get('identityKind') == 'exploration']
@@ -530,6 +607,10 @@ class CenterCatalog:
             self.record(entry_id, cycle_id, source_id)
             try:
                 raw, truncated = reader.read('logs/' + cycle_id + '.log', 128 * 1024, tail=True)
+                if truncated:
+                    # A byte tail may start inside UTF-8 or a JSONL event.
+                    # Only expose complete retained lines to the log viewer.
+                    raw = raw.partition('\n')[2]
             except (OSError, ValueError) as error:
                 raise CenterError('RESOURCE_NOT_FOUND', 'Recorded log was not retained.', 404) from error
             return raw.encode('utf-8'), 'text/plain; charset=utf-8'
@@ -641,21 +722,22 @@ class CenterCatalog:
         try:
             with self.store.transaction() as tx:
                 sources = [row for row in tx.list('sources') if not row.get('detached')]
-                icon_resources = {row['sourceId']: (tx.get('projections', row['sourceId']) or {}).get('iconResourceId') for row in sources}
+                media_resources = {row['sourceId']: [value for key, value in (tx.get('projections', row['sourceId']) or {}).items()
+                                                   if key in {'iconResourceId', 'thumbnailResourceId'} and value] for row in sources}
             if not sources:
                 return {'checked': 0, 'refreshed': 0}
             selected = [sources[(self._refresh_index + index) % len(sources)] for index in range(min(batch_size, len(sources)))]
             self._refresh_index = (self._refresh_index + len(selected)) % len(sources)
             refreshed = 0
             for source in selected:
-                paths = ['', '.auto-company', '.auto-company/product-state.json', '.auto-company/product-state.transaction.json',
+                paths = ['', '.auto-loop-state', '.auto-loop.pid', 'logs/usage.jsonl.pending', '.auto-company', '.auto-company/product-state.json', '.auto-company/product-state.transaction.json',
                          '.auto-company/product-state.lock', '.auto-company.local', 'projects/registry.tsv', 'logs/usage.jsonl', 'logs', 'logs/artifacts']
                 if source.get('project'):
                     paths += [source['project'], source['project'] + '/.auto-company/identity.json', source['project'] + '/.auto-company-project.json', source['project'] + '/.auto-company/media.json']
                 if source.get('productId'):
                     paths.append('logs/product-media/' + source['productId'] + '/media.json')
-                    if icon_resources.get(source['sourceId']):
-                        paths.append('logs/product-media/' + source['productId'] + '/' + icon_resources[source['sourceId']][6:])
+                    for resource in media_resources.get(source['sourceId'], []):
+                        paths.append('logs/product-media/' + source['productId'] + '/' + resource[6:])
                 if source.get('kind') == 'reference':
                     paths.append('README.md')
                 signature = []
@@ -671,6 +753,19 @@ class CenterCatalog:
                         self._discover_products(current)
                     self._stat_signatures[source['sourceId']] = signature
                     refreshed += 1
+                elif not source.get('runtimeId') and source.get('availability') == 'available':
+                    # Process exit is independent of source file modification.
+                    # The background reader keeps observation freshness current.
+                    try:
+                        _, _, reader = self.resolve_source(source['entryId'], source['sourceId'])
+                        observation = scoped_observation(reader, self.readonly_observer.status(reader))
+                        with self.store.transaction() as tx:
+                            projection = tx.get('projections', source['sourceId'])
+                            if projection is not None and projection.get('readonlyObservation') != observation:
+                                projection['readonlyObservation'] = observation
+                                tx.put('projections', source['sourceId'], projection)
+                    except (CenterError, OSError, ValueError, TypeError, KeyError, RecursionError):
+                        pass
             return {'checked': len(selected), 'refreshed': refreshed}
         finally:
             self._refresh_lock.release()

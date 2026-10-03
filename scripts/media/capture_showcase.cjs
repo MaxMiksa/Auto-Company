@@ -77,10 +77,10 @@ async function inspect(page, language) {
       currentNumber: document.querySelector('#cycleNumber')?.textContent,
       historyIds: histories.map(node => node.dataset.cycleId),
       openHistories: histories.filter(node => node.open).map(node => node.dataset.cycleId),
-      productMediaOpen: document.querySelector('details.product-media')?.open,
+      productMediaOpen: Boolean(document.querySelector('.product-media')?.checkVisibility()),
       productMediaBounds: document.querySelector('.product-media') ? box(document.querySelector('.product-media')) : null,
       cycleBounds: [document.querySelector('#currentCycle'),...histories].filter(Boolean).map(box),
-      footerBounds: box(document.querySelector('.page-footer')),
+      footerBounds: document.querySelector('.page-footer') ? box(document.querySelector('.page-footer')) : null,
       failedImages: [...document.images].filter(image => image.src && image.checkVisibility() && (!image.complete || !image.naturalWidth)).map(image=>image.src),
     };
   }, language);
@@ -134,11 +134,11 @@ async function saveShot(page, filename, fullPage = false) {
         const historyIds=data.cycles.slice(1).map(cycle=>cycle.id);
         const initial=await inspect(page,target.language);assert.deepEqual(initial.historyIds,historyIds);assert.deepEqual(initial.openHistories,[]);assert.equal(initial.currentNumber,String(data.cycles[0].sequenceNumber??data.cycles[0].number).padStart(2,'0'));
         assert.equal(initial.productMediaOpen,true,'Product screenshot must be expanded by the actual frontend default');
-        assert.doesNotMatch(initial.visibleText,/Published refinement|发布精修版|Original (desktop|mobile) capture|Original run captured|原运行(桌面截图|手机截图|截取于)|About this data|数据说明|Runtime diagnostics|运行诊断/);
+        assert.doesNotMatch(initial.visibleText,/Published refinement|发布精修版|Original (desktop|mobile) capture|Original run captured|原运行(桌面截图|手机截图|截取于)|About this data|数据说明/);
         assert.equal(await page.locator('#sourceNotes').count(),0);
         await page.locator('#tab-logs').click();
         assert.equal(await page.locator('#panel-logs #runtimeDiagnostics').isVisible(),true,'Diagnostics must be accessible in Log');
-        await page.locator('#runtimeDiagnostics > summary').click();
+        await page.locator('#runtimeDiagnostics .disclosure-trigger').click();
         assert.equal(await page.locator('#rawText').isVisible(),true);
         assert.ok((await page.locator('#diagnosticSummary').innerText()).trim());
         await page.locator('#tab-usage').click();
@@ -147,22 +147,21 @@ async function saveShot(page, filename, fullPage = false) {
         await settle(page,data.cycles.length);
         assert.equal(await page.locator('#runtimeDiagnostics').isVisible(),false);
         record.timelineCleanupChecks={removedLabels:true,removedDataNotes:true,diagnosticsOnlyInLog:true};
-        // Exercise the actual disclosure and refresh controls before capture.
-        await page.locator('.product-media > summary').click();
-        await page.locator('#refreshButton').click();await settle(page,data.cycles.length);
-        assert.equal(await page.locator('.product-media').evaluate(node=>node.open),false,'Refresh must retain the manual collapse');
+        // Exercise the actual history disclosure without changing recorded data.
+        const history = page.locator('#historyList .history-row').first();
+        await history.locator('.disclosure-trigger').click();
+        assert.equal(await history.evaluate(node=>node.open),true);
         await page.reload({waitUntil:'networkidle'});await settle(page,data.cycles.length);
-        assert.equal(await page.locator('.product-media').evaluate(node=>node.open),false,'The session must retain the manual collapse across reload');
-        await page.locator('.product-media > summary').click();
-        await page.locator('#refreshButton').click();await settle(page,data.cycles.length);
-        assert.equal(await page.locator('.product-media').evaluate(node=>node.open),true,'Refresh must retain manual expansion');
-        record.disclosureChecks={defaultExpanded:true,collapseAfterRefresh:true,collapseAfterReload:true,expandAfterRefresh:true};
-        let height = await page.evaluate(()=>Math.ceil(Math.max(...['#currentCycle','#historyList','#projectSidebar','.page-footer'].map(selector=>document.querySelector(selector).getBoundingClientRect().bottom))+24));
+        assert.equal(await history.evaluate(node=>node.open),true,'The session must retain expanded history across reload');
+        await history.locator('.disclosure-trigger').click();
+        assert.equal(await history.evaluate(node=>node.open),false);
+        record.disclosureChecks={defaultHistoryCollapsed:true,historyExpansionAfterReload:true,historyCollapse:true};
+        let height = await page.evaluate(()=>Math.ceil(Math.max(...['#currentCycle','#historyList','#projectSidebar','.page-footer'].map(selector=>document.querySelector(selector)).filter(Boolean).map(node=>node.getBoundingClientRect().bottom))+24));
         height=Math.max(1000,Math.ceil(height/40)*40);assert.ok(height<=4000,'Unexpected journal height; inspect the frontend before capturing');
         await page.setViewportSize({width:1440,height});await settle(page,data.cycles.length);await page.evaluate(()=>scrollTo(0,0));
         const desktop=await inspect(page,target.language);record.desktop=desktop;
         assert.deepEqual(desktop.historyIds,historyIds);assert.deepEqual(desktop.openHistories,[]);assert.ok(desktop.cycleBounds.every(b=>b.y>=0&&b.bottom<=height),'A recorded cycle is outside the desktop shot');
-        assert.ok(desktop.footerBounds.bottom<=height,'The real page footer is outside the desktop shot');
+        assert.ok(!desktop.footerBounds || desktop.footerBounds.bottom<=height,'The real page footer is outside the desktop shot');
         assert.ok(desktop.productMediaOpen&&desktop.productMediaBounds.bottom<=height,'Expanded product media must fit in the desktop shot');
         if(desktop.languageWarnings.length)record.warnings.push({kind:'desktop-language',lines:desktop.languageWarnings});
         if(desktop.titleBounds.some(title=>title.clipped))record.warnings.push({kind:'desktop-title-clipped',titles:desktop.titleBounds.filter(title=>title.clipped)});

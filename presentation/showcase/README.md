@@ -1,8 +1,8 @@
 # Recorded work timelines · 真实工作时间轴
 
-These six views show three products' real recorded work. Exploration and product work keep one continuous sequence, with the newest report and product screenshot open and earlier cycles collapsed. Manual screenshot collapse or expansion survives refresh and page reload within the browser session. The screenshots preserve original cycle identities, timestamps, statuses, checks and recorded limitations.
+These six views show three products' real recorded work. Exploration and product work keep one continuous sequence, with the newest report and product screenshot open and earlier cycles collapsed. Manual history expansion survives page reload within the browser session; product screenshots remain visible. The screenshots preserve original cycle identities, timestamps, statuses, checks and recorded limitations.
 
-六个视图展示三个产品的真实运行记录。探索和产品工作连续编号，最新报告与产品实拍展开、早期轮次保持默认折叠；手动收起或展开实拍的选择在本次浏览器会话的刷新及重载后保留。原始轮次身份、时间、状态、检查与已记录的限制均保留。
+六个视图展示三个产品的真实运行记录。探索和产品工作连续编号，最新报告与产品实拍展开、早期轮次保持默认折叠；手动展开历史轮次的选择在本次浏览器会话重载后保留；产品实拍保持可见。原始轮次身份、时间、状态、检查与已记录的限制均保留。
 
 | Product / 产品 | Recorded cycles / 真实轮次 | English | 中文 |
 | --- | --- | --- | --- |
@@ -30,9 +30,9 @@ The expanded product screenshot is a language-matched display of the previously 
 
 捕获脚本读取真实本机只读页面与 API，校验原身份、时间顺序、状态、报告哈希及捕获前后不变的轮次清单；等待字体和可见图片加载，并检查混语、文字截断、图片失败与横向溢出。没有请求模拟、记录注入、界面隐藏或像素编辑，最终六视图均通过检查。
 
-Desktop width is 1440 px; height follows actual content through the complete footer. Mobile viewport is 390 × 844 px, with a separate native full-page capture. This set was captured with Windows Chromium build 1243, Playwright 1.63.0 and device scale 1. Rendered font inspection confirmed Segoe UI for English and Microsoft YaHei for Chinese. Capture times in the index are UTC; the visible journal uses its recorded local times. Runtime state, historical checks and report limitations remain as recorded. Runtime diagnostics are available in the Log tab; the former data-notes disclosure is removed.
+Desktop width is 1440 px; height follows actual content through the complete timeline and product sidebar. Mobile viewport is 390 × 844 px, with a separate native full-page capture. This set was captured with Windows Chromium build 1243, Playwright 1.63.0 and device scale 1. The interface uses its configured Noto Sans SC stack with system fallbacks; no font overrides were injected. Capture times in the index are UTC; the visible journal uses its recorded local times. Runtime state, historical checks and report limitations remain as recorded. Runtime diagnostics are available in the sidebar and Log tab; the former data-notes disclosure is removed.
 
-桌面宽 1440 像素，高度按真实内容扩至完整页脚；手机视口为 390 × 844，另保留浏览器原生完整页面截图。本组使用 Windows Chromium 1243、Playwright 1.63.0、像素比例 1；实际渲染字体检查确认英文为 Segoe UI、中文为微软雅黑。清单捕获时间使用 UTC，界面时间来自原记录。运行状态、历史检查与报告中的限制按记录展示。运行诊断移入日志页，原数据说明折叠区已移除。
+桌面宽 1440 像素，高度覆盖完整时间轴与产品栏；手机视口为 390 × 844，另保留浏览器原生完整页面截图。本组使用 Windows Chromium 1243、Playwright 1.63.0、像素比例 1；采用界面配置的 Noto Sans SC 字体栈与系统回退字体，没有注入字体覆盖。清单捕获时间使用 UTC，界面时间来自原记录。运行状态、历史检查与报告中的限制按记录展示。运行诊断可从产品栏和日志页访问，原数据说明折叠区已移除。
 
 ## Reproduction / 复现
 
