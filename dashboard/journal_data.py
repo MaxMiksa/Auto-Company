@@ -373,6 +373,7 @@ class JournalSource:
             projection_available = False
             projections = {"cycles": [], "total": 0}
         project["stableId"] = (self.scope.product_id if self.scope else identity["id"] if identity else None)
+        project["createdAt"] = identity.get("createdAt") if identity and identity.get("id") == project["stableId"] else None
         rows = {row["cycleId"]: row for row in projections["cycles"]}
         known = {cycle["id"] for cycle in cycles}
         for row in rows.values():

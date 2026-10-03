@@ -226,7 +226,8 @@ class JournalTests(JournalFixture):
         project = self.source.snapshot()["project"]
         self.assertEqual(project, {"id": "projects/probe", "name": "Probe", "displayName": "Probe",
                                   "description": "Bound description", "source": "project_metadata",
-                                  "status": "recorded", "recordedAt": "2026-09-19T01:00:00+00:00", "stableId": None})
+                                  "status": "recorded", "recordedAt": "2026-09-19T01:00:00+00:00", "stableId": None,
+                                  "createdAt": None})
         self.assertEqual(self.source.documents(), [], "legacy root delivery cannot cross product selection")
         self.write(".auto-company.local", "ACTIVE_PROJECT=projects/other\n")
         self.write("projects/other/README.md", "new selection")

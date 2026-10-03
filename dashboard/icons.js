@@ -1,10 +1,24 @@
 /* Lucide 0.468.0, pinned f12b0de177fbc2a6795e99be065887e72b237123.
  * Source: https://github.com/lucide-icons/lucide/tree/f12b0de177fbc2a6795e99be065887e72b237123/icons
- * License: LICENSE-lucide.txt. Status marks preserve the existing journal design.
+ * License: LICENSE-lucide.txt. All interface and status geometry uses Lucide.
  */
 (() => {
   "use strict";
   const ICONS = {
+  "info": '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>',
+  "minus": '<path d="M5 12h14"/>',
+  "plus": '<path d="M5 12h14"/><path d="M12 5v14"/>',
+  "arrow-left": '<path d="m12 19-7-7 7-7"/><path d="M5 12h14"/>',
+  "arrow-up-down": '<path d="m21 16-4 4-4-4"/><path d="M17 20V4"/><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/>',
+  "arrow-up": '<path d="m5 12 7-7 7 7"/><path d="M12 19V5"/>',
+  "arrow-down": '<path d="M12 5v14"/><path d="m19 12-7 7-7-7"/>',
+  "filter": '<polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>',
+  "circle-check": '<path d="M21.801 10A10 10 0 1 1 17 3.335"/><path d="m9 11 3 3L22 4"/>',
+  "circle-help": '<circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/>',
+  "circle-pause": '<circle cx="12" cy="12" r="10"/><line x1="10" x2="10" y1="15" y2="9"/><line x1="14" x2="14" y1="15" y2="9"/>',
+  "clock": '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
+  "loader-circle": '<path d="M21 12a9 9 0 1 1-6.219-8.56"/>',
+  "circle-play": '<circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/>',
   "notebook-pen": "<path d=\"M13.4 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7.4\" />\n  <path d=\"M2 6h4\" />\n  <path d=\"M2 10h4\" />\n  <path d=\"M2 14h4\" />\n  <path d=\"M2 18h4\" />\n  <path d=\"M21.378 5.626a1 1 0 1 0-3.004-3.004l-5.01 5.012a2 2 0 0 0-.506.854l-.837 2.87a.5.5 0 0 0 .62.62l2.87-.837a2 2 0 0 0 .854-.506z\" />",
   "chart-no-axes-column": "<line x1=\"18\" x2=\"18\" y1=\"20\" y2=\"10\" />\n  <line x1=\"12\" x2=\"12\" y1=\"20\" y2=\"4\" />\n  <line x1=\"6\" x2=\"6\" y1=\"20\" y2=\"14\" />",
   "terminal": "<polyline points=\"4 17 10 11 4 5\" />\n  <line x1=\"12\" x2=\"20\" y1=\"19\" y2=\"19\" />",
@@ -43,7 +57,7 @@
     attention: ['待处理', 'Needs attention', 'attention'],
     canceled: ['已取消', 'Canceled', 'canceled'],
     idle: ['等待下一轮', 'Waiting for next cycle', 'pending'],
-    unknown: ['状态未知', 'Status unknown', 'unknown'],
+    unknown: ['状态待确认', 'Status unconfirmed', 'unknown'],
     preparing: ['准备中', 'Preparing', 'pending'],
     starting: ['启动中', 'Starting', 'running'],
     stopping: ['停止中', 'Stopping', 'running'],
@@ -56,15 +70,7 @@
     label: (value, language) => definition(value)?.[language === 'zh-CN' ? 0 : 1],
     visual: value => definition(value)?.[2] || 'unknown',
   });
-  const MARKS = {
-    completed: '<path d="m10.5 16 3.8 3.8 7.2-8"/>',
-    running: '<path d="M16 6a10 10 0 0 1 10 10H16Z" fill="currentColor" opacity=".35" stroke="none"/><path d="M16 8v8l-4 3"/>',
-    paused: '<path d="M12.8 11.5v9m6.4-9v9" stroke-width="2.8"/>',
-    pending: '<path d="M16 9v7l4 2"/>',
-    failed: '<path d="m12 12 8 8m0-8-8 8"/>',
-    unknown: '<path d="M12.5 12a3.5 3.5 0 0 1 7 0c0 3-3.5 2.5-3.5 5m0 4h.01"/>',
-    attention: '<path d="M16 9v9m0 5h.01"/>',
-  };
+  const STATUS_ICONS = { completed: 'circle-check', running: 'circle-play', paused: 'circle-pause', pending: 'clock', failed: 'circle-x', unknown: 'circle-help', attention: 'circle-alert', archived: 'archive', read_only: 'eye', canceled: 'circle-x' };
   function svg(markup, size) {
     const node = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     for (const [key, value] of Object.entries({ viewBox: `0 0 ${size} ${size}`, class: 'ui-icon', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.7', 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'aria-hidden': 'true', focusable: 'false' })) node.setAttribute(key, value);
@@ -72,13 +78,13 @@
     node.innerHTML = markup;
     return node;
   }
-  function icon(name) { return svg(ICONS[name] || ICONS['file-text'], 24); }
+  function icon(name) {
+    const node = svg(ICONS[name] || ICONS['file-text'], 24);
+    node.setAttribute('data-lucide', ICONS[name] ? name : 'file-text');
+    return node;
+  }
   function status(state) {
-    if (state === 'archived') return icon('archive');
-    if (state === 'read_only') return icon('eye');
-    if (state === 'canceled') return icon('circle-x');
-    // The fixed shaded sector means activity, never a progress percentage.
-    return svg('<circle cx="16" cy="16" r="13"/>' + (MARKS[state] || MARKS.unknown), 32);
+    return icon(STATUS_ICONS[state] || 'circle-help');
   }
   function hydrate(root = document) {
     root.querySelectorAll('[data-icon]').forEach(node => node.replaceChildren(icon(node.dataset.icon)));

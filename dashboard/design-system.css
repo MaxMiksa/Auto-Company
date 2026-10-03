@@ -1,17 +1,48 @@
+@layer base {
 /* Shared Dashboard typography. Sizes are rem-based; branding is independent. */
 :root {
-  --font-ui: Inter, "Segoe UI", "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+  --font-ui: "Noto Sans SC", "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
   --font-code: "Cascadia Code", Consolas, monospace;
-  --text-caption: .875rem;
-  --text-body: 1rem;
-  --text-title: 1.25rem;
-  --text-section: 1.75rem;
-  --text-page: 2.25rem;
+  --text-caption: .75rem;
+  --text-body: .8125rem;
+  --text-title: 1rem;
+  --text-section: 1.125rem;
+  --text-page: 1.25rem;
   --weight-regular: 400;
   --weight-medium: 600;
   --weight-bold: 700;
   --line-body: 1.6;
   --line-heading: 1.3;
+  --ui-background: #ffffff;
+  --ui-canvas: #f4f5f7;
+  --ui-frame-gap: 12px;
+  --ui-frame-radius: 8px;
+  --ui-foreground: #102659;
+  --ui-primary: #112c68;
+  --ui-muted: #5d7092;
+  --ui-success: #146d39;
+  --ui-danger: #a52828;
+  --ui-attention: #986300;
+  --ui-link: #1257c4;
+  --ui-border: #e3e7ed;
+  --ui-input-border: #7c8ca7;
+  --ui-surface: #f7f7f5;
+  --ui-hover: #f3f6fc;
+  --ui-rail: #607da8;
+  --ui-space-1: 4px;
+  --ui-space-2: 8px;
+  --ui-space-3: 12px;
+  --ui-space-4: 16px;
+  --ui-space-5: 20px;
+  --ui-space-6: 24px;
+  --ui-space-7: 28px;
+  --ui-space-8: 32px;
+  --ui-radius-control: 4px;
+  --ui-radius-panel: 8px;
+  --ui-control-height: 34px;
+  --ui-field-height: 42px;
+  --ui-focus: #1257c4;
+  --ui-overlay: rgb(6 18 38 / .35);
 }
 body { font-size: var(--text-body); line-height: var(--line-body); }
 button, input, select, textarea { font: inherit; }
@@ -23,3 +54,24 @@ h4, h5, h6 { font-size: var(--text-body); }
 h1, h2, h3, h4, h5, h6 { line-height: var(--line-heading); }
 .ui-icon { width: 20px; height: 20px; flex: 0 0 20px; vertical-align: -.15em; }
 [data-icon] { display: inline-flex; align-items: center; justify-content: center; }
+html { min-width: 320px; }
+body { overflow-wrap: break-word; }
+html:has(.app-frame), body:has(> .app-frame) { background: var(--ui-canvas); }
+body:has(> .app-frame) { display: flow-root; }
+.app-frame { min-width: 0; min-height: calc(100dvh - var(--ui-frame-gap) * 2); margin: var(--ui-frame-gap); border: 1px solid var(--ui-border); border-radius: var(--ui-frame-radius); background: var(--ui-background); box-shadow: 0 2px 10px rgb(12 31 59 / .05); }
+.app-frame > header { background: var(--ui-background); border-start-start-radius: var(--ui-frame-radius); border-start-end-radius: var(--ui-frame-radius); }
+.profile-button .profile-chevron { display: inline-flex; align-items: center; justify-content: center; align-self: center; flex: 0 0 14px; width: 14px; height: 14px; margin: 0; line-height: 1; }
+.profile-button .profile-chevron svg, .profile-button svg.profile-chevron { display: block; width: 14px; height: 14px; }
+.disclosure-chevron { display: block; width: 14px; height: 14px; flex: 0 0 14px; transition: transform 160ms ease-out; }
+[data-disclosure][open] .disclosure-trigger .disclosure-chevron { transform: rotate(180deg); }
+@media (max-width: 640px) { :root { --ui-frame-gap: 6px; } }
+button, input, select, textarea { letter-spacing: 0; }
+button, a, summary { touch-action: manipulation; }
+input::placeholder, textarea::placeholder { color: var(--ui-muted); opacity: 1; }
+time, .cycle-number, .history-number, .round-number, .usage-total, .numeric { font-variant-numeric: tabular-nums; }
+button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible, summary:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--ui-focus); outline-offset: 2px; box-shadow: 0 0 0 2px #fff; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
+
+}

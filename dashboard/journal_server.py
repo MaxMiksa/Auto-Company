@@ -20,6 +20,10 @@ from journal_data import JournalSource  # noqa: E402
 
 
 STATIC = {
+    "/navigation.js": ("navigation.js", "application/javascript; charset=utf-8"),
+    "/date-time.js": ("date-time.js", "application/javascript; charset=utf-8"),
+    "/ui-assets/ui.js": ("ui-assets/ui.js", "application/javascript; charset=utf-8"),
+    "/ui-assets/ui.css": ("ui-assets/ui.css", "text/css; charset=utf-8"),
     "/journal/icons.js": ("icons.js", "application/javascript; charset=utf-8"),
     "/journal/design-system.css": ("design-system.css", "text/css; charset=utf-8"),
     "/icons.js": ("icons.js", "application/javascript; charset=utf-8"),

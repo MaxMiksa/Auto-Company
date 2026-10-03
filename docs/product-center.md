@@ -34,7 +34,7 @@ Source-only directories can be explicitly registered as references. References c
 
 ## Execution and queue / 执行与队列
 
-The first version uses one managed execution domain and one model slot. On Windows, explicitly choose the WSL distribution and user:
+The center uses one managed execution domain with independent project owners. It runs up to four projects concurrently by default. In the existing work queue, change **Concurrent projects** or select **Unlimited**. Reducing the number does not interrupt active work; new requests wait until capacity becomes available. On Windows, explicitly choose the WSL distribution and user:
 
 ```powershell
 .\scripts\windows\center-win.ps1 -WslDistribution Ubuntu -WslUser your-user
@@ -45,12 +45,12 @@ Without a configured execution domain, Windows can still read registered sources
 Windows需要明确的WSL发行版与用户才能运行任务；未配置时仍可阅读已接入档案。引擎、账号和媒体依赖由现有环境提供，中心不自动安装或切换账号。
 
 - **View / 查看** never changes the active execution target.
-- **Start now / 立即开始** explicitly runs one request when no earlier task owns the slot. **Enqueue / 加入队列** persists the request and waits for queue dispatch to be enabled.
+- **Start work / 开始运行** authorizes the submitted work to start in queue order when capacity is available. **Enqueue / 加入队列** persists the request and waits for queue dispatch to be enabled. Starting a batch does not authorize other paused requests ahead of it.
 - **Pause queue / 暂停队列** prevents subsequent starts without interrupting the current work. **Stop this item / 停止此项** waits for that request's owned processes to finish. **Stop all / 全部停止** also pauses dispatch.
-- One request owns the slot for its entire auto-loop, including cleanup. A cycle ending is not a product finishing. A long-running product can keep other requests waiting; there is no implicit cycle cap or estimated wait time.
+- Each request owns its project for the entire auto-loop, including cleanup. A cycle ending is not a product finishing. Continuous projects can keep all capacity occupied and later requests waiting; there is no implicit cycle cap or estimated wait time.
 - Restarting the center pauses new dispatch and reconciles existing ownership. Uncertain launches are not automatically repeated. Budget or governance pauses remain protected.
 
-一次请求持续占用执行位置直到整个循环停止并清理完成，不会在每轮结束时自动切换产品。队列不设置隐含的轮数上限或商业完成条件。重启默认暂停派发；无法确认的启动或停止需要核对，不自动重放。已有预算和人类约束保护继续生效。
+默认同时运行 4 个项目，在原有工作队列中调整数量或选择不限；调低不会中断已启动的项目。一次请求持续占用项目及执行位置直到整个循环停止并清理完成，不会在每轮结束时自动切换产品。队列不设置隐含的总时长、轮数上限或商业完成条件。重启默认暂停派发；无法确认的启动或停止需要核对，不自动重放。已有预算和人类约束保护继续生效。
 
 Pause and Stop all also revoke earlier Start now authorizations that have not launched, including work still being prepared. Preparation may finish, but it cannot silently restore that authorization. An owned request in an attention state keeps its Stop action; an unlaunched request does not claim a process to stop.
 
@@ -64,11 +64,35 @@ An unresolved P1 in the original consensus prevents a new start. If the original
 
 原共识中存在未解决的 P1 时，中心拒绝新启动。如果原保护规则让已启动的循环暂停，中心显示保护暂停，但该请求仍持有执行位置，停止按钮仍可用。中心不会清除 P1、代做决定或自动停止循环；实时证据过期后显示未知。
 
-A live unresolved-P1 observation also pauses subsequent queue dispatch. Stopping the current request does not resume that queue; resuming dispatch remains an explicit operator action.
+A project-specific P1, budget pause or failed preflight affects that project only. Its ownership remains held until cleanup is confirmed; other projects can continue. A shared provider pause or unavailable execution environment pauses new dispatch without stopping unrelated running work. Legacy single-owner contexts retain their conservative recovery behavior and cannot overlap new project owners.
 
-运行中观察到未解决的 P1 时，后续队列派发也会暂停。停止当前请求不会恢复队列，恢复派发仍需明确操作。
+新运行中的单项目 P1、预算暂停或启动检查失败只影响该项目，其他项目可继续；清理未确认前不释放所属执行位置。共享服务商限流或执行环境不可用时暂停新派发，不自动停止其他正在运行的项目。旧单槽上下文保留原恢复规则，与新项目执行互斥；不会自动迁移旧运行。
+
+## Batch creation and configuration templates / 批量创建与配置模板
+
+Use the existing **New work** dialog. Each configuration group has its own engine, model, reasoning effort, new-product language, project count and optional direction. Add another group to submit, for example, two high and two xhigh projects together. Each project receives an independent runtime. A batch accepts up to 100 projects per submission; this does not cap the number of running or queued projects. All intents and configuration snapshots are registered atomically before preparation starts. Retrying the same submission does not duplicate projects. Individual preparation failures remain visible; pause, stop-all and restart revoke outstanding start authorizations while preserving prepared work in the queue.
+
+在原有“新建工作”窗口添加配置组，每组分别选择引擎、模型、思考强度、新产品语言、数量及可留空方向。例如一组 high × 2，另一组 xhigh × 2。每个项目拥有独立运行目录，方向留空时独立探索。一次批量提交最多 100 个项目，不限制总运行或排队项目数；整批意图与配置先原子保存再准备，重复提交不重复创建。准备失败可在原队列查看。暂停、全部停止和重启撤销待启动授权，已准备工作保留为排队状态。
+
+Choose, save or set a default template beside model configuration, including when continuing a project. Templates store only engine, model, effort and new-product language, never credentials, direction or count. Existing product language remains locked. New forms use the default template, then the last submitted configuration, then the installation/launch choices saved in `.auto-loop.env` and `.auto-company.local`. Existing center preferences are preserved on upgrade. These files are parsed as data, not executed. Saving UI language alone does not change model defaults. Temporary edits do not overwrite templates; changing a template name saves a separate copy. Explicitly saving the same named selection updates that template. Clearing or deleting the default restores the last-configuration fallback.
+
+模型配置旁支持选择、保存、设为默认，也可在继续项目时使用。模板只保存引擎、模型、思考强度和新产品语言，不保存凭据、方向或数量；已有产品语言仍锁定。默认顺序为：默认模板 → 上次提交配置 → 安装/启动流程保存在 `.auto-loop.env`、`.auto-company.local` 中的用户选择，升级保留原中心配置。仅读取这些文件，不执行其内容。只保存界面语言不会改变模型默认值。临时调整不覆盖模板；修改名称保存为另一份，显式保存同名选中项更新原模板。取消或删除默认模板后，回到上次配置。
+
+Every submitted request retains its own configuration snapshot. Later template edits, deletion or concurrency changes cannot change queued or running requests. Missing or unsupported engines/models fail explicitly; the center does not substitute another model. Live explorations appear in the existing project list and status filters alongside formed products. Project details select the matching current request, not whichever parallel request appears first.
+
+每次提交冻结配置；后续模板修改、删除和并发数调整不改变已排队或运行的请求。引擎或模型不可用时明确报错，不替换模型。当前探索出现在现有项目列表及状态筛选中；项目详情只匹配自身请求，不会错误显示其他并行项目的运行情况。
 
 ## Existing data and capabilities / 旧数据与能力
+
+### Upgrading from v2.0 / 从 v2.0 升级
+
+Back up the center data directory while its own service is stopped, keeping the original run directories and identity ledgers. Update a clean framework checkout to `v2.1.0`, then start that center with the same data directory and execution-domain settings. The release includes built Dashboard assets; users do not need Node to serve them. Developers changing the UI use `npm ci --prefix dashboard/ui`, then its `check` and `build` scripts.
+
+在中心服务停止时备份其数据目录，保留原运行目录及身份账本；把干净的框架副本更新到 `v2.1.0`，使用原数据目录和执行域设置启动。发布版自带前端资源，用户运行服务无需Node；开发者修改界面时在 `dashboard/ui` 安装锁定依赖后执行 `check`、`build`。
+
+Existing saved preferences and request configuration snapshots remain intact. New dispatch starts paused after restart; review reconciled ownership before resuming. Default concurrency is four; lowering it never stops existing work. Old run copies are not automatically upgraded or migrated. Incompatible sources remain readable without gaining execution permission. Do not replace an active source checkout, clear uncertain ownership, or restore only the database while discarding its matching runtime directories.
+
+既有偏好与请求配置快照保留。中心重启后新派发暂停，先核对恢复的所有权再恢复队列。默认并发4，调低不会停止已有工作。旧运行副本不会自动升级或迁移；不兼容来源可读但不获得执行权限。不要覆盖正在运行的源码、清除不确定所有权，或只还原数据库却丢掉配套运行目录。
 
 ### Upgrading from v1.x / 从 v1.x 升级
 

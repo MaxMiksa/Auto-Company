@@ -6,6 +6,8 @@ roots. It is not a sandbox against another process running as the same user.
 """
 from __future__ import annotations
 
+from contextlib import contextmanager
+
 import argparse
 import ctypes
 from functools import lru_cache
@@ -20,7 +22,7 @@ import subprocess
 import sys
 import time
 
-PROTOCOL = 1
+PROTOCOL = 2
 MARKER = ".auto-company-center.json"
 MAX_JSON = 128 * 1024
 HEARTBEAT_TIMEOUT = 15
@@ -85,24 +87,62 @@ def domain_dir(center_id):
     return path
 
 
-def lock_file(path):
+def owner_dir(marker):
+    folder = domain_dir(marker["centerId"])
+    if marker.get("protocolVersion", 1) >= 2:
+        folder = folder / "runtimes" / token(marker["runtimeId"])
+        folder.mkdir(mode=0o700, parents=True, exist_ok=True)
+    return folder
+
+
+def lock_file(path, shared=False):
     import fcntl
     descriptor = os.open(path, os.O_RDWR | os.O_CREAT, 0o600)
     try:
-        fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        fcntl.flock(descriptor, (fcntl.LOCK_SH if shared else fcntl.LOCK_EX) | fcntl.LOCK_NB)
     except BaseException:
         os.close(descriptor)
         raise
     return descriptor
 
 
-def lock_free(path):
+def lock_free(path, shared=False):
     try:
-        descriptor = lock_file(path)
+        descriptor = lock_file(path, shared)
     except BlockingIOError:
         return False
     os.close(descriptor)
     return True
+
+
+def legacy_gate(marker):
+    """New independent owners share a gate that excludes a legacy center owner."""
+    if marker.get("protocolVersion", 1) < 2:
+        return None
+    folder = domain_dir(marker["centerId"])
+    descriptor = lock_file(folder / "slot.lock", shared=True)
+    try:
+        if (folder / "owner.json").exists():
+            previous = read_json(folder / "owner.json")
+            if previous.get("state") != "terminal" or not previous.get("cleanupConfirmed"):
+                raise ValueError("legacy_owner_recovery_required")
+    except BaseException:
+        os.close(descriptor)
+        raise
+    return descriptor
+
+
+@contextmanager
+def execution_lock(marker):
+    gate, descriptor = legacy_gate(marker), None
+    try:
+        descriptor = lock_file(owner_dir(marker) / "slot.lock")
+        yield descriptor, gate
+    finally:
+        if descriptor is not None:
+            os.close(descriptor)
+        if gate is not None:
+            os.close(gate)
 
 
 def existing_lock_free(path):
@@ -144,7 +184,7 @@ def same_process(value):
 
 def marker_for(root):
     marker = read_json(Path(root) / MARKER)
-    if marker.get("protocolVersion") != PROTOCOL:
+    if marker.get("protocolVersion") not in {1, PROTOCOL}:
         raise ValueError("incompatible_admission")
     for key in ("centerId", "runtimeId", "entryId", "sourceId"):
         token(marker.get(key))
@@ -177,14 +217,14 @@ def admission(root):
         if manifest.get(key) != marker.get(key):
             raise ValueError("admission_identity_mismatch")
     descriptor = int(os.environ["AUTO_COMPANY_CENTER_SLOT_FD"])
-    slot = domain_dir(marker["centerId"]) / "slot.lock"
+    slot = owner_dir(marker) / "slot.lock"
     if (os.fstat(descriptor).st_dev, os.fstat(descriptor).st_ino) != (slot.stat().st_dev, slot.stat().st_ino):
         raise ValueError("admission_descriptor_mismatch")
     # An inherited descriptor references the same locked open-file description.
     fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
     if lock_free(slot):
         raise ValueError("admission_without_lock")
-    owner = read_json(domain_dir(marker["centerId"]) / "owner.json")
+    owner = read_json(owner_dir(marker) / "owner.json")
     if any(owner.get(key) != manifest.get(key) for key in ("dispatchId", "requestId", "nonce", "runtimeId")):
         raise ValueError("admission_owner_mismatch")
     if not same_process(owner.get("runner")):
@@ -203,7 +243,7 @@ def artifact_admission(root, cleanup=False):
     if not (root / MARKER).exists() and not (root / MARKER).is_symlink():
         return
     marker = marker_for(root)
-    folder = domain_dir(marker["centerId"])
+    folder = owner_dir(marker)
     owner = read_json(folder / "owner.json")
     if any(owner.get(key) != marker.get(key) for key in ("centerId", "runtimeId", "entryId", "sourceId")):
         raise ValueError("artifact_owner_mismatch")
@@ -407,7 +447,8 @@ def preflight(root, center_id=None, allow_protected=False, require_context=True,
         result["reason"] = "service_state_unknown"
         return result
     if center_id:
-        folder = domain_dir(center_id)
+        marker = marker_for(root) if (root / MARKER).exists() else {"centerId": center_id}
+        folder = owner_dir(marker)
         if not lock_free(folder / "slot.lock"):
             result["reason"] = "slot_busy"
             return result
@@ -420,14 +461,27 @@ def preflight(root, center_id=None, allow_protected=False, require_context=True,
     return result
 
 
-def probe(center_id, manifest_path=None):
-    folder = domain_dir(center_id)
+def probe(center_id, manifest_path=None, runtime_id=None):
+    marker = {"centerId": center_id, "runtimeId": runtime_id, "protocolVersion": 2 if runtime_id else 1}
+    if manifest_path:
+        manifest = read_json(manifest_path)
+        if manifest["centerId"] != center_id:
+            raise ValueError("probe_identity_mismatch")
+        marker = marker_for(manifest["root"])
+    folder = owner_dir(marker)
     result = {"slotFree": lock_free(folder / "slot.lock"), "owner": None, "receipt": None, "ownerAlive": False}
     try:
         result["owner"] = read_json(folder / "owner.json")
         result["ownerAlive"] = same_process(result["owner"].get("runner"))
     except (OSError, ValueError, KeyError):
         pass
+    if marker.get("protocolVersion", 1) >= 2:
+        try:
+            gate = legacy_gate(marker)
+            os.close(gate)
+        except (OSError, ValueError):
+            result["slotFree"] = False
+            result["legacyConflict"] = True
     if manifest_path:
         manifest = read_json(manifest_path)
         try:
@@ -470,24 +524,27 @@ def owned_children():
 
 
 def run(manifest_path):
+    manifest = read_json(manifest_path)
+    with execution_lock(marker_for(manifest["root"])) as (descriptor, gate):
+        return run_owned(manifest_path, descriptor, gate)
+
+
+def run_owned(manifest_path, descriptor, gate):
     manifest_path = Path(manifest_path).resolve()
     manifest = read_json(manifest_path)
     root = Path(manifest["root"]).resolve()
     marker = marker_for(root)
     if any(marker.get(key) != manifest.get(key) for key in ("centerId", "runtimeId", "entryId", "sourceId")):
         raise ValueError("managed_identity_mismatch")
-    folder = domain_dir(manifest["centerId"])
+    folder = owner_dir(marker)
     receipt_path = Path(manifest["controlDir"]) / "receipt.json"
     # Lock contention produces no terminal receipt: another dispatch may own it.
-    descriptor = lock_file(folder / "slot.lock")
     os.set_inheritable(descriptor, True)
     if receipt_path.exists():
-        os.close(descriptor)
         raise ValueError("dispatch_already_received")
     if (folder / "owner.json").exists():
         previous = read_json(folder / "owner.json")
         if previous.get("state") != "terminal" or not previous.get("cleanupConfirmed"):
-            os.close(descriptor)
             raise ValueError("previous_owner_requires_recovery")
     runner = identity(os.getpid())
     receipt = {key: manifest[key] for key in ("centerId", "runtimeId", "entryId", "sourceId", "requestId", "dispatchId", "nonce")}
@@ -527,7 +584,7 @@ def run(manifest_path):
         launched_at_ns = time.time_ns()
         with (Path(manifest["controlDir"]) / "runner.log").open("ab") as output:
             child = subprocess.Popen(command, cwd=root, env=env, stdin=subprocess.DEVNULL, stdout=output,
-                                     stderr=subprocess.STDOUT, start_new_session=True, pass_fds=(descriptor,))
+                                     stderr=subprocess.STDOUT, start_new_session=True, pass_fds=tuple(fd for fd in (descriptor, gate) if fd is not None))
         launched, child_identity = True, identity(child.pid)
         publish("running", child=child_identity, startedAt=now())
         stop_started = None
@@ -619,8 +676,6 @@ def run(manifest_path):
                 child.poll()
             time.sleep(0.1)
         raise
-    finally:
-        os.close(descriptor)
 
 
 def operator_previews(root, project=None):
@@ -730,7 +785,7 @@ def media_command(command, root, project, preserve_preview, descriptor, timeout=
 def media_status(manifest_path):
     manifest = read_json(manifest_path)
     receipt_path = Path(manifest_path).with_name("receipt.json")
-    result = {"slotFree": lock_free(domain_dir(manifest["centerId"]) / "slot.lock"), "receipt": None}
+    result = {"slotFree": lock_free(owner_dir(marker_for(manifest["root"])) / "slot.lock"), "receipt": None}
     if receipt_path.exists():
         receipt = read_json(receipt_path)
         if all(receipt.get(key) == manifest.get(key) for key in ("centerId", "runtimeId", "sourceId", "entryId", "operationId")):
@@ -740,12 +795,17 @@ def media_status(manifest_path):
 
 def media(manifest_path):
     manifest = read_json(manifest_path)
+    with execution_lock(marker_for(manifest["root"])) as (descriptor, _gate):
+        return media_owned(manifest_path, descriptor)
+
+
+def media_owned(manifest_path, descriptor):
+    manifest = read_json(manifest_path)
     root = Path(manifest["root"])
     marker = marker_for(root)
     if any(marker.get(key) != manifest.get(key) for key in ("centerId", "runtimeId", "entryId", "sourceId")):
         raise ValueError("managed_identity_mismatch")
-    descriptor = lock_file(domain_dir(marker["centerId"]) / "slot.lock")
-    owner_path = domain_dir(marker["centerId"]) / "owner.json"
+    owner_path = owner_dir(marker) / "owner.json"
     owner = {**{key: manifest[key] for key in ("centerId", "runtimeId", "entryId", "sourceId")},
              "operationId": manifest.get("operationId"), "root": str(root.resolve()), "runner": identity(os.getpid()),
              "state": "media", "cleanupConfirmed": False}
@@ -803,16 +863,25 @@ def media(manifest_path):
             atomic_json(receipt_path, {**owner, "state": "terminal", "cleanupConfirmed": True, "endedAt": now(), "result": result})
             return result
         raise
-    finally:
-        os.close(descriptor)
 
 
 def bind(manifest_path):
+    manifest = read_json(manifest_path)
+    marker = manifest.get("oldMarker") or manifest["marker"]
+    with execution_lock(marker):
+        previous_path = owner_dir(marker) / "owner.json"
+        if previous_path.exists():
+            previous = read_json(previous_path)
+            if previous.get("state") != "terminal" or not previous.get("cleanupConfirmed"):
+                raise ValueError("owner_recovery_required")
+        return bind_owned(manifest_path)
+
+
+def bind_owned(manifest_path):
     """Close the check-to-bind race with normal auto-loop's actual root lock."""
     manifest = read_json(manifest_path)
     root = Path(manifest["root"]).resolve()
     marker = manifest["marker"]
-    domain_lock = lock_file(domain_dir(marker["centerId"]) / "slot.lock")
     root_lock = None
     try:
         check = preflight(root, allow_protected=manifest["action"] == "release", require_context=manifest["action"] != "release",
@@ -840,7 +909,6 @@ def bind(manifest_path):
     finally:
         if root_lock is not None:
             os.close(root_lock)
-        os.close(domain_lock)
 
 
 def main():
@@ -849,6 +917,7 @@ def main():
     parser.add_argument("--manifest")
     parser.add_argument("--root")
     parser.add_argument("--center-id")
+    parser.add_argument("--runtime-id")
     parser.add_argument("--allow-protected", choices=("0", "1"), default="0")
     parser.add_argument("--require-context", choices=("0", "1"), default="1")
     parser.add_argument("--expected-product-id")
@@ -868,7 +937,7 @@ def main():
         elif args.action == "bind":
             result = bind(args.manifest)
         else:
-            result = probe(args.center_id, args.manifest)
+            result = probe(args.center_id, args.manifest, args.runtime_id)
         print(json.dumps(result, ensure_ascii=False))
         return 0
     except (OSError, ValueError, KeyError, subprocess.SubprocessError) as exc:

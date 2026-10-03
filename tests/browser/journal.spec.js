@@ -11,6 +11,12 @@ import { fileURLToPath } from "node:url";
 const repository = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const python = process.env.AUTO_COMPANY_BROWSER_PYTHON || process.env.PYTHON || (process.platform === "win32" ? "python" : "python3");
 
+async function refreshRecords(page) {
+  await page.locator("#settingsButton").click();
+  await page.locator("#refreshButton").click();
+  await page.locator("#closeSettingsButton").click();
+}
+
 async function changeIdentityFixture(directory, code) {
   return promisify(execFile)(python, ["-c", [
     "import json, sys", "from pathlib import Path",
@@ -122,6 +128,79 @@ const test = base.extend({
   },
 });
 
+test('spec compliance: manual tabs, mobile product anchor and journal return state', async ({ page, journal }) => {
+  await page.goto(`${journal.url}/journal`);
+  await expect(page.locator('#cycleNumber')).toHaveText('03');
+  await page.locator('#tab-work').focus();
+  await page.locator('#tab-work').press('ArrowRight');
+  await expect(page.locator('#tab-usage')).toBeFocused();
+  await expect(page.locator('#tab-work')).toHaveAttribute('aria-selected', 'true');
+  await page.locator('#tab-usage').press('Enter');
+  await expect(page.locator('#panel-usage')).toBeVisible();
+  await page.locator('#tab-work').click();
+  const history = page.locator('#historyList [data-disclosure]').first();
+  await history.locator('.disclosure-trigger').click();
+  await page.reload();
+  await expect(page.locator('#historyList [data-disclosure]').first()).toHaveAttribute('open', '');
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.locator('#productInfoJump').click();
+  await expect(page.locator('#projectSidebar')).toBeFocused();
+  await expect(page.locator('#projectName')).toBeInViewport();
+});
+
+test('spec compliance: disconnected logs preserve reading position, copy and source time', async ({ page, journal }) => {
+  let failed = false;
+  let log = Array.from({length: 250}, (_, index) => `record ${index} long log line`).join('\n');
+  await page.route('**/api/journal/log?*', route => failed ? route.abort() : route.fulfill({contentType: 'application/json', body: JSON.stringify({ok: true, available: true, text: log, truncated: true})}));
+  await page.goto(`${journal.url}/journal`);
+  await expect(page.locator('#cycleNumber')).toHaveText('03');
+  await page.locator('#tab-logs').click();
+  await page.locator('#logSelect').selectOption('cycle-0001-fixture');
+  await expect(page.locator('#logText')).toContainText('record 249');
+  await page.locator('#logText').evaluate(node => { node.scrollTop = 190; });
+  const top = await page.locator('#logText').evaluate(node => node.scrollTop);
+  failed = true;
+  await page.locator('#refreshLogButton').click();
+  await expect(page.locator('#logStatus')).toContainText(/失败|Could not/);
+  await expect(page.locator('#logStatus')).toContainText(/最后成功读取|Last successful read/);
+  await expect(page.locator('#copyLogButton')).toBeEnabled();
+  expect(await page.locator('#logText').evaluate(node => node.scrollTop)).toBe(top);
+  await expect(page.locator('#logText')).toContainText('record 249');
+  failed = false; log += '\nNEW RECORD';
+  await page.locator('#refreshLogButton').click();
+  await expect(page.locator('#newLogButton')).toBeVisible();
+  expect(await page.locator('#logText').evaluate(node => node.scrollTop)).toBe(top);
+  await page.locator('#newLogButton').click();
+  await expect(page.locator('#logText')).toBeFocused();
+  expect(await page.locator('#logText').evaluate(node => node.scrollHeight - node.clientHeight - node.scrollTop)).toBeLessThanOrEqual(4);
+});
+
+test('spec compliance: journal widths and mixed usage preserve all records', async ({ page, journal }, testInfo) => {
+  await page.goto(`${journal.url}/journal`);
+  await expect(page.locator('#cycleNumber')).toHaveText('03');
+  for (const width of [320, 359, 360, 390, 640, 641, 650, 651, 760, 761, 1000, 1001, 1064, 1440, 1450, 1800]) {
+    await page.setViewportSize({width, height: 900});
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), `journal width ${width}`).toBeTruthy();
+  }
+  await page.setViewportSize({width: 320, height: 650});
+  await page.screenshot({path: testInfo.outputPath('journal-320-fixture.png'), fullPage: true});
+  await page.locator('#tab-usage').click();
+  await expect(page.locator('#usageSource')).toContainText(/上次更新|Last updated/);
+  await expect(page.locator('#usageRows tr')).toHaveCount(3);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBeTruthy();
+  await page.screenshot({path: testInfo.outputPath('usage-320-fixture.png')});
+  await page.locator('#tab-logs').click();
+  await expect(page.locator('#refreshLogButton')).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBeTruthy();
+  await page.setViewportSize({width: 532, height: 375});
+  await page.addStyleTag({content: 'html { font-size: 32px !important; }'});
+  await page.locator('#tab-work').click();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBeTruthy();
+  await page.locator('#settingsButton').click();
+  await expect(page.locator('#closeSettingsButton')).toBeInViewport();
+  await page.locator('#closeSettingsButton').click();
+});
+
 test("journal renders source history and never treats a report as live telemetry", async ({ page, journal }) => {
   const errors = [];
   page.on("pageerror", (error) => errors.push(error.message));
@@ -170,7 +249,7 @@ test("stable identity keeps moved history and document access, then isolates a s
     "(root / 'projects/moved-fixture/.auto-company/identity.json').unlink()",
     "products.register_project(root, 'projects/moved-fixture')",
   ].join("\n"));
-  await page.locator("#refreshButton").click();
+  await refreshRecords(page);
   await expect(document).toHaveCount(0);
   await expect(page.locator("#cycleNumber")).toHaveCount(0);
   expect((await page.request.get(`${journal.url}/api/journal/document?path=projects%2Fmoved-fixture%2FDELIVERY.md`)).ok()).toBeFalsy();
@@ -252,10 +331,10 @@ test("real static preview loads web assets and denies private same-origin reads"
 
 test("history stays open after refresh and its log belongs to the selected cycle", async ({ page, journal }) => {
   await page.goto(`${journal.url}/journal`);
-  const row = page.locator("#historyList details").first();
-  await row.locator(":scope > summary").click();
+  const row = page.locator("#historyList [data-disclosure]").first();
+  await row.locator(".disclosure-trigger").click();
   await expect(row).toHaveAttribute("open", "");
-  await page.locator("#refreshButton").click();
+  await refreshRecords(page);
   await expect(row).toHaveAttribute("open", "");
   await page.locator("#tab-logs").click();
   await page.locator("#logSelect").selectOption("cycle-0001-fixture");
@@ -284,10 +363,10 @@ test("failed refresh remains visible and recovers without losing the journal", a
   await page.route("**/api/journal", (route) => route.fulfill({
     status: 503, contentType: "application/json", body: JSON.stringify({ ok: false, error: "Unavailable" }),
   }));
-  await page.locator("#refreshButton").click();
+  await refreshRecords(page);
   await expect(page.getByRole("alert")).toBeVisible();
   await page.unroute("**/api/journal");
-  await page.locator("#refreshButton").click();
+  await refreshRecords(page);
   await expect(page.getByRole("alert")).toBeHidden();
   await expect(page.locator("#cycleNumber")).toContainText("03");
 });
@@ -371,29 +450,29 @@ test("product timeline shows continuous authoritative numbers and exploration by
   await page.goto(`${journal.url}/journal`);
 
   await expect(page.locator("#cycleNumber")).toHaveText("07");
-  await expect(page.locator("#historyList .history-number")).toHaveText(["06", "05", "04", "03", "02", "01", "09"]);
+  await expect(page.locator("#historyList .history-number-value")).toHaveText(["06", "05", "04", "03", "02", "01", "09"]);
   await expect(page.locator("#historyList .history-row[open]")).toHaveCount(0);
   await expect(page.locator("#olderButton, #explorationSection")).toHaveCount(0);
   const explorationRows = page.locator('#historyList .history-row[data-cycle-id^="explore-"]');
   await expect(explorationRows).toHaveCount(3);
-  await expect(explorationRows.locator(":scope > summary .progress-completed")).toHaveCount(1);
-  await expect(explorationRows.locator(":scope > summary .progress-failed")).toHaveCount(1);
-  await expect(explorationRows.locator(":scope > summary .progress-unknown")).toHaveCount(1);
+  await expect(explorationRows.locator(".disclosure-trigger .progress-completed")).toHaveCount(1);
+  await expect(explorationRows.locator(".disclosure-trigger .progress-failed")).toHaveCount(1);
+  await expect(explorationRows.locator(".disclosure-trigger .progress-unknown")).toHaveCount(1);
   const explorationRow = explorationRows.first();
   await expect(explorationRow).toBeVisible();
-  await expect(explorationRow.locator(":scope > summary")).toContainText("Pre-product exploration");
-  await explorationRow.locator(":scope > summary").click();
+  await expect(explorationRow.locator(".disclosure-trigger")).toContainText("Pre-product exploration");
+  await explorationRow.locator(".disclosure-trigger").click();
   await expect(explorationRow).toHaveAttribute("open", "");
   await expect(explorationRow.locator(".history-content")).toContainText("Exploration report 3");
   await expect(explorationRow.locator(".cycle-log-link")).toBeVisible();
 
-  await page.locator("#refreshButton").click();
+  await refreshRecords(page);
   await expect(explorationRow).toHaveAttribute("open", "");
 
   const legacyRow = page.locator('#historyList .history-row[data-cycle-id="legacy-9"]');
   await expect(legacyRow).toBeVisible();
   await expect(legacyRow.locator(".progress-unknown")).toHaveCount(1);
-  await legacyRow.locator(":scope > summary").click();
+  await legacyRow.locator(".disclosure-trigger").click();
   await expect(legacyRow.locator(".history-content")).toContainText("Legacy unknown record");
   await page.setViewportSize({ width: 360, height: 900 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
@@ -412,28 +491,28 @@ test("exploration-only archives keep the original current and history timeline",
   await page.goto(`${journal.url}/journal`);
   await expect(page.locator("#cycleNumber")).toHaveText("03");
   await expect(page.locator("#currentCycle")).toContainText("Pre-product exploration");
-  await expect(page.locator("#historyList .history-number")).toHaveText(["02", "01"]);
+  await expect(page.locator("#historyList .history-number-value")).toHaveText(["02", "01"]);
   await expect(page.locator("#explorationSection")).toHaveCount(0);
 });
 
 
 test("cycle timeline preserves disclosures, keyboard focus and selected logs across changed data", async ({ page, journal }) => {
   await page.goto(`${journal.url}/journal`);
-  const summary = page.locator("#historyList > details > summary").first();
+  const summary = page.locator("#historyList > [data-disclosure] .disclosure-trigger").first();
   await summary.click();
   await summary.focus();
   const latest = path.join(journal.directory, "logs/cycle-0003-fixture.json");
   await fs.writeFile(latest, JSON.stringify({ result: "Changed report after refresh" }));
   await page.evaluate(() => document.getElementById("refreshButton").click());
   await expect(page.locator("#cycleTitle")).toHaveText("Changed report after refresh");
-  await expect(page.locator("#historyList > details").first()).toHaveAttribute("open", "");
+  await expect(page.locator("#historyList > [data-disclosure]").first()).toHaveAttribute("open", "");
   await expect(summary).toBeFocused();
   await expect(page.locator(".current-cycle")).toHaveAttribute("aria-current", "step");
-  expect(await page.locator(".current-column").evaluate((node) => getComputedStyle(node, "::before").width)).toBe("1px");
+  expect(await page.locator(".current-column").evaluate((node) => getComputedStyle(node, "::before").width)).toBe("2px");
   await page.locator("#tab-logs").click();
   await page.locator("#logSelect").selectOption("cycle-0001-fixture");
   await fs.writeFile(latest, JSON.stringify({ result: "Another changed report" }));
-  await page.locator("#refreshButton").click();
+  await refreshRecords(page);
   await expect(page.locator("#logSelect")).toHaveValue("cycle-0001-fixture");
   await expect(page.locator("#logText")).toContainText("Fixture log 1");
 });
@@ -467,7 +546,7 @@ test("compact records preserve failures and unknowns while hiding technical deta
   await expect(page.locator("#projectSidebar")).not.toContainText("File changed or missing");
   for (const locale of ["en", "zh-CN"]) {
     language = locale;
-    await page.locator("#refreshButton").click();
+    await refreshRecords(page);
     await expect(page.locator("html")).toHaveAttribute("lang", locale);
     for (const width of [1280, 360]) {
       await page.setViewportSize({ width, height: 900 });
@@ -476,17 +555,17 @@ test("compact records preserve failures and unknowns while hiding technical deta
   }
   current.latestCheck = null;
   current.checkStatus = "unregistered";
-  await page.locator("#refreshButton").click();
+  await refreshRecords(page);
   await expect(page.locator("#currentCycle .record-check")).toContainText("暂无已登记检查");
   await expect(page.locator("#currentCycle .record-check")).not.toContainText("通过");
   current.latestCheck = { state: "completed", evidenceStatus: "missing", exitCode: 0, tests: { tests: 7, failures: 0, errors: 0, skipped: 0 } };
   current.checkStatus = "stale";
-  await page.locator("#refreshButton").click();
+  await refreshRecords(page);
   await expect(page.locator("#currentCycle .record-check")).toContainText("过期");
   await expect(page.locator("#currentCycle .record-check")).not.toContainText("7 项通过");
   current.projectStatus = "unknown";
   data.project.id = null;
-  await page.locator("#refreshButton").click();
+  await refreshRecords(page);
   await expect(page.locator("#currentCycle .record-check")).toHaveCount(0);
 });
 
@@ -496,20 +575,24 @@ test("running elapsed freezes on disconnect and rejects older snapshots", async 
   data.runtime = { ...data.runtime, available: true, processState: "running", state: "running", elapsedReliable: true, elapsedSeconds: 60 };
   data.cycles[0] = { ...data.cycles[0], active: true, status: "running", endedAt: null };
   data.language = "en"; data.languageState = null;
+  // The live settings endpoint must agree with this English telemetry fixture.
+  await page.route("**/api/language", route => route.fulfill({ json: { language: "en", nextLanguage: "en" } }));
   await page.route("**/api/journal", (route) => route.fulfill({ json: data }));
   await page.goto(`${journal.url}/journal`);
   await expect(page.locator(".live-elapsed")).toContainText("Running for 1m");
-  await page.locator("#autoRefresh").uncheck();
+  await page.locator("#settingsButton").click();
+  await page.locator("#autoRefresh-control").uncheck();
+  await page.locator("#closeSettingsButton").click();
   await page.unroute("**/api/journal");
   await page.route("**/api/journal", (route) => route.fulfill({ status: 503, json: { ok: false } }));
-  await page.locator("#refreshButton").click();
+  await refreshRecords(page);
   await expect(page.locator("#connectionError")).toBeVisible();
   await expect(page.locator(".live-elapsed")).toHaveCount(0);
   await expect(page.locator("#refreshStatus")).toContainText("Last updated");
   await page.unroute("**/api/journal");
   await page.route("**/api/journal", (route) => route.fulfill({ json: { ...data,
     generatedAt: new Date(Date.parse(data.generatedAt) - 1000).toISOString(), cycles: [] } }));
-  await page.locator("#refreshButton").click();
+  await refreshRecords(page);
   await expect(page.locator("#cycleNumber")).toHaveText("03");
   await expect(page.locator("#connectionError")).toBeVisible();
 });

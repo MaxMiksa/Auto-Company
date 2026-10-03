@@ -224,3 +224,6 @@ docs/*/*
 memories/*
 !memories/.gitkeep
 !memories/consensus.template.md
+
+# Shared frontend specification is maintained source.
+!docs/design/UI-UX-SPEC.md

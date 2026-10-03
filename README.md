@@ -2,7 +2,7 @@
 
 # Auto Company
 
-**An AI company framework for continuous autonomous work** <a href="README-ZH.md"><img alt="[中文说明]" src="https://img.shields.io/badge/%5B%E4%B8%AD%E6%96%87%E8%AF%B4%E6%98%8E%5D-2f3640.svg" /></a>
+**An AI company framework for continuous autonomous work**
 
 Powered by **Agentic Workflows**, this project provides 14 **AI agent role definitions**, each drawing on an expert's approach to its domain.
 The team can research products, make decisions, and write code autonomously within human-configured goals, permissions, and budgets. Deployment, publication, and marketing depend on the tools and authorization available; continuous operation depends on services and model availability.
@@ -16,12 +16,16 @@ Optional Cursor and OpenAI-compatible adapters require explicit configuration. S
 [![Codex CLI](https://img.shields.io/badge/Engine-Codex%20CLI-orange?logo=data:image/svg%2Bxml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMjQgMjQiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgZmlsbD0id2hpdGUiPjxwYXRoIGQ9Ik0yMi4yODE5IDkuODIxMWE1Ljk4NDcgNS45ODQ3IDAgMCAwLS41MTU3LTQuOTEwOCA2LjA0NjIgNi4wNDYyIDAgMCAwLTYuNTA5OC0yLjlBNi4wNjUxIDYuMDY1MSAwIDAgMCA0Ljk4MDcgNC4xODE4YTUuOTg0NyA1Ljk4NDcgMCAwIDAtMy45OTc3IDIuOSA2LjA0NjIgNi4wNDYyIDAgMCAwIC43NDI3IDcuMDk2NiA1Ljk4IDUuOTggMCAwIDAgLjUxMSA0LjkxMDcgNi4wNTEgNi4wNTEgMCAwIDAgNi41MTQ2IDIuOTAwMUE2LjA2NTEgNi4wNjUxIDAgMCAwIDE5LjAyIDE5LjgxODJhNS45ODQ3IDUuOTg0NyAwIDAgMCAzLjk5NzctMi45MDAxIDYuMDQ2MiA2LjA0NjIgMCAwIDAtLjczNTgtNy4wOTdaTTguNzQ5IDYuNzU3OGE0LjQxMTggNC40MTE4IDAgMCAxIDcuMzY3MyAxLjE0NDQgNC4zOTg2IDQuMzk4NiAwIDAgMS0uMjkyOCA0LjIyODVsLTQuNzA3LTIuNzIxNHYtMi42NTE1Wk02LjUzMzIgMTQuNjU0YTQuNDExOCA0LjQxMTggMCAwIDEtMS4xMjkzLTcuMzcgNC4zOTg2IDQuMzk4NiAwIDAgMSA0LjEzNTItMS4zOWwyLjM2MTUgNC4wOTN2NS4zMDJMNi41MzMyIDE0LjY1NFptLTEuODQ4LTEuNTcyYTQuNDExOCA0LjQxMTggMCAwIDEgNi4yMzgtNi4yMjYgNC4zOTg2IDQuMzk4NiAwIDAgMSAzLjg0MzMgMi44MzhsLTQuNzA3IDIuNzIxdjUuMzAxNUw0LjY4NTIgMTMuMDgyWm0xMC41NjU4IDQuMTZhNC40MTE4IDQuNDExOCAwIDAgMS03LjM2NzMtMS4xNDQzIDQuMzk4NiA0LjM5ODYgMCAwIDEgLjI5MjgtNC4yMjg1bDQuNzA3IDIuNzIxNHYyLjY1MTRabTIuMjE1OC03Ljg5NmE0LjQxMTggNC40MTE4IDAgMCAxIDEuMTI5MyA3LjM3IDQuMzk4NiA0LjM5ODYgMCAwIDEtNC4xMzUyIDEuMzlsLTIuMzYxNS00LjA5M1Y5LjE4Nmw1LjM2NzQgMi4xODZabTEuODQ4IDEuNTcyYTQuNDExOCA0LjQxMTggMCAwIDEtNi4yMzggNi4yMjYgNC4zOTg2IDQuMzk4NiAwIDAgMS0zLjg0MzMtMi44MzhsNC43MDctMi43MjFWOS4xODZsNS4zNzQgMy4wOTZaTTEyIDE2LjUxNmE0LjQxMTggNC40MTE4IDAgMCAxLTQuNDExOC00LjQxMThjMC0yLjQzNDggMS45NzctNC40MTE4IDQuNDExOC00LjQxMThzNC40MTE4IDEuOTc3IDQuNDExOCA0LjQxMTgtMS45NzcgNC40MTE4LTQuNDExOCA0LjQxMThaIi8+PC9zdmc+&logoColor=white)](https://www.npmjs.com/package/@openai/codex)
 [![Claude Code](https://img.shields.io/badge/Engine-Claude%20Code-purple?logo=anthropic&logoColor=white)](#dependencies)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green?logo=opensourceinitiative&logoColor=white)](LICENSE)
+<a href="README-ZH.md"><img alt="[中文说明]" src="https://img.shields.io/badge/%5B%E4%B8%AD%E6%96%87%E8%AF%B4%E6%98%8E%5D-2f3640.svg" /></a>
 
 </div>
 
+**v2.1.0: Parallel projects, configuration templates and a refreshed Product Center.**
+
 ---
 
-## Dashboard and Product Preview
+<a id="dashboard-and-product-preview"></a>
+## 🎬 Dashboard and Product Preview
 
 [![ScopeFence · work timeline](presentation/showcase/scopefence-timeline-en.png)](presentation/showcase/scopefence-timeline-en.png)
 
@@ -39,7 +43,8 @@ Click an image to view it at full size. [Capture sources and reproduction](prese
 <tr><td width="50%" valign="top"><a href="presentation/products/coi-chase-desk-en-full.png"><img src="presentation/products/coi-chase-desk-en-full.png" alt="COI Chase Desk · product interface" width="100%" /></a></td><td width="50%" valign="top"><a href="presentation/showcase/coi-chase-desk-timeline-en.png"><img src="presentation/showcase/coi-chase-desk-timeline-en.png" alt="COI Chase Desk · recorded work timeline" width="100%" /></a></td></tr>
 </table>
 
-## What Is This?
+<a id="what-is-this"></a>
+## ✨ What Is This?
 
 You start a loop. Each cycle reads the shared work summary, decides what to do, forms a team as needed, executes, updates the summary, and waits before the next cycle. Team creation depends on the model and engine capabilities; errors, budget limits, or a pause request can stop continuation.
 
@@ -68,7 +73,9 @@ The local Product Center brings explicitly connected product runs into one catal
 | Product catalog | Search and open connected products while keeping each product's identity, history, usage and recorded outcomes separate. |
 | Safe import | Connect an existing run or source for read-only review first; incompatible or incomplete sources stay unavailable for execution. |
 | Explicit work requests | Continue a product or prepare a new exploration only after you submit a request. Viewing and refreshing do not create work. |
-| One ordered queue | One managed slot runs requests in order. A request keeps the slot for its full continuous loop and cleanup, rather than switching products after each cycle. |
+| Parallel work | Run up to four projects at once by default; adjust the limit or choose unlimited. Each project retains its place until its continuous loop and cleanup finish. |
+| Batch creation and templates | Create groups with different models, reasoning levels and project counts. Save configurations as templates; queued work keeps the choices made when submitted. |
+| Faster browsing | A compact catalog, preview choices and consistent work reports make products easier to find and follow. Open a product from its row, with keyboard support throughout. |
 | Visible recovery | Preparation, failures, protective pauses and uncertain states remain visible after reload so you can review them before retrying or resuming the queue. |
 
 Start it from the repository, then open `http://127.0.0.1:8810/center`:
@@ -85,7 +92,8 @@ make center
 
 See the [Product Center guide](docs/product-center.md) for source registration, execution-domain setup, queue controls and recovery behavior.
 
-## Generated Applications
+<a id="generated-applications"></a>
+## 🧩 Generated Applications
 
 The [example catalog](examples/README.md) contains 22 independently runnable public examples, including 14 newly completed products and selected historical work. Each entry provides startup instructions, limitations and provenance; new local runs continue to write into `projects/`.
 
@@ -93,12 +101,14 @@ The examples cover professional data review, image delivery, shared meals, trave
 
 Frontend work uses the B design baseline adapted from Anthropic, followed by a [dedicated finishing pass](.claude/skills/frontend-polish/SKILL.md) once the core flow works. The pass preserves the product’s identity and improves components, copy and responsive behavior. The [refinement study](presentation/frontend-study/README.md) and [redesign comparison](presentation/frontend-redesign/README.md) retain their original evidence and limits.
 
-## Where To Start (By Platform)
+<a id="where-to-start-by-platform"></a>
+## 🚀 Where To Start (By Platform)
 
 - Windows users: start from [Windows (WSL) Quick Start](#windows-wsl-quick-start), then read the [Windows + WSL Setup Guide](i18n/en/docs/windows-setup.md)
 - macOS users: start from [macOS Quick Start](#macos-quick-start), then see [Command Quick Reference](#command-quick-reference-by-platform)
 
-## Languages and Documentation
+<a id="languages-and-documentation"></a>
+## 🌐 Languages and Documentation
 
 One language setting controls the Dashboard, documentation links and new product work. The initial default follows your computer's display language: Chinese uses `zh-CN`; other languages use `en`. WSL uses the Windows display language when available.
 
@@ -115,7 +125,8 @@ All bundled skills are written in English; their user-facing work follows the pr
 | Usage and budgets | [Governance guide](docs/usage-governance.md) | [用量与预算治理](i18n/zh-CN/docs/usage-governance.md) |
 | Operations and troubleshooting | [Common tasks and errors](i18n/en/docs/troubleshooting.md) | [常见操作与排错](docs/troubleshooting.md) |
 
-## Team Lineup (14 Roles)
+<a id="team-lineup-14-roles"></a>
+## 👥 Team Lineup (14 Roles)
 
 This is not "you are a generic developer". It is "you are DHH" style role prompting with real expert mental models.
 
@@ -138,7 +149,8 @@ This is not "you are a generic developer". It is "you are DHH" style role prompt
 
 Plus 30+ reusable skills (deep research, scraping, financial modeling, SEO, security audit, UX audit, etc.).
 
-## macOS Quick Start
+<a id="macos-quick-start"></a>
+## 🍎 macOS Quick Start
 
 ```bash
 # Prerequisites:
@@ -163,7 +175,8 @@ make install
 ENGINE=codex make install
 ```
 
-## Windows (WSL) Quick Start
+<a id="windows-wsl-quick-start"></a>
+## 🪟 Windows (WSL) Quick Start
 
 ```powershell
 # Prerequisites:
@@ -192,7 +205,8 @@ cd Auto-Company
 
 For monitoring, dashboard, and autostart commands, see the [Windows + WSL Setup Guide](i18n/en/docs/windows-setup.md).
 
-## Command Quick Reference (By Platform)
+<a id="command-quick-reference-by-platform"></a>
+## ⌨️ Command Quick Reference (By Platform)
 
 | Task | macOS / WSL (Terminal) | Windows (PowerShell) |
 |---|---|---|
@@ -226,7 +240,13 @@ Notes:
 - Both commands depend on built-in `caffeinate`
 - `make awake` exits automatically when target PID exits
 
-## Architecture & Technology Stack (5-Layer Architecture)
+<a id="architecture--technology-stack-5-layer-architecture"></a>
+## 📚 More Info
+
+<details>
+<summary><b>💻 Developer Guide</b></summary>
+
+## 🏗️ Architecture & Technology Stack (5-Layer Architecture)
 
 Auto-Company is not a simple LLM API wrapper, but a highly decoupled **Multi-Agent System (MAS)**. Its technical architecture is divided into 5 distinct layers:
 
@@ -272,7 +292,10 @@ Auto-Company is not a simple LLM API wrapper, but a highly decoupled **Multi-Age
 *   **Cross-Platform Daemon**: macOS uses `launchd` for auto-start and crash recovery; Windows/WSL runs via `systemd --user` inside a WSL container, controlled and kept alive externally via PowerShell.
 *   **Sandbox Boundary**: Currently relies on underlying CLI configurations (like Codex's `danger-full-access` or Claude's `bypassPermissions`). System-level operations occur directly in the host environment (or WSL container).
 
-## Operating Model
+</details>
+
+<a id="operating-model"></a>
+## 🔄 Operating Model
 
 ### Default Workflow Guidance
 
@@ -297,7 +320,8 @@ These are suggested role collaboration chains; the executing model selects the a
 | 5 | **Weekly Review** | Ops -> Sales -> CFO -> QA -> CEO |
 | 6 | **Opportunity Discovery** | Research -> CEO -> Munger -> CFO |
 
-## Steering
+<a id="steering"></a>
+## 🧭 Steering
 
 To change direction, stop the foreground run with `make stop`, pause a macOS/WSL daemon with `make pause`, or use the Windows stop command below. Wait until the run has stopped before editing, then start or resume it.
 
@@ -310,7 +334,8 @@ To change direction, stop the foreground run with `make stop`, pause a macOS/WSL
 
 Agents may report unresolved P1 blockers, but must preserve existing P1 entries and cannot add checked-off ones. Resolve blockers only after stopping and completing pending recovery; see [P1 issues and human edits](i18n/en/docs/troubleshooting.md#p1-issues-and-human-edits).
 
-## Safety Guardrails
+<a id="safety-guardrails"></a>
+## 🛡️ Safety Guardrails
 
 `CLAUDE.md` gives agents the following behavioral rules. They complement specific framework checks, but are not a general command-denial mechanism or a guarantee that every agent action is blocked when it violates a rule:
 
@@ -322,7 +347,8 @@ Agents may report unresolved P1 blockers, but must preserve existing P1 entries 
 - Do not force push to main/master
 - Create all new projects under `projects/`
 
-## Configuration
+<a id="configuration"></a>
+## ⚙️ Configuration
 
 Environment variable overrides:
 
@@ -350,7 +376,8 @@ Windows `start-win.ps1` writes the same values into `.auto-loop.env`:
 
 No automatic engine fallback is performed. If the selected engine is missing, startup fails fast.
 
-## Project Structure
+<a id="project-structure"></a>
+## 📁 Project Structure
 
 ```
 auto-company/
@@ -375,7 +402,11 @@ auto-company/
     └── settings.json      # Permissions + Agent Teams switch
 ```
 
-## Dependencies
+<a id="dependencies"></a>
+<details>
+<summary><b>📦 Requirements & limits</b></summary>
+
+## 📦 Dependencies
 
 | Dependency | Notes |
 |------|------|
@@ -390,7 +421,14 @@ auto-company/
 | `gh` | Optional, GitHub CLI |
 | `wrangler` | Optional, Cloudflare CLI |
 
-## FAQ
+</details>
+
+<a id="faq"></a>
+
+<details>
+<summary><b>❓ Troubleshooting</b></summary>
+
+## ❓ FAQ
 
 ### 1) WSL `.sh` fails with `^M` / `bad interpreter`
 
@@ -418,7 +456,11 @@ auto-company/
   - Run `systemctl --user --version`
   - Re-open WSL session and retry if needed
 
-## Disclaimer
+</details>
+
+<a id="disclaimer"></a>
+
+## ⚠️ Disclaimer
 
 This is an **experimental project**:
 
@@ -431,7 +473,8 @@ This is an **experimental project**:
 
 Suggested rollout: start with `make start` (foreground), then move to daemon mode (`make install` on macOS/WSL, `.\scripts\windows\start-win.ps1` on Windows).
 
-## Acknowledgments
+<a id="acknowledgments"></a>
+## 🙏 Acknowledgments
 
 Thanks to the contributors whose reports, fixes, and proposals have shaped Auto Company:
 
@@ -448,11 +491,13 @@ Thanks to the contributors whose reports, fixes, and proposals have shaped Auto 
 | [@mdoganexe](https://github.com/mdoganexe) | Reported and contributed fixes for systemd installation, WSL distribution selection, and locale-dependent configuration handling | [#27](https://github.com/MaxMiksa/Auto-Company/pull/27), [#28](https://github.com/MaxMiksa/Auto-Company/pull/28) |
 
 - [nicepkg/auto-company](https://github.com/nicepkg/auto-company) - initial macOS edition
+- [shadcn/ui](https://github.com/shadcn-ui/ui) - shared Dashboard components; [license and integration notes](dashboard/ui/README.md)
 - [continuous-claude](https://github.com/AnandChowdhary/continuous-claude) - cross-session shared notes
 - [ralph-claude-code](https://github.com/frankbria/ralph-claude-code) - exit signal interception
 - [claude-auto-resume](https://github.com/terryso/claude-auto-resume) - usage-limit resume pattern
 
-## License
+<a id="license"></a>
+## 📄 License
 
 The framework is distributed under the [MIT License](LICENSE). Bundled third-party components retain their own license terms and notices.
 

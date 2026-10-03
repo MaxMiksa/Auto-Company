@@ -19,9 +19,10 @@ function helpers() {
   });
   vm.runInContext(i18n, context);
   vm.runInContext(fs.readFileSync(path.join(dashboard, "icons.js"), "utf8"), context);
+  vm.runInContext(fs.readFileSync(path.join(dashboard, "date-time.js"), "utf8"), context);
   const binding = app.lastIndexOf("\n  applyLanguage(); wire(); renderPage(); refresh();");
   assert.ok(binding > 0, "Center event wiring must follow helper declarations");
-  vm.runInContext(app.slice(0, binding) + "\n globalThis.center = { state, message, entryState, capability, capabilityReason, errorText, requestReason, requestIsFresh, executionBlockReason, requestDisplayState, requestOwnsDispatch, normalizeCounts, renderCounts, filteredEntries, emptyListState, requestState, statusLabel, write };\n})();", context);
+  vm.runInContext(app.slice(0, binding) + "\n globalThis.center = { state, message, entryState, capability, capabilityReason, errorText, requestReason, requestIsFresh, executionBlockReason, requestDisplayState, requestOwnsDispatch, normalizeCounts, renderCounts, filteredEntries, sortedEntries, latestWorkSource, readonlyObservationState, emptyListState, requestState, statusLabel, write };\n})();", context);
   context.center.state.language = "en";
   return { ...context.center, messages: context.window.CENTER_MESSAGES, context };
 }
@@ -33,6 +34,7 @@ function journalHelpers() {
   });
   vm.runInContext(fs.readFileSync(path.join(dashboard, "i18n.js"), "utf8"), context);
   vm.runInContext(fs.readFileSync(path.join(dashboard, "icons.js"), "utf8"), context);
+  vm.runInContext(fs.readFileSync(path.join(dashboard, "date-time.js"), "utf8"), context);
   const binding = journalApp.indexOf("\n  document.querySelectorAll('[data-tab]')");
   assert.ok(binding > 0, "Journal event wiring must follow helper declarations");
   vm.runInContext(journalApp.slice(0, binding) + "\n globalThis.journal = { state, scope, freshCenterRequest, centerRequestDisplayState, scopedCenterRuntimeState, scopedRecordedRuntimeState, runtimeStateValue, runtimeStatusLabel, runtimeLabel, requestContextLabel, centerRuntimeContextValue, historyGroups, fetchFullScopedJournal, journalPageMatches, safePreviewURL };\n})();", context);
@@ -43,7 +45,8 @@ function journalHelpers() {
 test("queue badge counts requests without treating read-only unknown products as queued work", () => {
   const { state, context, renderCounts } = helpers();
   const elements = {};
-  context.document.getElementById = id => elements[id] ||= {};
+  context.document.getElementById = id => elements[id] ||= { replaceChildren() { this.textContent = ""; }, append(node) { this.textContent += node.textContent; } };
+  context.window.DashboardUI = { element: (tag, className, text) => ({ textContent: text }) };
   state.entries = [1, 2, 3].map(id => ({ entryId: `archive-${id}`, kind: "product", executionSummary: { state: "unknown" } }));
   state.summary = { currentRequest: { requestId: "active", state: "running" }, queuedCount: 0, attentionCount: 0 };
   renderCounts();
@@ -69,6 +72,85 @@ test("center fixed labels are complete and bilingual", () => {
   for (const [, key] of rendered) assert.ok(messages.en[key], `Missing rendered translation: ${key}`);
 });
 
+test("column ordering uses the whole filtered result before grouping and preserves unavailable values", () => {
+  const { state, sortedEntries, filteredEntries } = helpers();
+  state.entries = [
+    { entryId: "a", kind: "product", displayName: "Zeta", cycleNumber: 9, latestCycleStatus: "completed", lastActivityAt: "2026-10-01T00:00:00Z" },
+    { entryId: "b", kind: "product", displayName: "Alpha", cycleNumber: 2, latestCycleStatus: "failed", lastActivityAt: null },
+    { entryId: "c", kind: "product", displayName: "Beta", latestCycleStatus: "completed", lastActivityAt: "2026-10-02T00:00:00Z" },
+  ];
+  state.sort = "name"; state.sortDirection = "asc";
+  assert.deepEqual(Array.from(sortedEntries(), row => row.entryId), ["b", "c", "a"]);
+  state.sort = "round"; state.sortDirection = "desc";
+  assert.deepEqual(Array.from(sortedEntries(), row => row.entryId), ["a", "b", "c"]);
+  state.roundFilter = "completed";
+  assert.deepEqual(Array.from(filteredEntries(), row => row.entryId), ["a", "c"]);
+  state.sort = "activity"; state.sortDirection = "asc"; state.roundFilter = "all";
+  assert.deepEqual(Array.from(sortedEntries(), row => row.entryId), ["a", "c", "b"]);
+});
+
+test("runtime filters use fresh source observations while preserving read-only access", () => {
+  const { state, entryState, filteredEntries, normalizeCounts, readonlyObservationState, latestWorkSource } = helpers();
+  const states = ["read_only", "paused", "ended", "idle", "unknown", "failed", "canceled", "preparing"];
+  state.entries = states.map(value => ({ entryId: value, kind: "product", executionSummary: { state: value } }));
+  for (const value of states) { state.filter = value; assert.deepEqual(Array.from(filteredEntries(), entry => entry.entryId), value === "unknown" ? ["read_only", "unknown"] : [value]); }
+  state.filter = "invalid-filter"; assert.equal(filteredEntries().length, 0);
+  const now = Date.now(), source = { readonlyObservation: { state: "running", readOnly: true, scoped: true, liveConfirmedAt: new Date(now - 1000).toISOString() } };
+  Object.assign(state.entries[0], source);
+  assert.equal(readonlyObservationState(state.entries[0], now), "running");
+  assert.equal(entryState(state.entries[0], now), "running");
+  assert.equal(entryState(state.entries[0], now + 15000), "unknown");
+  assert.equal(normalizeCounts().running, 1);
+  assert.equal(readonlyObservationState(state.entries[0], now + 15000), "");
+  assert.equal(readonlyObservationState({ readonlyObservation: { ...source.readonlyObservation, scoped: false } }, now), "");
+  assert.equal(readonlyObservationState({ readonlyObservation: { state: "ended", readOnly: true, scoped: true, processState: "stopped", observedAt: new Date(now).toISOString() } }, now), "ended");
+  assert.equal(latestWorkSource({ latestWork: { scope: "exploration", cycleNumber: 5, isLatestCycle: false } }), "Exploration record · Cycle 05");
+  assert.equal(latestWorkSource({ latestWork: { scope: "product", cycleNumber: 7, isLatestCycle: true } }), "");
+  assert.equal(latestWorkSource({ latestWork: { scope: "product", cycleNumber: 6, isLatestCycle: false } }), "Earlier work record · Cycle 06");
+});
+
+test("round filters match startup reservations without changing their raw status", () => {
+  const { state, filteredEntries, sortedEntries } = helpers();
+  state.entries = ["not_started", "startup_unconfirmed", "unknown", "pending"].map(value => ({ entryId: value, kind: "product", latestCycleStatus: value, lastActivityAt: "2026-10-03T00:00:00Z" }));
+  for (const value of ["not_started", "startup_unconfirmed", "unknown", "pending"]) { state.roundFilter = value; assert.deepEqual(Array.from(filteredEntries(), entry => entry.entryId), [value]); }
+  state.roundFilter = "all";
+  assert.deepEqual(Array.from(sortedEntries(), entry => entry.entryId), ["not_started", "startup_unconfirmed", "unknown", "pending"], "Equal activity timestamps retain API order");
+  state.entries[1].readonlyObservation = { readOnly: true, scoped: true, state: "ended", processState: "stopped", observedAt: new Date().toISOString() };
+  state.roundFilter = "interrupted";
+  assert.deepEqual(Array.from(filteredEntries(), entry => entry.entryId), ["startup_unconfirmed"]);
+  assert.equal(state.entries[1].latestCycleStatus, "startup_unconfirmed", "Display projection must preserve the ledger status");
+});
+
+test("parallel projects use their own live request and include active exploration", () => {
+  const { state, entryState, filteredEntries, normalizeCounts, renderCounts, context } = helpers();
+  const fresh = new Date().toISOString();
+  const requests = ["a", "b"].map(id => ({ requestId: `request-${id}`, entryId: `entry-${id}`, state: "running", liveConfirmedAt: fresh }));
+  state.requests = requests;
+  state.summary = { currentRequest: requests[0], currentRequests: requests, queuedCount: 1, attentionCount: 1 };
+  state.entries = requests.map((request, index) => ({ entryId: request.entryId, kind: index ? "exploration" : "product", executionSummary: request }));
+  state.entries.push({ entryId: "historical-exploration", kind: "exploration" });
+  assert.equal(entryState(state.entries[1]), "running");
+  assert.equal(filteredEntries().length, 2);
+  assert.equal(normalizeCounts().running, 2);
+  const elements = {};
+  context.document.getElementById = id => elements[id] ||= { replaceChildren() { this.textContent = ""; }, append(node) { this.textContent += node.textContent; } };
+  context.window.DashboardUI = { element: (tag, className, text) => ({ textContent: text }) };
+  renderCounts();
+  assert.equal(elements.queueNavCount.textContent, "4");
+  requests[1].liveConfirmedAt = "2000-01-01T00:00:00Z";
+  assert.equal(entryState(state.entries[1]), "unknown");
+});
+
+test("a product journal finds its own request among simultaneous owners", () => {
+  const { state, freshCenterRequest } = journalHelpers();
+  state.statusFailed = false;
+  state.data = { entry: { entryId: "entry-a" } };
+  const first = { entryId: "other-entry", state: "running", liveConfirmedAt: new Date().toISOString() };
+  const own = { ...first, entryId: "entry-a" };
+  state.centerSummary = { currentRequest: first, currentRequests: [first, own] };
+  assert.equal(freshCenterRequest(), own);
+});
+
 test("entry state preserves unknown and keeps archive separate from execution", () => {
   const { state, entryState, statusLabel, messages } = helpers();
   const now = Date.now();
@@ -80,7 +162,7 @@ test("entry state preserves unknown and keeps archive separate from execution", 
   assert.equal(entryState({ executionSummary: { state: "ended" } }), "ended");
   assert.equal(entryState({ executionSummary: { state: "unknown" } }), "unknown");
   assert.equal(entryState({ availability: { state: "conflict" }, capabilities: { execute: false }, executionSummary: { state: "idle" } }), "unknown");
-  assert.equal(entryState({ availability: "read_only", capabilities: { execute: false }, executionSummary: { state: "idle" } }), "read_only");
+  assert.equal(entryState({ availability: "read_only", capabilities: { execute: false }, executionSummary: { state: "idle" } }), "unknown");
   assert.equal(entryState({ availability: "available", executionSummary: {} }), "idle");
   assert.equal(statusLabel("future-state"), messages.en.state_unknown);
 });
@@ -195,7 +277,7 @@ test("product detail trusts only the confirmed matching center request", () => {
   state.centerSummary = { currentRequest: { ...request, entryId: "entry-b" } };
   assert.equal(scopedCenterRuntimeState(state.data, state.centerSummary, now), null);
   assert.equal(runtimeStateValue(), "unknown");
-  assert.equal(runtimeLabel(), "Status unknown");
+  assert.equal(runtimeLabel(), "Status unconfirmed");
   state.centerSummary = { currentRequest: { ...request, liveConfirmedAt: null } };
   assert.equal(scopedCenterRuntimeState(state.data, state.centerSummary, now), null);
 });
@@ -208,20 +290,20 @@ test("product detail drops stale or disconnected running evidence", () => {
   state.data = { entry, runtime: { state: "running" } }; state.centerSummary = { currentRequest }; state.statusFailed = true;
   assert.equal(scopedCenterRuntimeState(state.data, state.centerSummary, now), null);
   assert.equal(runtimeStateValue(), "unknown");
-  assert.equal(runtimeLabel(), "Status unknown");
+  assert.equal(runtimeLabel(), "Status unconfirmed");
   assert.equal(centerRuntimeContextValue(state.centerSummary, now), "");
   state.statusFailed = false; state.centerSummary.currentRequest.liveConfirmedAt = new Date(now - 15001).toISOString();
   assert.equal(freshCenterRequest(state.centerSummary, now), null);
   assert.equal(scopedCenterRuntimeState(state.data, state.centerSummary, now), null);
   assert.equal(runtimeStateValue(), "unknown");
-  assert.equal(runtimeLabel(), "Status unknown");
+  assert.equal(runtimeLabel(), "Status unconfirmed");
   assert.equal(centerRuntimeContextValue(state.centerSummary, now), "");
 });
 
 test("product detail labels recorded request states without claiming product completion", () => {
   const { state, scopedRecordedRuntimeState, runtimeStateValue, runtimeStatusLabel } = journalHelpers();
   state.statusFailed = false; state.centerSummary = { currentRequest: null };
-  const labels = { ended: "Last run ended", canceled: "Work canceled", failed: "Work failed", queued: "Work queued", attention: "Work needs review" };
+  const labels = { ended: "Ended", canceled: "Work canceled", failed: "Work failed", queued: "Work queued", attention: "Work needs review" };
   for (const [value, label] of Object.entries(labels)) {
     state.data = { entry: { entryId: "entry-a", executionSummary: { requestId: `request-${value}`, state: value } } };
     assert.equal(scopedRecordedRuntimeState(), value);
@@ -367,8 +449,8 @@ test("product detail routes are entry scoped while the legacy journal stays unch
 });
 
 test("blank exploration direction stays a string and preparations survive refresh", () => {
-  assert.match(app, /direction: text\(form\.elements\.direction\.value\)/);
-  assert.doesNotMatch(app, /direction: text\(form\.elements\.direction\.value\) \|\| null/);
+  assert.match(app, /direction: text\(group\.querySelector/);
+  assert.doesNotMatch(app, /direction: text\([^\n]+\|\| null/);
   assert.match(app, /state\.operations = operations\.items/);
   assert.match(app, /groups\.operationAttention/);
   assert.match(app, /preparationAttentionSection/);
@@ -383,7 +465,7 @@ test("owned attention dispatches retain stop controls", () => {
 });
 
 test("refreshable product and queue controls have stable focus identities", () => {
-  for (const value of ["entry:${entry.entryId}:view", "entry:${entry.entryId}:continue-inline", "entry:${entry.entryId}:continue-menu", "request:${request.requestId}:cancel", "request:${request.requestId}:stop"]) {
+  for (const value of ["entry:${entry.entryId}:view", "entry:${entry.entryId}:continue-menu", "request:${request.requestId}:cancel", "request:${request.requestId}:stop", "queue-preview:${request.requestId}"]) {
     assert.ok(app.includes(value), `Missing stable focus key ${value}`);
   }
   assert.match(app, /const focused = rememberFocus\(\);[\s\S]*restoreFocus\(focused\)/);

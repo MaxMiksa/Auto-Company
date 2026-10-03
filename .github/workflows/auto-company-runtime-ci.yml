@@ -190,6 +190,8 @@ jobs:
         run: python3 scripts/ci/run.py shell-contracts-6 node tests/test_dashboard_frontend.js
       - name: Verify product center frontend contracts
         run: python3 scripts/ci/run.py center-frontend node tests/test_center_frontend.js
+      - name: Verify localized dashboard dates
+        run: python3 scripts/ci/run.py dashboard-dates node --test tests/test_dashboard_dates.js
       - name: Save failure evidence
         if: failure()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -215,6 +217,12 @@ jobs:
           package-manager-cache: false
       - name: Install and verify mandatory Linux project isolation
         run: bash scripts/ci/setup-isolation.sh
+      - name: Build and verify shared Dashboard components
+        run: |
+          python3 scripts/ci/run.py ui-dependencies npm ci --prefix dashboard/ui --ignore-scripts --no-audit --no-fund
+          python3 scripts/ci/run.py ui-types npm run check --prefix dashboard/ui
+          python3 scripts/ci/run.py ui-build npm run build --prefix dashboard/ui
+          git diff --exit-code -- dashboard/ui-assets
       - name: Install browser test dependencies
         run: python3 scripts/ci/run.py browser-dependencies npm ci --prefix tests/browser --ignore-scripts --no-audit --no-fund
       - name: Install product screenshot dependencies

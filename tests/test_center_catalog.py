@@ -35,7 +35,8 @@ class CenterCatalogTests(unittest.TestCase):
         return path
 
     def cycle(self, project='projects/one', attempt='first', tokens=13, created_project=None):
-        (self.root / project).mkdir(parents=True, exist_ok=True)
+        if project:
+            (self.root / project).mkdir(parents=True, exist_ok=True)
         row = products.reserve_cycle(self.root, project, attempt, 1, 'fixture', 'no-model')
         if created_project:
             (self.root / created_project).mkdir(parents=True, exist_ok=True)
@@ -48,7 +49,7 @@ class CenterCatalogTests(unittest.TestCase):
         path.parent.mkdir(parents=True, exist_ok=True)
         with path.open('a', encoding='utf-8') as output:
             output.write(json.dumps(record) + '\n')
-        self.write('logs/' + row['cycleId'] + '.log', project + ' private log')
+        self.write('logs/' + row['cycleId'] + '.log', (project or 'exploration') + ' private log')
         return row
 
     def import_root(self, root=None):
@@ -58,6 +59,75 @@ class CenterCatalogTests(unittest.TestCase):
 
     def hashes(self):
         return {str(path.relative_to(self.root)): hashlib.sha256(path.read_bytes()).hexdigest() for path in self.root.rglob('*') if path.is_file()}
+
+    def test_legacy_summary_is_restored_with_record_provenance_and_no_identity_write(self):
+        self.write('logs/usage.jsonl', json.dumps({'schema_version': 1, 'kind': 'cycle_usage', 'cycle_id': 'cycle-legacy-1',
+                   'cycle_number': 1, 'started_at': '2026-09-18T01:00:00+00:00', 'ended_at': '2026-09-18T01:01:00+00:00',
+                   'status': 'completed'}) + '\n')
+        self.write('logs/cycle-legacy-1.json', json.dumps({'result': '真实交付摘要\n\n更多工作记录'}))
+        before = self.hashes()
+        item, = self.import_root()
+        entry = self.catalog.get_entry(item['entryId'])
+        self.assertEqual(entry['latestTitle'], '真实交付摘要')
+        self.assertEqual(entry['latestWork']['provenance'], 'cycle_summary')
+        self.assertEqual(entry['latestWork']['cycleId'], 'cycle-legacy-1')
+        self.assertEqual(entry['executionSummary']['state'], 'read_only')
+        self.assertEqual(entry['latestCycleStatus'], 'completed')
+        self.assertEqual(entry['displayName'], 'Auto Company')
+        self.assertIsNone(entry['productId'])
+        self.assertEqual(self.hashes(), before)
+
+    def test_prior_work_does_not_replace_latest_round_facts(self):
+        first = self.cycle(attempt='first')
+        self.write('logs/' + first['cycleId'] + '.json', json.dumps({'result': 'Earlier meaningful work'}))
+        second = self.cycle(attempt='second')
+        # Match actual timestamps so ordering is deterministic rather than ID order.
+        records = [json.loads(line) for line in (self.root / 'logs/usage.jsonl').read_text().splitlines()]
+        records[-1].update(started_at='2026-09-26T02:00:00+00:00', ended_at='2026-09-26T02:01:00+00:00', status='failed')
+        self.write('logs/usage.jsonl', '\n'.join(json.dumps(row) for row in records) + '\n')
+        self.write('logs/' + second['cycleId'] + '.work.json', '{bad report')
+        self.write('logs/' + second['cycleId'] + '.json', json.dumps({'result': 'Invalid report must not become latest work'}))
+        item, = self.import_root()
+        entry = self.catalog.get_entry(item['entryId'])
+        self.assertEqual(entry['latestTitle'], 'Earlier meaningful work')
+        self.assertEqual(entry['latestWork']['cycleId'], first['cycleId'])
+        self.assertFalse(entry['latestWork']['isLatestCycle'])
+        self.assertEqual(entry['latestCycleStatus'], 'failed')
+
+    def test_product_without_product_rounds_includes_linked_exploration_sequence(self):
+        row = self.cycle(project=None, created_project='projects/new')
+        self.write('logs/' + row['cycleId'] + '.json', json.dumps({'result': 'Exploration produced the registered product'}))
+        items = self.import_root()
+        entry = next(self.catalog.get_entry(item['entryId']) for item in items if self.catalog.get_entry(item['entryId'])['kind'] == 'product')
+        self.assertEqual(entry['latestWork']['scope'], 'exploration')
+        self.assertEqual(entry['latestWork']['cycleId'], row['cycleId'])
+        self.assertTrue(entry['latestWork']['isLatestCycle'])
+        self.assertEqual(entry['cycleNumber'], 1)
+        self.assertEqual(entry['latestCycleStatus'], 'completed')
+
+    def test_log_tail_discards_partial_json_event_and_keeps_complete_unicode_lines(self):
+        row = self.cycle()
+        final = json.dumps({'type': 'item.completed', 'item': {'type': 'agent_message', 'text': '核验完成'}}, ensure_ascii=False) + '\n'
+        self.write('logs/' + row['cycleId'] + '.log', '前' * (128 * 1024) + '\n' + final)
+        item, = self.import_root()
+        content, mime = self.catalog.resource(item['entryId'], 'log-' + row['cycleId'])
+        self.assertEqual(content.decode('utf-8').splitlines(), final.splitlines())
+        self.assertEqual(mime, 'text/plain; charset=utf-8')
+
+    def test_observation_freshness_does_not_change_source_revision_or_catalog_cursor(self):
+        self.cycle()
+        self.cycle('projects/two', 'second')
+        items = self.import_root()
+        item = items[0]
+        before = self.catalog.get_entry(item['entryId'])['sourceRevision']
+        with patch('center_catalog.scoped_observation', return_value={'state': 'ended', 'observedAt': '2026-10-03T00:00:00+00:00'}):
+            self.catalog.refresh_source(item['sourceId'])
+            page = self.catalog.list_entries({'limit': 1})
+        with patch('center_catalog.scoped_observation', return_value={'state': 'ended', 'observedAt': '2026-10-03T00:00:05+00:00'}):
+            self.catalog.refresh_source(item['sourceId'])
+            second = self.catalog.list_entries({'limit': 1, 'cursor': page['nextCursor']})
+        self.assertEqual(len(second['items']), 1)
+        self.assertEqual(self.catalog.get_entry(item['entryId'])['sourceRevision'], before)
 
     def test_transactions_rollback_and_read_revision(self):
         revision = self.store.revision
@@ -348,11 +418,15 @@ class CenterCatalogTests(unittest.TestCase):
         items = self.import_root()
         item = next(row for row in items if self.catalog.get_entry(row['entryId'])['kind'] == 'product')
         first = self.catalog.journal(item['entryId'], {'limit': 2})
+        self.assertTrue(first['project']['createdAt'])
+        self.assertNotEqual(first['project']['createdAt'], self.catalog.get_entry(item['entryId'])['createdAt'])
         second = self.catalog.journal(item['entryId'], {'limit': 2, 'before': first['nextBefore']})
         third = self.catalog.journal(item['entryId'], {'limit': 2, 'before': second['nextBefore']})
         rows = first['cycles'] + second['cycles'] + third['cycles']
         self.assertEqual([row['id'] for row in rows], [row['cycleId'] for row in reversed(explorations + product_cycles)])
         self.assertEqual([row['sequenceNumber'] for row in rows], [5, 4, 3, 2, 1])
+        self.assertEqual(self.catalog.get_entry(item['entryId'])['cycleNumber'], 5)
+        self.assertEqual(self.catalog.get_entry(item['entryId'])['latestCycleStatus'], 'completed')
         self.assertEqual([row['number'] for row in rows], [2, 1, 3, 2, 1])
         self.assertEqual(first['total'], 5)
         self.assertIsNone(third['nextBefore'])
@@ -700,6 +774,31 @@ class CenterCatalogTests(unittest.TestCase):
         (self.root / 'projects/one').rename(self.root / 'projects/moved')
         products.relocate_identity(self.root, one['productId'], 'projects/moved')
         self.assertEqual(self.catalog.journal(item['entryId'])['languageState']['productLanguage'], 'en')
+
+    def test_catalog_thumbnail_is_verified_cached_scoped_and_invalidated(self):
+        from product_media import capture_product
+        from test_product_media import MediaFixture
+        one = self.cycle()
+        two = self.cycle('projects/two', 'second')
+        self.write('projects/one/index.html', '<!doctype html><title>Thumbnail fixture</title>')
+        with patch('product_media.run_worker', side_effect=MediaFixture().unit_worker):
+            capture_product(self.root, 'projects/one', one['cycleId'])
+        before = self.hashes()
+        self.import_root()
+        with patch('center_catalog.JournalSource.snapshot', side_effect=AssertionError('list must use cache')):
+            entries = self.catalog.list_entries()['items']
+        item = next(row for row in entries if row['productId'] == one['productId'])
+        other = next(row for row in entries if row['productId'] == two['productId'])
+        self.assertIn('/resources/' + item['thumbnailResourceId'], item['thumbnailUrl'])
+        self.assertIsNone(other['thumbnailUrl'])
+        self.assertTrue(self.catalog.resource(item['entryId'], item['thumbnailResourceId'], item['sourceId'])[0].startswith(b'\x89PNG'))
+        with self.assertRaises(CenterError):
+            self.catalog.resource(other['entryId'], item['thumbnailResourceId'], item['sourceId'])
+        self.assertEqual(self.hashes(), before)
+        self.catalog.refresh_changed_sources()
+        self.write('logs/product-media/' + one['productId'] + '/' + item['thumbnailResourceId'][6:], 'changed')
+        self.catalog.refresh_changed_sources()
+        self.assertIsNone(self.catalog.get_entry(item['entryId'])['thumbnailUrl'])
 
     def test_catalog_icon_is_verified_cached_and_source_scoped(self):
         from unittest.mock import patch

@@ -47,7 +47,7 @@ def main():
         root = Path(directory)
         # Import a copy so every path, including default arguments, stays in the
         # temporary checkout. No local logs, configuration or services are read.
-        shutil.copytree(REPO_ROOT / "dashboard", root / "dashboard")
+        shutil.copytree(REPO_ROOT / "dashboard", root / "dashboard", ignore=shutil.ignore_patterns("node_modules", "__pycache__"))
         core = root / "scripts/core"
         core.mkdir(parents=True)
         for name in ("localization.py", "usage_lib.py", "cycle_reports.py", "project_metadata.py", "product_identity.py", "product_media.py", "product_media_process.py", "product_icon_html.py"):

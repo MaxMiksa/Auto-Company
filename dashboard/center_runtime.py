@@ -19,6 +19,7 @@ import time
 import uuid
 
 from center_store import CenterError
+import center_profiles as profiles
 
 STATES = frozenset(("queued", "starting", "running", "stopping", "attention", "ended", "failed", "canceled"))
 OPEN = frozenset(("queued", "starting", "running", "stopping", "attention"))
@@ -31,13 +32,14 @@ EDGES = {"queued": {"canceled", "attention", "starting"},
          "attention": {"running", "stopping", "ended", "failed", "canceled"}}
 MARKER = ".auto-company-center.json"
 ENGINES = {"claude", "codex", "cursor", "openai-compatible"}
-EFFORTS = {"low", "medium", "high", "xhigh", "minimal", "none"}
+EFFORTS = profiles.EFFORTS
 RUNTIME_ENV_NAMES = {"CODEX_BIN", "CODEX_SANDBOX_MODE", "CLAUDE_BIN", "CLAUDE_PERMISSION_MODE", "CURSOR_BIN",
                      "CURSOR_ADAPTER_ENABLED", "CURSOR_SANDBOX_MODE", "OPENAI_API_KEY", "ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN",
                      "OPENAI_BASE_URL", "ANTHROPIC_BASE_URL", "OPENAI_COMPATIBLE_ADAPTER_ENABLED", "OPENAI_COMPATIBLE_ENDPOINT",
                      "OPENAI_COMPATIBLE_API_KEY", "OPENAI_COMPATIBLE_ALLOW_INSECURE_HTTP", "OPENAI_COMPATIBLE_MODEL",
                      "LOOP_INTERVAL", "CYCLE_TIMEOUT_SECONDS", "CYCLE_TERM_GRACE_SECONDS", "CYCLE_KILL_WAIT_SECONDS",
-                     "USAGE_BUDGET_PERIOD", "USAGE_WARNING_USD", "USAGE_HARD_LIMIT_USD", "USAGE_WARNING_TOKENS", "USAGE_HARD_LIMIT_TOKENS"}
+                     "USAGE_BUDGET_PERIOD", "USAGE_WARNING_USD", "USAGE_HARD_LIMIT_USD", "USAGE_WARNING_TOKENS", "USAGE_HARD_LIMIT_TOKENS",
+                     "AUTO_COMPANY_BWRAP", "AUTO_COMPANY_BROWSER_RUNTIME", "AUTO_COMPANY_LIBRARY_RUNTIME"}
 
 
 def now():
@@ -188,10 +190,12 @@ class CenterRuntime:
         self.store, self.catalog, self.framework_root = store, catalog, Path(framework_root).resolve()
         self.data_dir = Path(store.data_dir)
         self._mutex = threading.RLock()
+        self._controls_mutex = threading.Lock()
         self._prepare_mutex = threading.Lock()
         self._session_id = uid("session")
         self._closing = threading.Event()
         self._thread = None
+        self._heartbeat_thread = None
         self._workers = set()
         self._children = {}
         self._last_refresh = {}
@@ -207,13 +211,23 @@ class CenterRuntime:
                 tx.put("controls", "execution_domain", domain)
             self.domain = domain["domain"] if domain else None
             queue = tx.get("controls", "queue") or {"revision": 0}
+            queue.setdefault("maxConcurrentProjects", 4)
             queue.update(dispatchEnabled=False, revision=queue["revision"] + 1, reason="center_restarted")
             tx.put("controls", "queue", queue)
             if not tx.get("preferences", "main"):
                 sys.path.insert(0, str(self.framework_root / "scripts/core"))
                 from localization import system_language
                 language = system_language(os.environ)
-                tx.put("preferences", "main", {"language": language, "productLanguage": language, "engine": "codex", "model": "", "effort": "high", "revision": 1})
+                installed = profiles.installation_defaults(self.framework_root, language)
+                tx.put("preferences", "main", {"language": language, **installed, "installationConfig": installed,
+                                               "defaultTemplateId": None, "revision": 1})
+            else:
+                preferences = tx.get("preferences", "main")
+                if "installationConfig" not in preferences:
+                    preferences["installationConfig"] = {key: preferences[key] for key in profiles.FIELDS}
+                    preferences["lastConfig"] = dict(preferences["installationConfig"])
+                    preferences["defaultTemplateId"] = None
+                    tx.put("preferences", "main", preferences)
             # A single-item authorization also expires at a center restart.
             self._revoke_start_authorizations(tx)
             for operation in tx.list("operations"):
@@ -240,6 +254,8 @@ class CenterRuntime:
                                 and row.get("state") == "attention" and row.get("reason") == "recovery_required"]
             for operation_id in preparations:
                 self._worker(self._prepare_exploration, operation_id)
+            self._heartbeat_thread = threading.Thread(target=self._heartbeat, name="center-heartbeat", daemon=True)
+            self._heartbeat_thread.start()
             self._thread = threading.Thread(target=self._supervise, name="center-supervisor", daemon=True)
             self._thread.start()
 
@@ -256,6 +272,8 @@ class CenterRuntime:
             self._write_controls()
         if self._thread:
             self._thread.join()
+        if self._heartbeat_thread:
+            self._heartbeat_thread.join()
         for worker in list(self._workers):
             # Clone/media commands have their own bounded deadlines. Storage
             # ownership outlives their final audit write, including shutdown.
@@ -327,16 +345,22 @@ class CenterRuntime:
         queue = tx.get("controls", "queue")
         if queue.get("dispatchEnabled") or queue.get("reason") != reason:
             queue.update(dispatchEnabled=False, reason=reason, revision=queue["revision"] + 1)
-            tx.put("controls", "queue", queue)
+        tx.put("controls", "queue", queue)
+
+    def _pause_request(self, tx, request, reason):
+        # Legacy single-owner recovery remains conservative. Independent project
+        # errors hold only that project's request; provider/domain failures are shared.
+        if request.get("ownershipProtocol", 1) < 2 or reason in {"provider_pause", "runner_unavailable", "center_shutdown"}:
+            self._pause(tx, reason)
 
     def summary(self):
         with self.store.transaction() as tx:
             requests, queue = tx.list("requests"), tx.get("controls", "queue")
             entries = [entry for entry in tx.list("entries") if not entry.get("detached")]
             preparations = [row for row in tx.list("operations") if row.get("kind") == "exploration"]
-            current = next((request for request in requests if request["state"] in ACTIVE and request.get("dispatchId")), None)
-            current = self._request_view(tx, current) if current else None
-            return {"dispatchEnabled": queue["dispatchEnabled"], "queueRevision": queue["revision"], "currentRequest": current,
+            current = [self._request_view(tx, request) for request in requests if request["state"] in ACTIVE and request.get("dispatchId")]
+            return {"dispatchEnabled": queue["dispatchEnabled"], "queueRevision": queue["revision"], "currentRequest": current[0] if current else None,
+                    "currentRequests": current, "occupiedCount": len(current), "maxConcurrentProjects": queue["maxConcurrentProjects"],
                     "queuedCount": sum(row["state"] == "queued" for row in requests),
                     "attentionCount": sum(row["state"] == "attention" for row in requests)
                                       + sum(row["state"] in {"failed", "attention"} for row in preparations),
@@ -353,7 +377,7 @@ class CenterRuntime:
             request = next((row for row in rows if row["state"] in OPEN), rows[0] if rows else None)
             runtime = tx.get("runtimes", entry.get("runtimeId")) if entry.get("runtimeId") else None
             source = tx.get("sources", entry.get("sourceId")) if entry.get("sourceId") else None
-            busy = any(row["state"] in ACTIVE for row in tx.list("requests")) or self._busy_operation(tx)
+            busy = any(row["state"] in ACTIVE for row in rows) or self._busy_operation(tx, entry.get("sourceId"))
             preparations = [row for row in tx.list("operations") if row.get("reserved", {}).get("entryId") == entry["entryId"] and row.get("state") == "preparing"]
         if request:
             state = request["state"]
@@ -368,8 +392,9 @@ class CenterRuntime:
             result["executionSummary"] = {"state": state, "requestId": request["requestId"], "terminalReason": request.get("terminalReason"),
                                           "attentionReason": request.get("attentionReason"), "reason": request.get("executionBlockedReason") if state == "blocked" else None}
         else:
-            result["executionSummary"] = {"state": "preparing" if preparations else "idle" if runtime and runtime.get("managed") else "unknown",
-                                          "reason": None if runtime and runtime.get("managed") else "unmanaged_source"}
+            readonly = not entry.get("runtimeId") and entry.get("availability") == "available"
+            result["executionSummary"] = {"state": "preparing" if preparations else "idle" if runtime and runtime.get("managed") else "read_only" if readonly else "unknown",
+                                          "reason": None if runtime and runtime.get("managed") else "read_only_source" if readonly else "unmanaged_source"}
         executable = bool(runtime and runtime.get("managed") and runtime.get("executionDomain") == self.domain and self.adapter.available
                           and entry.get("availability") == "available" and not entry.get("archived") and not entry.get("detached"))
         if executable:
@@ -450,15 +475,16 @@ class CenterRuntime:
         else:
             with self.store.transaction() as config_tx:
                 preferences = config_tx.get("preferences", "main")
-        config = {key: preferences[key] for key in ("engine", "model", "effort", "productLanguage")}
+        if tx is not None:
+            config, _ = profiles.defaults(tx, preferences)
+        else:
+            with self.store.transaction() as config_tx:
+                config, _ = profiles.defaults(config_tx, preferences)
         supplied = body.get("config", {})
         if not isinstance(supplied, dict) or set(supplied) - set(config):
             raise CenterError("INVALID_CONFIG", "Unsupported execution configuration")
         config.update(supplied)
-        if config["engine"] not in ENGINES or config["effort"] not in EFFORTS or config["productLanguage"] not in {"en", "zh-CN"}:
-            raise CenterError("INVALID_CONFIG", "Invalid engine, effort or product language")
-        if not isinstance(config["model"], str) or len(config["model"]) > 200 or any(ord(char) < 32 for char in config["model"]):
-            raise CenterError("INVALID_CONFIG", "Invalid model name")
+        profiles.validate(config)
         if body.get("configRevision") is not None and body["configRevision"] != preferences["revision"]:
             raise CenterError("REVISION_CONFLICT", "Default configuration changed", 409)
         if root:
@@ -477,20 +503,21 @@ class CenterRuntime:
         if kind not in {"explore", "continue"} or mode not in {"enqueue", "start_now"}:
             raise CenterError("INVALID_REQUEST", "Invalid request kind or execution mode")
         rows = tx.list("requests")
-        if any(row["entryId"] == entry["entryId"] and row["state"] in OPEN for row in rows):
+        if any((row["entryId"] == entry["entryId"] or row["runtimeId"] == runtime["runtimeId"]) and row["state"] in OPEN for row in rows):
             raise CenterError("OPEN_REQUEST_EXISTS", "This entry already has an open request", 409)
-        if mode == "start_now" and (any(row["state"] in OPEN for row in rows) or self._busy_operation(tx)):
-            raise CenterError("SLOT_BUSY", "A running or earlier waiting request occupies the slot", 409)
+        if mode == "start_now" and any(row["state"] == "queued" for row in rows):
+            raise CenterError("SLOT_BUSY", "An earlier waiting request must be dispatched first", 409)
         config = self._config(body, source["root"], tx)
         request_id = request_id or uid("request")
         request = {"requestId": request_id, "entryId": entry["entryId"], "sourceId": source["sourceId"], "runtimeId": runtime["runtimeId"],
                    "displayName": entry.get("displayName"), "kind": kind, "state": "queued", "executionMode": mode,
                    "startAuthorized": mode == "start_now", "createdAt": now(), "startedAt": None, "endedAt": None,
-                   "dispatchId": None, "revision": 1, "order": max([row.get("order", 0) for row in rows] + [0]) + 1,
+                   "dispatchId": None, "revision": 1, "order": self._next_order(tx),
                    "terminalReason": None, "attentionReason": None, "reasonDetail": None, "config": config,
                    "sourceRevision": source["sourceRevision"], "configFingerprint": config_fingerprint(source["root"]),
                    "frameworkRevision": runtime.get("frameworkRevision"), "previousRequestId": body.get("previousRequestId"),
                    "executionScope": "managed_runtime", "budgetConfigRevision": digest({key: os.environ.get(key) for key in sorted(RUNTIME_ENV_NAMES) if key.startswith("USAGE_")}),
+                   "ownershipProtocol": read_json(Path(source["root"]) / MARKER).get("protocolVersion", 1),
                    "permissionConfigRevision": digest({key: os.environ.get(key) for key in ("CODEX_SANDBOX_MODE", "CLAUDE_PERMISSION_MODE", "CURSOR_SANDBOX_MODE")})}
         tx.put("requests", request_id, request)
         self._event(tx, request, None, "local_operator_intent", "request_created", body)
@@ -513,6 +540,7 @@ class CenterRuntime:
                 raise CenterError(str(check.get("reason", "CONTEXT_UNAVAILABLE")).upper(), "Source cannot start until its current protection or owner is resolved", 409)
             with self.store.transaction() as tx:
                 request = self._new_request(tx, entry, source, runtime, body)
+                profiles.remember(tx, request["config"])
                 self._remember(tx, key, body_hash, {"requestId": request["requestId"]})
                 return self._request_view(tx, request)
 
@@ -553,8 +581,9 @@ class CenterRuntime:
             return self.get_request(request_id)
 
     @staticmethod
-    def _busy_operation(tx):
-        return any(row.get("kind") != "exploration" and row.get("state") in {"running", "preparing", "attention"} for row in tx.list("operations"))
+    def _busy_operation(tx, source_id=None):
+        return any(row.get("kind") not in {"exploration", "batch"} and row.get("state") in {"running", "preparing", "attention"}
+                   and (source_id is None or row.get("sourceId") == source_id) for row in tx.list("operations"))
 
     @staticmethod
     def _stop_media_tx(tx):
@@ -573,9 +602,14 @@ class CenterRuntime:
                 self._expected(body, queue)
                 requests = tx.list("requests")
                 if action == "resume":
-                    if not self.adapter.available or any(row["state"] == "attention" for row in requests) or self._busy_operation(tx):
-                        raise CenterError("RECOVERY_REQUIRED", "Resolve outstanding ownership or operation issues first", 409)
+                    if not self.adapter.available:
+                        raise CenterError("EXECUTION_DOMAIN_UNCONFIGURED", "Select an execution domain first", 409)
                     queue.update(dispatchEnabled=True, reason=None)
+                elif action == "capacity":
+                    value = body.get("maxConcurrentProjects")
+                    if value is not None and (type(value) is not int or value < 1):
+                        raise CenterError("INVALID_CAPACITY", "Concurrency must be a positive integer or null for unlimited")
+                    queue["maxConcurrentProjects"] = value
                 elif action in {"pause", "stop-all"}:
                     self._revoke_start_authorizations(tx)
                     queue.update(dispatchEnabled=False, reason="user_pause" if action == "pause" else "stop_all")
@@ -608,7 +642,9 @@ class CenterRuntime:
         with self.store.transaction() as tx:
             preferences = tx.get("preferences", "main")
             if body is None:
-                return {**preferences, "executionDomain": self.domain, "executionAvailable": self.adapter.available}
+                defaults, origin = profiles.defaults(tx, preferences)
+                return {**preferences, "defaults": defaults, "defaultsOrigin": origin,
+                        "templates": tx.list("templates"), "executionDomain": self.domain, "executionAvailable": self.adapter.available}
             key, body_hash, previous = self._idempotent(tx, "preferences", body)
             if previous:
                 return previous
@@ -622,9 +658,47 @@ class CenterRuntime:
             if not isinstance(candidate["model"], str) or len(candidate["model"]) > 200 or any(ord(c) < 32 for c in candidate["model"]):
                 raise CenterError("INVALID_PREFERENCE", "Invalid model name")
             candidate["revision"] += 1
+            if set(updates) & set(profiles.FIELDS):
+                candidate["lastConfig"] = {key: candidate[key] for key in profiles.FIELDS}
             tx.put("preferences", "main", candidate)
             self._remember(tx, key, body_hash, candidate)
             return candidate
+
+    def template_action(self, body):
+        with self.store.transaction() as tx:
+            key, body_hash, previous = self._idempotent(tx, "templates", body)
+            if previous:
+                return previous
+            preferences = tx.get("preferences", "main")
+            self._expected(body, preferences)
+            action, template_id = body.get("action", "save"), body.get("templateId")
+            template = tx.get("templates", template_id) if template_id else None
+            if template_id and not template:
+                raise CenterError("TEMPLATE_NOT_FOUND", "The selected template is unavailable", 404)
+            if action == "save":
+                name = body.get("name")
+                if not isinstance(name, str) or not name.strip() or len(name) > 80 or any(ord(c) < 32 for c in name):
+                    raise CenterError("INVALID_TEMPLATE", "Give the template a name of 1 to 80 characters")
+                config = profiles.validate(body.get("config"))
+                template_id = template_id or uid("template")
+                template = {"templateId": template_id, "name": name.strip(), "config": config,
+                            "revision": (template or {}).get("revision", 0) + 1}
+                tx.put("templates", template_id, template)
+                if body.get("makeDefault") is True:
+                    preferences["defaultTemplateId"] = template_id
+            elif action == "default":
+                preferences["defaultTemplateId"] = template_id
+            elif action == "delete" and template:
+                tx.delete("templates", template_id)
+                if preferences.get("defaultTemplateId") == template_id:
+                    preferences["defaultTemplateId"] = None
+            else:
+                raise CenterError("INVALID_ACTION", "Unknown template action")
+            preferences["revision"] += 1
+            tx.put("preferences", "main", preferences)
+            result = {"template": template, "defaultTemplateId": preferences.get("defaultTemplateId")}
+            self._remember(tx, key, body_hash, result)
+            return result
 
     def list_operations(self, query=None):
         query = query or {}
@@ -661,6 +735,34 @@ class CenterRuntime:
         self._workers.add(worker)
         worker.start()
 
+    @staticmethod
+    def _next_order(tx):
+        return max([row.get("order", 0) for kind in ("requests", "operations") for row in tx.list(kind)] + [0]) + 1
+
+    def _exploration_record(self, tx, body, batch_id=None):
+        direction = body.get("direction", "")
+        mode = body.get("executionMode", "enqueue")
+        if not isinstance(direction, str) or len(direction) > 5000:
+            raise CenterError("INVALID_DIRECTION", "Direction must be bounded text")
+        if mode not in {"enqueue", "start_now"}:
+            raise CenterError("INVALID_REQUEST", "Invalid execution mode")
+        operation_id = uid("operation")
+        reserved = {key: uid(prefix) for key, prefix in (("entryId", "entry"), ("sourceId", "source"), ("runtimeId", "runtime"), ("requestId", "request"))}
+        operation = {"operationId": operation_id, "kind": "exploration", "state": "preparing", "createdAt": now(),
+                     "reserved": reserved, "input": {"direction": direction, "executionMode": mode, "config": self._config(body, tx=tx)},
+                     "authorizationSession": self._session_id, "queueRevision": tx.get("controls", "queue")["revision"],
+                     "order": self._next_order(tx), "batchId": batch_id,
+                     "revision": 1, "actorKind": "local_operator_intent", "authenticatedUserId": None,
+                     "provenance": body.get("_provenance", {"channel": "local_api"})}
+        tx.put("operations", operation_id, operation)
+        return operation
+
+    def _prepare_batch(self, operation_ids):
+        for operation_id in operation_ids:
+            if self._closing.is_set():
+                return
+            self._prepare_exploration(operation_id)
+
     def create_exploration(self, body):
         with self._mutex:
             with self.store.transaction() as tx:
@@ -673,25 +775,36 @@ class CenterRuntime:
                 self._expected(body)
                 if not self.adapter.available:
                     raise CenterError("EXECUTION_DOMAIN_UNCONFIGURED", "Execution domain is not configured", 409)
-                direction = body.get("direction", "")
-                if not isinstance(direction, str) or len(direction) > 5000:
-                    raise CenterError("INVALID_DIRECTION", "Direction must be bounded text")
-                mode = body.get("executionMode", "enqueue")
-                if mode not in {"enqueue", "start_now"}:
-                    raise CenterError("INVALID_REQUEST", "Invalid execution mode")
-                if mode == "start_now" and any(row["state"] in OPEN for row in tx.list("requests")):
-                    raise CenterError("SLOT_BUSY", "An earlier request occupies the slot", 409)
-                operation_id = uid("operation")
-                reserved = {key: uid(prefix) for key, prefix in (("entryId", "entry"), ("sourceId", "source"), ("runtimeId", "runtime"), ("requestId", "request"))}
-                operation = {"operationId": operation_id, "kind": "exploration", "state": "preparing", "createdAt": now(),
-                             "reserved": reserved, "input": {"direction": direction, "executionMode": mode, "config": self._config(body, tx=tx)},
-                             "authorizationSession": self._session_id, "queueRevision": tx.get("controls", "queue")["revision"],
-                             "revision": 1, "actorKind": "local_operator_intent", "authenticatedUserId": None,
-                             "provenance": body.get("_provenance", {"channel": "local_api"})}
-                tx.put("operations", operation_id, operation)
-                self._remember(tx, key, body_hash, {"operationId": operation_id})
-            self._worker(self._prepare_exploration, operation_id)
+                operation = self._exploration_record(tx, body)
+                profiles.remember(tx, operation["input"]["config"])
+                self._remember(tx, key, body_hash, {"operationId": operation["operationId"]})
+            self._worker(self._prepare_exploration, operation["operationId"])
             return operation
+
+    def create_batch(self, body):
+        with self._mutex:
+            with self.store.transaction() as tx:
+                key, body_hash, previous = self._idempotent(tx, "exploration-batch", body)
+                if previous:
+                    return {"items": [tx.get("operations", identity) for identity in previous["operationIds"]]}
+                self._expected(body)
+                if not self.adapter.available:
+                    raise CenterError("EXECUTION_DOMAIN_UNCONFIGURED", "Execution domain is not configured", 409)
+                groups = body.get("groups")
+                if not isinstance(groups, list) or not groups or any(not isinstance(group, dict) for group in groups):
+                    raise CenterError("INVALID_BATCH", "Provide at least one configuration group")
+                if any(type(group.get("count")) is not int or group["count"] < 1 for group in groups) or sum(group["count"] for group in groups) > 100:
+                    raise CenterError("INVALID_BATCH", "Submit 1 to 100 projects per batch")
+                batch_id, operations = uid("batch"), []
+                for group in groups:
+                    for _ in range(group["count"]):
+                        operations.append(self._exploration_record(tx, {**group, "executionMode": body.get("executionMode", "enqueue"),
+                                          "_provenance": body.get("_provenance", {"channel": "local_api"})}, batch_id))
+                profiles.remember(tx, operations[-1]["input"]["config"])
+                ids = [operation["operationId"] for operation in operations]
+                self._remember(tx, key, body_hash, {"operationIds": ids})
+            self._worker(self._prepare_batch, ids)
+            return {"items": operations}
 
     def _framework(self):
         status = subprocess.run(["git", "-C", str(self.framework_root), "status", "--porcelain", "--untracked-files=all"], capture_output=True, text=True, check=True, timeout=15).stdout
@@ -743,7 +856,7 @@ class CenterRuntime:
                             raise CenterError("RUNTIME_INCOMPATIBLE", "Framework has no human direction section", 409)
                         text = text.replace(heading, heading + "\n\n" + operation["input"]["direction"], 1)
                         consensus.write_text(text, encoding="utf-8")
-                    atomic_json(prepared / MARKER, {"protocolVersion": 1, "centerId": self.store.center_id, **{key: reserved[key] for key in ("entryId", "sourceId", "runtimeId")}, "operationId": operation_id})
+                    atomic_json(prepared / MARKER, {"protocolVersion": 2, "centerId": self.store.center_id, **{key: reserved[key] for key in ("entryId", "sourceId", "runtimeId")}, "operationId": operation_id})
                     target.parent.mkdir(parents=True, exist_ok=True)
                     os.replace(prepared, target)
                 marker = read_json(target / MARKER)
@@ -757,7 +870,7 @@ class CenterRuntime:
                           "sourceRevision": 1, "revision": 1, "fingerprint": None, "identityFingerprint": None,
                           "capabilities": {"readJournal": True, "readMedia": True, "execute": True, "preview": False, "capture": False}}
                 runtime = {"runtimeId": reserved["runtimeId"], "root": str(target), "entryId": reserved["entryId"], "sourceId": reserved["sourceId"],
-                           "centerId": self.store.center_id, "protocolVersion": 1, "managed": True, "executionDomain": self.domain, "frameworkRevision": revision}
+                           "centerId": self.store.center_id, "protocolVersion": 2, "managed": True, "executionDomain": self.domain, "frameworkRevision": revision}
                 with self.store.transaction() as tx:
                     operation = tx.get("operations", operation_id)
                     tx.put("entries", entry["entryId"], entry)
@@ -765,18 +878,20 @@ class CenterRuntime:
                     tx.put("runtimes", runtime["runtimeId"], runtime)
                     config = {key: value for key, value in operation["input"]["config"].items() if key != "configRevision"}
                     request_body = {"kind": "explore", "executionMode": "enqueue", "config": config, "_provenance": operation["provenance"]}
-                    request = self._new_request(tx, entry, source, runtime, request_body, reserved["requestId"])
+                    request = tx.get("requests", reserved["requestId"])
+                    if request is None:
+                        request = self._new_request(tx, entry, source, runtime, request_body, reserved["requestId"])
+                    elif request["state"] != "queued" or request["runtimeId"] != runtime["runtimeId"]:
+                        raise CenterError("RECOVERY_REQUIRED", "Prepared request already changed state", 409)
                     request["config"] = operation["input"]["config"]
+                    request["order"] = operation.get("order", request["order"])
+                    request["batchId"] = operation.get("batchId")
                     request["preparationPending"] = True
                     tx.put("requests", request["requestId"], request)
-                    if operation["input"]["executionMode"] == "start_now":
-                        if (any(row["requestId"] != request["requestId"] and row["state"] in OPEN for row in tx.list("requests"))
-                                or tx.get("controls", "queue")["revision"] != operation["queueRevision"]):
-                            self._transition(tx, request, "attention", "center", "slot_changed", attentionReason="preflight", reasonDetail="slot_changed")
-                        elif (operation.get("authorizationSession") == self._session_id and not operation.get("authorizationRevoked")
-                              and not self._closing.is_set()):
-                            request.update(startAuthorized=True, executionMode="start_now")
-                            tx.put("requests", request["requestId"], request)
+                    if (operation["input"]["executionMode"] == "start_now" and operation.get("authorizationSession") == self._session_id
+                            and not operation.get("authorizationRevoked") and not self._closing.is_set()):
+                        request.update(startAuthorized=True, executionMode="start_now")
+                        tx.put("requests", request["requestId"], request)
                     operation.update(state="succeeded", endedAt=now(), result=reserved, revision=operation["revision"] + 1)
                     tx.put("operations", operation_id, operation)
                 # Source discovery owns product/exploration identities, never us.
@@ -841,7 +956,7 @@ class CenterRuntime:
                 raise CenterError("OWNER_CONFLICT", "Another center or source owns this root", 409)
             operation_id = uid("operation")
             runtime_id = (existing or {}).get("runtimeId") or source.get("runtimeId") or uid("runtime")
-            marker = {"protocolVersion": 1, "centerId": self.store.center_id, "runtimeId": runtime_id, "entryId": source["entryId"], "sourceId": source_id}
+            marker = {"protocolVersion": 2, "centerId": self.store.center_id, "runtimeId": runtime_id, "entryId": source["entryId"], "sourceId": source_id}
             operation = {"operationId": operation_id, "kind": action, "state": "running", "entryId": source["entryId"], "sourceId": source_id, "createdAt": now(), "revision": 1,
                          "actorKind": "local_operator_intent", "authenticatedUserId": None, "provenance": body.get("_provenance", {"channel": "local_api"})}
             with self.store.transaction() as tx:
@@ -955,7 +1070,8 @@ class CenterRuntime:
                 key, body_hash, previous = self._idempotent(tx, entry_id + "/" + action, body)
                 if previous:
                     return tx.get("operations", previous["operationId"])
-                if any(row["state"] in ACTIVE for row in tx.list("requests")) or self._busy_operation(tx):
+                if any(row["state"] in ACTIVE and (row["entryId"] == entry_id or row.get("ownershipProtocol", 1) < 2)
+                       for row in tx.list("requests")) or self._busy_operation(tx, body.get("sourceId")):
                     raise CenterError("SLOT_BUSY", "Media and managed execution are serialized", 409)
             entry, source, runtime = self._source(entry_id, body.get("sourceId"))
             self._expected(body, source)
@@ -1002,6 +1118,10 @@ class CenterRuntime:
         return path
 
     def _write_controls(self):
+        with self._controls_mutex:
+            self._publish_controls()
+
+    def _publish_controls(self):
         with self.store.transaction() as tx:
             requests = [row for row in tx.list("requests") if row["state"] in ACTIVE and row.get("dispatchId")]
             operations = [row for row in tx.list("operations") if row.get("kind") in {"capture", "preview_start", "preview_stop"} and row.get("state") == "running"]
@@ -1018,12 +1138,21 @@ class CenterRuntime:
     def _dispatch(self):
         with self.store.transaction() as tx:
             requests = tx.list("requests")
-            if any(row["state"] in ACTIVE for row in requests) or self._busy_operation(tx):
+            active = [row for row in requests if row["state"] in ACTIVE and row.get("dispatchId")]
+            limit = tx.get("controls", "queue")["maxConcurrentProjects"]
+            if (limit is not None and len(active) >= limit) or any(row.get("ownershipProtocol", 1) < 2 for row in active):
                 return
             queued = sorted([row for row in requests if row["state"] == "queued"], key=lambda row: (row["order"], row["createdAt"]))
             if not queued:
                 return
-            request = queued[0]
+            request = next((row for row in queued if not self._busy_operation(tx, row["sourceId"])), None)
+            if request is None:
+                return
+            if request.get("ownershipProtocol", 1) < 2 and (active or self._busy_operation(tx)):
+                return
+            if any(row.get("kind") == "exploration" and row.get("state") == "preparing"
+                   and row.get("order", float("inf")) < request["order"] for row in tx.list("operations")):
+                return
             if request.get("preparationPending"):
                 pending = request
             else:
@@ -1047,7 +1176,8 @@ class CenterRuntime:
                 raise CenterError("CONFIG_CHANGED", "Budget configuration changed while waiting", 409)
             if request.get("permissionConfigRevision") != digest({key: os.environ.get(key) for key in ("CODEX_SANDBOX_MODE", "CLAUDE_PERMISSION_MODE", "CURSOR_SANDBOX_MODE")}):
                 raise CenterError("CONFIG_CHANGED", "Permission configuration changed while waiting", 409)
-            probe = self.adapter.query("probe", center_id=self.store.center_id)
+            probe = self.adapter.query("probe", center_id=self.store.center_id,
+                                       runtime_id=request["runtimeId"] if request.get("ownershipProtocol", 1) >= 2 else None)
             check = self.adapter.query("preflight", root=source["root"], expected_product_id=source.get("productId"))
             previous_owner = probe.get("owner")
             if (not probe["slotFree"] or not check["quiescent"] or
@@ -1056,7 +1186,7 @@ class CenterRuntime:
         except Exception as exc:
             with self.store.transaction() as tx:
                 self._transition(tx, request, "attention", "center", getattr(exc, "code", "preflight_failed"), attentionReason="preflight", reasonDetail=getattr(exc, "code", "preflight_failed"))
-                self._pause(tx, "preflight_failed")
+                self._pause_request(tx, request, "preflight_failed")
             return
         with self.store.transaction() as tx:
             request = tx.get("requests", request["requestId"])
@@ -1092,7 +1222,7 @@ class CenterRuntime:
                     self._transition(tx, current, "attention", "center", "dispatch_uncertain", attentionReason="dispatch_uncertain", reasonDetail=type(exc).__name__)
                 else:
                     self._transition(tx, current, "failed", "center", "pre_start", terminalReason="pre_start", reasonDetail=type(exc).__name__)
-                self._pause(tx, "dispatch_uncertain")
+                self._pause_request(tx, current, "dispatch_uncertain")
 
     def _reconcile(self, request):
         if not request.get("dispatchId"):
@@ -1109,29 +1239,29 @@ class CenterRuntime:
                 current = tx.get("requests", request["requestId"])
                 if current["state"] in OPEN and current["state"] != "attention":
                     self._transition(tx, current, "attention", "recovery", "runner_unavailable", attentionReason="recovery_required", reasonDetail="runner_unavailable")
-                self._pause(tx, "runner_unavailable")
+                self._pause_request(tx, current, "runner_unavailable")
             return
         receipt = probe.get("receipt")
         with self.store.transaction() as tx:
             current = tx.get("requests", request["requestId"])
             if current["state"] in TERMINAL:
                 if not probe["slotFree"] and probe.get("owner", {}).get("dispatchId") == current["dispatchId"]:
-                    self._pause(tx, "terminal_owner_conflict")
+                    self._pause_request(tx, current, "terminal_owner_conflict")
                 return
             if receipt and receipt.get("state") == "terminal" and receipt.get("cleanupConfirmed") and probe["slotFree"]:
                 reason = receipt.get("reason")
                 if reason in {"budget_pause", "governance_pause"}:
                     state, terminal = "ended", reason
-                    self._pause(tx, reason)
+                    self._pause_request(tx, current, reason)
                 elif reason in {"user_stop", "center_shutdown"} or current.get("stopRequested"):
                     state, terminal = "ended", "user_stop"
                     if reason != "user_stop":
-                        self._pause(tx, reason)
+                        self._pause_request(tx, current, reason)
                 elif reason == "natural" and receipt.get("launched"):
                     state, terminal = "ended", "natural"
                 else:
                     state, terminal = "failed", "runtime" if receipt.get("launched") else "pre_start"
-                    self._pause(tx, reason or "runtime_failed")
+                    self._pause_request(tx, current, reason or "runtime_failed")
                 self._transition(tx, current, state, "runner", reason, terminalReason=terminal, reasonDetail=reason, receipt=receipt)
                 child = self._children.get(current["dispatchId"])
                 if child is not None and child.poll() is not None:
@@ -1140,7 +1270,7 @@ class CenterRuntime:
                 current["liveConfirmedAt"] = now()
                 observed_block = receipt.get("executionBlockedReason") if receipt.get("state") == "running" else None
                 if observed_block == "unresolved_p1":
-                    self._pause(tx, "unresolved_p1")
+                    self._pause_request(tx, current, "unresolved_p1")
                 blocked = observed_block if observed_block == "unresolved_p1" and not current.get("stopRequested") else None
                 if current.get("executionBlockedReason") != blocked:
                     current.update(executionBlockedReason=blocked, executionBlockedAt=receipt.get("executionBlockedAt") if blocked else None)
@@ -1154,11 +1284,11 @@ class CenterRuntime:
                     state = "attention"
                     if current["state"] != state:
                         self._transition(tx, current, state, "runner", "stop_unconfirmed", attentionReason="stop_unconfirmed", reasonDetail=receipt.get("reason"))
-                    self._pause(tx, "stop_unconfirmed")
+                    self._pause_request(tx, current, "stop_unconfirmed")
                 elif current["state"] != state:
                     self._transition(tx, current, state, "runner", receipt.get("reason"), startedAt=receipt.get("startedAt"), attentionReason=None)
                     if state == "stopping" and receipt.get("reason") in {"budget_pause", "governance_pause", "provider_pause"}:
-                        self._pause(tx, receipt["reason"])
+                        self._pause_request(tx, current, receipt["reason"])
             elif not current.get("launchIssued") and probe["slotFree"]:
                 self._transition(tx, current, "failed", "recovery", "pre_start", terminalReason="pre_start", reasonDetail="runner_not_issued")
             else:
@@ -1168,7 +1298,7 @@ class CenterRuntime:
                 reason = "stop_unconfirmed" if current.get("stopRequested") else "dispatch_uncertain"
                 if current["state"] != "attention":
                     self._transition(tx, current, "attention", "recovery", reason, attentionReason=reason)
-                self._pause(tx, reason)
+                self._pause_request(tx, current, reason)
         if receipt and (time.monotonic() - self._last_refresh.get(request["sourceId"], 0) > 5 or receipt.get("state") == "terminal"):
             try:
                 self._refresh_source(request["sourceId"])
@@ -1202,3 +1332,14 @@ class CenterRuntime:
                 except Exception:
                     pass
             self._closing.wait(0.5)
+
+    def _heartbeat(self):
+        # WSL probes and catalog reads can take longer as concurrency increases.
+        # They must not starve the independent liveness channel of healthy owners.
+        while not self._closing.is_set():
+            try:
+                self._write_controls()
+            except Exception:
+                with self.store.transaction() as tx:
+                    self._pause(tx, "center_error")
+            self._closing.wait(1)

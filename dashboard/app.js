@@ -7,13 +7,10 @@
   const state = { data: null, language: 'zh-CN', tab: 'work', expanded: new Set(), selectedLog: scope.center ? '' : 'runtime', logText: '', logLoadedKey: '', logRequest: 0, logPending: null, refreshPending: null, signature: '', statusFailed: true, action: '', languageState: null, languageSaving: false, languageLoading: false, languageRevision: 0, languageError: '', languageSaved: false, timer: null, autoChanged: false, currentCycle: null, receivedAt: 0, elapsedTimer: null, centerSummary: null, scopedUsage: null, usageToken: 0, detailToken: 0, detailLoads: new Map(), mediaIntent: null };
   const message = (key, values = {}) => {
     const dictionary = window.JOURNAL_MESSAGES[state.language] || window.JOURNAL_MESSAGES.en;
-    return Object.entries(values).reduce((result, [name, value]) => result.replaceAll(`{${name}}`, String(value)), dictionary[key] || key);
+    return Object.entries(values).reduce((result, [name, value]) => result.replaceAll(`{${name}}`, typeof value === 'number' && name !== 'number' ? new Intl.NumberFormat(state.language).format(value) : String(value)), dictionary[key] || key);
   };
   function element(tag, className, text) {
-    const node = document.createElement(tag);
-    if (className) node.className = className;
-    if (text !== undefined) node.textContent = text;
-    return node;
+    return window.DashboardUI.element(tag, className, text);
   }
   function clear(node) { node.replaceChildren(); return node; }
   function clean(value) {
@@ -34,7 +31,7 @@
   function liveProcess() { return !readOnly() && !state.statusFailed && state.data?.runtime?.processState === 'running'; }
   function freshCenterRequest(summary = state.centerSummary, currentTime = Date.now()) {
     if (!scope.center || state.statusFailed) return null;
-    const request = summary?.currentRequest;
+    const request = summary?.currentRequests?.find((item) => item?.entryId === scope.entryId) || summary?.currentRequest;
     if (!request?.liveConfirmedAt || !['starting', 'running', 'stopping'].includes(request.state)) return null;
     const confirmationAge = currentTime - Date.parse(request.liveConfirmedAt);
     if (!Number.isFinite(confirmationAge) || confirmationAge < 0 || confirmationAge > 15000) return null;
@@ -56,6 +53,13 @@
   function scopedRecordedRuntimeState(data = state.data) {
     if (!scope.center) return null;
     const execution = data?.entry?.executionSummary;
+    if (!state.statusFailed && data?.entry?.entryId === scope.entryId && !data.entry.runtimeId && execution?.state === 'read_only') {
+      const observed = data.entry.readonlyObservation;
+      const age = Date.now() - Date.parse(observed?.state === 'ended' ? observed.observedAt : observed?.liveConfirmedAt);
+      if (observed?.readOnly === true && observed.scoped === true && Number.isFinite(age) && age >= 0 && age <= 15000
+        && (['running', 'paused', 'idle'].includes(observed.state) || observed.state === 'ended' && observed.processState === 'stopped')) return observed.state;
+      return 'unknown';
+    }
     if (!execution?.requestId) return null;
     if (execution.state === 'ended' && execution.terminalReason === 'delivery_complete') return 'delivery_complete';
     return ['ended', 'canceled', 'failed', 'queued', 'attention'].includes(execution.state) ? execution.state : null;
@@ -69,6 +73,20 @@
     return keys[value] ? message(keys[value]) : statusLabel(value);
   }
   function runtimeLabel() { return runtimeStatusLabel(runtimeStateValue()); }
+  function runtimeEvidence() {
+    const value = runtimeStateValue();
+    if (scope.center && value === 'read_only') return message('sourceReadOnlyEvidence');
+    if (!scope.center || !['unknown', 'unavailable', 'blocked', 'attention'].includes(value)) return '';
+    const execution = state.data?.entry?.executionSummary;
+    const request = state.centerSummary?.currentRequests?.find(item => item.entryId === scope.entryId) || (state.centerSummary?.currentRequest?.entryId === scope.entryId ? state.centerSummary.currentRequest : null);
+    const reason = state.statusFailed ? message('runtimeUnavailable') : execution?.reason === 'unresolved_p1' ? message('pause_unresolved_p1') : execution?.reason === 'unmanaged_source' ? message('runtimeUnmanaged') : message('runtimeNoEvidence');
+    return `${reason} ${message('lastRuntimeEvidence', { time: request?.liveConfirmedAt ? fullTime(request.liveConfirmedAt) : message('unknownTime') })}`;
+  }
+  function concurrencyLabel() {
+    if (scopedCenterRuntimeState()) return message('yes');
+    if (scope.center && !state.statusFailed && ['ended', 'canceled', 'failed', 'queued', 'idle', 'read_only'].includes(state.data?.entry?.executionSummary?.state)) return message('no');
+    return message('unknown');
+  }
   function requestContextLabel(request) {
     const name = request?.displayName || message('unknown');
     const plan = [request?.config?.model, request?.config?.effort].filter(Boolean).join(' · ');
@@ -176,7 +194,7 @@
     const expectedRange = expectedUsageRange(selection);
     if (!expectedRange) throw new Error('Invalid usage selection');
     const date = selection.date ? `&date=${encodeURIComponent(selection.date)}` : '';
-    const result = await fetchCenter(`${scopedJournalPath('/usage')}?period=${encodeURIComponent(selection.period)}${date}&sourceId=${encodeURIComponent(data.sourceId)}`);
+    const result = await fetchCenter(`${scopedJournalPath('/usage')}?period=${encodeURIComponent(selection.period)}${date}&includeExploration=true&sourceId=${encodeURIComponent(data.sourceId)}`);
     if (result?.entryId !== data.entryId || result?.sourceId !== data.sourceId || result?.sourceRevision !== data.sourceRevision || result?.period !== selection.period || result?.startDate !== expectedRange.startDate || result?.endDate !== expectedRange.endDate) throw new Error('Out-of-scope usage response');
     return { key: usageKey(selection, data), data: result };
   }
@@ -198,15 +216,25 @@
     try { const response = await fetch(url, { cache: 'no-store', signal: controller.signal }); if (!response.ok) throw new Error(`HTTP ${response.status}`); return await response.text(); }
     finally { clearTimeout(timer); }
   }
-  function formatTime(value, withDate = false) {
-    if (!value || !Number.isFinite(Date.parse(value))) return message('unknownTime');
-    const date = new Date(value);
-    return new Intl.DateTimeFormat(state.language, { ...(withDate ? { month: '2-digit', day: '2-digit' } : {}), hour: '2-digit', minute: '2-digit', hour12: false }).format(date);
+  function formatTime(value) { return fullTime(value); }
+  function fullTime(value) { return window.DashboardDate.format(value, state.language) || message('unknownTime'); }
+  function describeTimes(root = document) {
+    root.querySelectorAll('time[datetime]').forEach(node => { node.title = fullTime(node.dateTime); node.setAttribute('aria-label', node.title); });
   }
-  function formatDate(value) {
-    if (!value || !Number.isFinite(Date.parse(value))) return message('unknownTime');
-    return new Intl.DateTimeFormat(state.language, { month: 'long', day: 'numeric' }).format(new Date(value));
+  function saveJournalView() {
+    try { sessionStorage.setItem(`journal:view:${scope.entryId || location.pathname}`, JSON.stringify({ expanded: [...state.expanded], tab: state.tab, selectedLog: state.selectedLog, scroll: window.scrollY })); } catch (_) {}
   }
+  function restoreJournalView() {
+    try {
+      const saved = JSON.parse(sessionStorage.getItem(`journal:view:${scope.entryId || location.pathname}`) || 'null');
+      if (!saved || typeof saved !== 'object') return;
+      if (Array.isArray(saved.expanded)) state.expanded = new Set(saved.expanded.filter(key => typeof key === 'string').slice(0, 500));
+      if (['work', 'usage', 'logs'].includes(saved.tab)) state.tab = saved.tab;
+      if (typeof saved.selectedLog === 'string') state.selectedLog = saved.selectedLog;
+      if (Number.isFinite(saved.scroll) && saved.scroll >= 0) state.restoreScroll = saved.scroll;
+    } catch (_) {}
+  }
+  function formatDate(value) { return window.DashboardDate.date(value, state.language) || message('unknownTime'); }
   function datePart(value) { return /^\d{4}-\d{2}-\d{2}/.test(value || '') ? value.slice(0, 10) : ''; }
   function localDatePart(value) {
     const date = new Date(value);
@@ -215,7 +243,7 @@
   }
   function knownNumber(value) { return typeof value === 'number' && Number.isFinite(value) && value >= 0; }
   function number(value) { return knownNumber(value) ? new Intl.NumberFormat(state.language).format(value) : '—'; }
-  function compactNumber(value) { return knownNumber(value) ? new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 }).format(value) : message('unknown'); }
+  function compactNumber(value) { return knownNumber(value) ? new Intl.NumberFormat(state.language, { notation: 'compact', maximumFractionDigits: 1 }).format(value) : message('unknown'); }
   function duration(cycle) {
     if (cycle.durationReliable === false || cycle.status === 'interrupted') return '';
     const seconds = Math.round((Date.parse(cycle.endedAt) - Date.parse(cycle.startedAt)) / 1000);
@@ -244,7 +272,7 @@
     const firstClause = title.split(/[，,。\n]/)[0];
     title = firstClause && firstClause.length >= 7 ? firstClause : title;
     if (!title) return message(cycle.active ? 'runningSummary' : cycle.status === 'failed' ? 'failedSummary' : cycle.status === 'interrupted' ? 'interruptedSummary' : cycle.status === 'unknown' ? 'unknownSummary' : 'finishedSummary');
-    return shortText(title, 68);
+    return title;
   }
   function metadata(cycle) {
     const row = element('div', 'cycle-meta');
@@ -278,6 +306,7 @@
     details.addEventListener('toggle', () => {
       if (details.open) state.expanded.add(key);
       else state.expanded.delete(key);
+      saveJournalView();
       try { if (preferenceKey) sessionStorage.setItem(preferenceKey, details.open ? 'open' : 'closed'); } catch (_) {}
     });
     return details;
@@ -334,19 +363,22 @@
     return result;
   }
   function progressState(status) {
+    if (['read_only', 'archived', 'canceled'].includes(status)) return window.DashboardStatus.visual(status);
     if (status === 'completed') return 'completed';
     if (status === 'running') return 'running';
-    if (['paused', 'waiting_limit', 'circuit_break', 'interrupted', 'completed_with_timeout', 'stopped'].includes(status)) return 'paused';
+    if (['attention', 'blocked', 'waiting_limit', 'circuit_break'].includes(status)) return 'attention';
+    if (['paused', 'interrupted', 'completed_with_timeout', 'stopped', 'ended', 'canceled'].includes(status)) return 'paused';
     if (status === 'failed') return 'failed';
-    if (['pending', 'not_started'].includes(status)) return 'pending';
+    if (['pending', 'not_started', 'queued', 'idle'].includes(status)) return 'pending';
     return 'unknown';
   }
-  function progressIcon(status, label = statusLabel(status)) {
+  function progressIcon(status, label = statusLabel(status), redundant = false) {
     const state = progressState(status);
     const node = element('span', `progress-node progress-${state}`);
-    if (state === 'pending') label = message('pendingCycle');
     node.setAttribute('role', 'img'); node.setAttribute('aria-label', label); node.title = label;
-    node.append(window.DashboardIcons.status(state));
+    if (redundant) { node.removeAttribute('role'); node.removeAttribute('aria-label'); node.setAttribute('aria-hidden', 'true'); }
+    const symbol = window.DashboardIcons.status(state); symbol.classList.add('size-full'); symbol.setAttribute('viewBox', '1 1 22 22');
+    node.append(symbol);
     return node;
   }
   function checkPresentation(cycle) {
@@ -376,7 +408,6 @@
   }
   function cycleRecords(cycle) {
     const section = element('section', 'cycle-records');
-    section.append(element('h3', 'content-heading', message('cycleRecords')));
     if (cycle.projectStatus === 'other' || cycle.projectStatus === 'unknown') {
       section.append(element('p', 'sidebar-note', message(cycle.projectStatus === 'other' ? 'otherProjectCycle' : 'unknownProjectCycle')));
       return section;
@@ -384,7 +415,7 @@
     const rows = [];
     const check = cycle.latestCheck;
     const presentation = checkPresentation(cycle);
-    rows.push({ kind: 'check', title: message('latestCheckRecord'), status: presentation.status, detail: presentation.detail,
+    rows.push({ kind: 'check', title: message('checkSummary'), status: presentation.status, detail: presentation.detail,
       time: check?.endedAt || check?.recordedAt || check?.startedAt,
       path: check?.available === true && !scope.center ? check.path : null,
       url: check?.available === true && scope.center ? safeScopedResource(check.url) : null });
@@ -398,12 +429,13 @@
     rows.sort((a, b) => (Date.parse(a.time) || Infinity) - (Date.parse(b.time) || Infinity));
     const list = element('ol', 'record-list');
     for (const record of rows) {
-      const row = element('li', `record-row record-${record.kind}`);
-      const time = element('time', '', record.time ? formatTime(record.time) : '—');
+      const row = element(record.kind === 'check' ? 'div' : 'li', `record-row record-${record.kind}`);
+      if (record.status) row.dataset.status = record.status;
+      const time = element('time', '', record.time ? formatTime(record.time, localDatePart(record.time) !== localDatePart(cycle.startedAt || cycle.reservedAt)) : '—');
       if (record.time) { time.dateTime = record.time; time.title = formatTime(record.time, true); }
       const body = element('div', 'record-body');
       const title = element('div', 'record-title', record.title);
-      if (record.status) title.append(progressIcon(record.status, record.detail));
+      if (record.status) title.append(progressIcon(record.status, record.detail, true));
       body.append(title);
       if (record.detail || record.path || record.url) {
         const detail = element('div', `record-detail${record.status === 'failed' ? ' status-failed' : ''}`);
@@ -415,9 +447,11 @@
         }
         body.append(detail);
       }
-      row.append(time, body); list.append(row);
+      row.append(time, body);
+      if (record.kind === 'check') section.append(row);
+      else list.append(row);
     }
-    section.append(list);
+    section.insertBefore(list, section.querySelector('.record-check'));
     return section;
   }
   function workReportDetails(cycle) {
@@ -450,12 +484,29 @@
     const body = element('div', 'cycle-body');
     const title = element('h2', 'cycle-title', cycleTitle(cycle));
     title.id = 'cycleTitle';
-    body.append(title, metadata(cycle));
+    const headline = element('div', 'cycle-headline');
+    const stamp = element('time', 'cycle-timestamp', formatTime(cycle.endedAt || cycle.startedAt || cycle.reservedAt, true));
+    if (cycle.endedAt || cycle.startedAt || cycle.reservedAt) stamp.dateTime = cycle.endedAt || cycle.startedAt || cycle.reservedAt;
+    headline.append(title, stamp);
+    const cycleLink = logButton(cycle);
+    if (cycleLink.tagName === 'BUTTON') {
+      cycleLink.className = element('button', 'current-cycle-link icon-button').className;
+      cycleLink.dataset.size = 'icon';
+      cycleLink.dataset.focusKey = `headline-log:${cycle.id}`;
+      cycleLink.setAttribute('aria-label', message('viewLog')); cycleLink.title = message('viewLog');
+      cycleLink.replaceChildren(icon('chevron-right')); headline.append(cycleLink);
+    }
+    body.append(headline, metadata(cycle));
+    body.append(reportSurface(cycle, true));
+    article.append(gutter, progressIcon(cycle.status), body);
+    container.append(article);
+  }
+  function reportSurface(cycle, current = false) {
     const report = element('section', 'report-section');
     const heading = element('div', 'section-heading-row');
-    heading.append(element('h3', '', message('latestReport')));
+    heading.append(element('h3', '', message(current ? 'latestReport' : 'workReportHeading')));
     const timestamp = cycle.workReport?.recorded_at || cycle.reportObservedAt || (cycle.durationReliable !== false && cycle.endedAtKind !== 'recovered' && cycle.status !== 'interrupted' ? cycle.endedAt : null);
-    if (timestamp) {
+    if (timestamp && timestamp !== (cycle.endedAt || cycle.startedAt || cycle.reservedAt)) {
       const time = element('time', '', message('recordedAt', { time: formatTime(timestamp) }));
       time.dateTime = timestamp;
       heading.append(time);
@@ -467,43 +518,49 @@
     report.append(heading, element('p', 'report-intro', intro));
     const workDetails = workReportDetails(cycle);
     if (workDetails) report.append(workDetails);
-    body.append(report);
-    body.append(cycleRecords(cycle));
+    const surface = element('div', 'cycle-report-surface');
+    surface.append(report, cycleRecords(cycle));
     const rows = cycle.workReport ? [] : reportRows(cycle);
     if (rows.length) {
       const results = element('section', 'results-section');
       const resultHeading = element('div', 'section-heading-row');
       resultHeading.append(element('h3', '', message('cycleResults')));
       results.append(resultHeading, resultList(rows));
-      body.append(results);
+      surface.append(results);
     }
-    if (cycle.report && !cycle.workReport) body.append(element('p', 'report-source', message('reportSource')));
-    body.append(logButton(cycle));
-    article.append(gutter, progressIcon(cycle.status), body);
-    container.append(article);
+    if (cycle.report && !cycle.workReport) surface.append(element('p', 'report-source', message('reportSource')));
+    const footer = element('div', 'cycle-report-footer');
+    const check = surface.querySelector('.record-check');
+    if (check) footer.append(check);
+    footer.append(logButton(cycle)); surface.append(footer);
+    return surface;
   }
   function historyRow(cycle) {
     const row = bindDisclosure(element('details', 'history-row'), `cycle:${cycle.id}`);
     row.dataset.cycleId = cycle.id;
     const summary = element('summary');
     const association = cycle.projectStatus === 'other' ? message('otherProjectCycle') : cycle.projectStatus === 'unknown' ? message('unknownProjectCycle') : cycle.identityKind === 'exploration' ? message('explorationCycles') : '';
-    const timing = `${statusLabel(cycle.status)} · ${formatTime(cycle.startedAt)}${association ? ` · ${association}` : ''}`;
-    const cycleNumber = paddedCycleNumber(cycle);
-    summary.append(element('span', 'history-number', cycleNumber), progressIcon(cycle.status), element('span', 'history-title', cycleTitle(cycle)), element('span', `history-meta${cycle.status === 'failed' ? ' status-failed' : ''}`, timing));
+    const number = element('span', 'history-number');
+    number.append(element('span', 'history-number-value', paddedCycleNumber(cycle)));
+    const title = element('span', 'history-title');
+    title.append(element('span', 'history-title-text', cycleTitle(cycle)));
+    if (association) title.append(element('span', 'cycle-association', association));
+    const timing = element('time', `history-meta${cycle.status === 'failed' ? ' status-failed' : ''}`, formatTime(cycle.endedAt || cycle.startedAt || cycle.reservedAt, true));
+    timing.title = statusLabel(cycle.status);
+    if (cycle.endedAt || cycle.startedAt || cycle.reservedAt) timing.dateTime = cycle.endedAt || cycle.startedAt || cycle.reservedAt;
+    summary.append(number, progressIcon(cycle.status), title, timing);
     const arrow = icon('chevron-right'); arrow.classList.add('history-chevron');
     arrow.setAttribute('aria-hidden', 'true');
     summary.append(arrow);
     const content = element('div', 'history-content');
     content.append(metadata(cycle));
-    let report = cycle.workReport?.summary || clean(cycle.summary || '');
-    if (/^[\[{]/.test(report)) report = cycleTitle(cycle);
-    content.append(element('p', '', report || message('noSummary')));
-    const workDetails = workReportDetails(cycle);
-    if (workDetails) content.append(workDetails);
-    const results = cycle.workReport ? [] : reportRows(cycle);
-    if (results.length) content.append(resultList(results));
-    content.append(cycleRecords(cycle));
-    content.append(logButton(cycle));
+    content.append(reportSurface(cycle));
+    if (state.detailErrors?.has(cycle.id)) {
+      const error = element('p', 'status-failed', message('detailReadFailed'));
+      const retry = element('button', 'text-button', message('retryRead')); retry.type = 'button'; retry.dataset.focusKey = `detail-retry:${cycle.id}`;
+      retry.addEventListener('click', () => loadCycleDetail(cycle.id));
+      error.append(retry); content.append(error);
+    }
     row.append(summary, content);
     if (scope.center && cycle.detailStatus === 'limited') row.addEventListener('toggle', () => { if (row.open) loadCycleDetail(cycle.id); });
     return row;
@@ -522,14 +579,21 @@
         const currentIndex = collection.findIndex((cycle) => cycle.id === cycleId && cycle.detailStatus === 'limited');
         if (currentIndex < 0) return;
         collection[currentIndex] = { ...limited, ...detail };
+        state.detailErrors?.delete(cycleId);
         renderHistory();
-      } catch (_) { /* The limited row remains retryable on its next open. */ }
+      } catch (_) {
+        if (expected.token === state.detailToken && state.data?.sourceRevision === expected.sourceRevision) {
+          if (!state.detailErrors) state.detailErrors = new Set();
+          state.detailErrors.add(cycleId); renderHistory();
+        }
+      }
       finally { state.detailLoads.delete(cycleId); }
     })();
     state.detailLoads.set(cycleId, promise);
     return promise;
   }
   function renderHistory() {
+    const focus = rememberFocus();
     const history = clear($('historyList'));
     const groups = historyGroups(state.data, state.currentCycle);
     const older = groups.main;
@@ -545,6 +609,9 @@
     }
     document.querySelector('.history-section').hidden = !older.length;
     document.querySelector('.journal-layout').classList.toggle('no-history', !older.length);
+    describeTimes(history);
+    window.DashboardUI?.mountControls();
+    restoreFocus(focus);
   }
   function aggregate(cycles) {
     const result = { inputTokens: null, outputTokens: null, totalTokens: null, known: 0, count: cycles.length, partial: false };
@@ -555,6 +622,22 @@
     result.known = cycles.filter((cycle) => knownNumber(cycle.usage?.totalTokens)).length;
     result.partial = result.known < cycles.length || cycles.some((cycle) => cycle.usage?.status === 'partial');
     return result;
+  }
+  function usageGroups(cycles) {
+    const groups = new Map();
+    for (const cycle of cycles) {
+      const rawEngine = cycle.engine;
+      const rawModel = cycle.observedConfig?.model || cycle.model;
+      const engine = rawEngine && rawEngine !== 'unknown' ? rawEngine : message('unknown');
+      const model = rawModel && rawModel !== 'unknown' ? rawModel : message('unknown');
+      // Unknown identities cannot be assumed to share a billing/token scope.
+      const unknownIdentity = !rawEngine || rawEngine === 'unknown' || !rawModel || rawModel === 'unknown';
+      const key = JSON.stringify([engine, model, unknownIdentity ? cycle.id : null]);
+      const label = [rawEngine && rawEngine !== 'unknown' ? rawEngine : '', rawModel && rawModel !== 'unknown' ? rawModel : '', unknownIdentity ? `${message('cycle')} ${paddedCycleNumber(cycle)}` : ''].filter(Boolean).join(' · ');
+      if (!groups.has(key)) groups.set(key, { label, cycles: [] });
+      groups.get(key).cycles.push(cycle);
+    }
+    return [...groups.values()];
   }
   function icon(name) { return window.DashboardIcons.icon(name); }
   function iconLabel(node, name, text) {
@@ -568,9 +651,10 @@
   }
   function languageLabel(value) { return value === 'zh-CN' || value === 'zh' ? message('languageChinese') : value === 'en' ? message('languageEnglish') : value || message('unknown'); }
   function actionMessage(key, values = {}, error = false) {
+    if (key === 'actionComplete') { window.DashboardUI.notify(message(key, values)); $('actionStatus').hidden = true; return; }
     const node = $('actionStatus');
     node.hidden = false;
-    node.textContent = message(key, values);
+    node.replaceChildren(window.DashboardUI.alertMessage(message(key, values)));
     node.classList.toggle('status-failed', error);
   }
   function renderRuntime() {
@@ -596,8 +680,8 @@
     document.querySelectorAll('.dialog-links a[href^="/docs/"]').forEach((node) => { node.hidden = readOnly(); });
     const reason = runtime.pauseReason || data?.budgetPause?.reason;
     const paused = ['paused', 'waiting_limit', 'circuit_break'].includes(runtime.state);
-    $('runtimeNotice').hidden = unavailable || (!reason && !paused && !data?.budgetPause);
-    $('runtimeNotice').textContent = reason ? message('pauseReason', { reason: pauseLabel(reason) }) : paused ? message('pauseReview') : data?.budgetPause ? message('budgetPause') : '';
+    $('runtimeNotice').hidden = !data || (scope.center && !reason && !paused && !data?.budgetPause) || (!readOnly() && (unavailable || (!reason && !paused && !data?.budgetPause)));
+    $('runtimeNotice').textContent = reason ? message('pauseReason', { reason: pauseLabel(reason) }) : paused ? message('pauseReview') : data?.budgetPause ? message('budgetPause') : readOnly() ? message('readOnly') : '';
     updateElapsed();
     renderDiagnostics();
   }
@@ -612,6 +696,11 @@
   function renderCenterLiveState() {
     renderRuntimeState();
     renderCenterRuntimeContext(state.centerSummary);
+    const node = $('projectRuntimeStatus');
+    if (node) node.replaceChildren(progressIcon(runtimeStateValue(), runtimeLabel(), true), element('span', '', runtimeLabel()));
+    if ($('runtimeEvidence')) { $('runtimeEvidence').textContent = runtimeEvidence(); $('runtimeEvidence').hidden = !$('runtimeEvidence').textContent; }
+    if ($('sidebarRuntimeState')) $('sidebarRuntimeState').textContent = runtimeLabel();
+    if ($('sidebarSlot')) $('sidebarSlot').textContent = concurrencyLabel();
   }
   function renderDiagnostics() {
     const data = state.data;
@@ -744,8 +833,10 @@
   }
   function renderProductMedia(media) {
     if (!media?.productId) return null;
-    const section = readOnly() ? bindDisclosure(element('details', 'sidebar-block product-media'), 'product-media', true) : element('section', 'sidebar-block product-media');
-    section.append(element(readOnly() ? 'summary' : 'h2', '', message('productScreenshot')));
+    const section = element('section', 'product-media');
+    section.setAttribute('aria-label', message('productScreenshot'));
+    const diagnostics = element('div', 'media-diagnostics');
+    diagnostics.append(element('h3', 'content-heading', message('mediaDetails')));
     const capture = media.screenshot || {};
     const original = capture.latestSuccess;
     const refinement = publishedRefinement(media);
@@ -779,16 +870,16 @@
       section.append(link);
       const caption = element('p', 'sidebar-note screenshot-caption', message(refinement && !refinement.capturedAt ? 'captureSessionAt' : 'capturedAt', { time: formatTime(success.capturedAt || success.captureSessionAt, true) }));
       if (!refinement && capture.currentVersion && success.version !== capture.currentVersion) caption.append(element('span', 'screenshot-stale', message('screenshotOldVersion')));
-      section.append(caption);
+      diagnostics.append(caption);
       const links = element('div', 'screenshot-links');
       for (const variant of variants) {
         const item = element('a', '', message(variant.viewport === 'mobile' ? 'mobileScreenshot' : 'desktopScreenshot'));
         item.href = mediaURL(variant.href, media.productId); item.target = '_blank'; item.rel = 'noopener';
         links.append(item);
       }
-      section.append(links);
+      diagnostics.append(links);
     }
-    if (!desktop || !['completed', 'ready', 'success', 'unchanged'].includes(capture.state)) {
+    if (!desktop || !['completed', 'ready', 'success', 'unchanged', 'stale'].includes(capture.state)) {
       const key = { capturing: 'screenshotCapturing', running: 'screenshotCapturing', pending: 'screenshotCapturing',
         failed: 'screenshotFailed', interrupted: 'screenshotInterrupted', unsupported: 'screenshotUnsupported',
         not_applicable: 'screenshotNotApplicable', unavailable: 'screenshotUnavailable', stale: 'screenshotOldVersion' }[capture.state] || 'screenshotMissing';
@@ -800,34 +891,36 @@
       retry.disabled = Boolean(state.mediaAction || state.statusFailed || state.action || state.data?.control?.action || state.data?.control?.stopUnconfirmed || !['stopped', 'inactive'].includes(state.data?.runtime?.processState));
       retry.title = message('retryScreenshotHint');
       retry.addEventListener('click', () => retryProductMedia(media.productId));
-      section.append(retry);
+      diagnostics.append(retry);
       if (mediaRetryError(media)) section.append(element('p', 'sidebar-note status-failed', message('screenshotRetryFailed')));
     }
+    section.append(diagnostics);
     return section;
   }
   function renderSidebar() {
+    const switcher = $('productSwitcherButton');
+    const sourceName = $('sourceName');
     const sidebar = clear($('projectSidebar'));
     const data = state.data;
     const overview = element('section', 'sidebar-block project-overview');
     const name = element('h1', '', data.project?.displayName || data.project?.name || message('noProject')); name.id = 'projectName';
     const description = element('p', 'project-description', clean(data.project?.description)); description.id = 'projectDescription'; description.title = description.textContent;
     const latest = state.currentCycle;
-    const date = element('p', 'sidebar-note', latest?.active ? message('currentRun') : latest ? message('latestRun', { date: formatDate(latest.startedAt) }) : message(readOnly() ? 'archived' : 'ready')); date.id = 'runHeading';
     const identity = element('div', 'project-identity');
     const media = data.productMedia;
-    const productIcon = mediaURL(media?.icon?.href, media?.productId);
-    if (productIcon) {
-      const image = element('img', 'product-icon');
-      image.src = productIcon; image.alt = ''; image.width = image.height = 36;
-      image.title = message(media.icon.source === 'default' ? 'defaultProductIcon' : 'productIcon');
-      image.addEventListener('error', () => image.remove(), { once: true });
-      identity.append(image);
-    }
-    identity.append(name);
-    overview.append(identity, description, date);
+    const titleGroup = element('div', 'project-title-group');
+    titleGroup.append(name); identity.append(titleGroup);
+    if (scope.center && switcher) { switcher.setAttribute('aria-label', message('switchProduct')); titleGroup.append(switcher); }
+    const status = element('div', 'project-runtime-status');
+    status.id = 'projectRuntimeStatus';
+    status.append(progressIcon(runtimeStateValue(), runtimeLabel(), true), element('span', '', runtimeLabel()));
+    identity.append(status);
+    overview.append(identity, description);
+    const evidence = element('p', 'sidebar-note', runtimeEvidence()); evidence.id = 'runtimeEvidence'; evidence.hidden = !evidence.textContent; overview.append(evidence);
     const iconWarning = iconPublicationWarning(media?.icon);
     if (iconWarning) overview.append(element('p', 'sidebar-note status-failed', message(iconWarning)));
-    const artifacts = element('section', 'sidebar-block');
+    const artifacts = element('section', 'sidebar-block project-artifacts');
+    const artifactDiagnostics = element('div', 'artifact-diagnostics');
     artifacts.append(element('h2', '', message('artifacts')));
     const visibleArtifacts = (data.artifacts || []).filter((artifact) => artifact.kind !== 'check');
     if (visibleArtifacts.length) {
@@ -841,25 +934,30 @@
           const link = element('a', 'artifact-link');
           const scopedURL = artifact.kind === 'preview' ? safePreviewURL(artifact) : safeScopedResource(artifact.url);
           link.href = scope.center ? scopedURL : artifact.url || `/api/journal/document?path=${encodeURIComponent(artifact.path)}`;
-          if (!link.href || (scope.center && !scopedURL)) { item.replaceChildren(element('span', '', `${label} · ${message('artifactUnavailable')}`)); list.append(item); continue; }
+          if (!link.href || (scope.center && !scopedURL)) { item.replaceChildren(element('span', '', `${label} · ${message('artifactUnavailable')}`)); artifactDiagnostics.append(item); continue; }
           link.target = '_blank';
           link.rel = 'noopener';
           link.title = artifact.path || artifact.url;
+          link.dataset.focusKey = `artifact:${artifact.id || artifact.url || artifact.path}`;
+          link.setAttribute('aria-label', label);
           link.append(icon(artifact.kind === 'preview' ? 'panels-top-left' : 'file-text'), element('span', '', label));
           const arrow = icon('external-link'); arrow.classList.add('artifact-arrow');
           arrow.setAttribute('aria-hidden', 'true');
           link.append(arrow);
           item.append(link);
         }
-        if (artifact.recordedAt) item.append(element('p', 'sidebar-note', message('recordedAt', { time: formatTime(artifact.recordedAt) })));
-        list.append(item);
+        if (artifact.recordedAt) item.title = message('recordedAt', { time: fullTime(artifact.recordedAt) });
+        if (artifact.available === false || (!artifact.path && !artifact.url)) artifactDiagnostics.append(item);
+        else list.append(item);
       }
-      artifacts.append(list);
+      if (list.children.length) artifacts.append(list);
+      else artifacts.append(element('p', 'sidebar-note', message('noArtifacts')));
     } else artifacts.append(element('p', 'sidebar-note', message('noArtifacts')));
-    const runtime = element('section', 'sidebar-block');
+    const runtime = element('section', 'sidebar-block project-runtime');
     runtime.append(element('h2', '', message('runtime')));
-    const sum = aggregate(data.cycles.filter((cycle) => !cycle.active));
-    const usage = `${compactNumber(sum.totalTokens)}${knownNumber(sum.totalTokens) ? ' tokens' : ''}${sum.partial && sum.known ? message('usagePartialShort') : ''}`;
+    const recordedGroups = usageGroups(data.cycles.filter((cycle) => !cycle.active));
+    const sum = aggregate(recordedGroups.length === 1 ? recordedGroups[0].cycles : []);
+    const usage = recordedGroups.length > 1 ? message('usageSeparated') : `${compactNumber(sum.totalTokens)}${knownNumber(sum.totalTokens) ? ' tokens' : ''}${sum.partial && sum.known ? message('usagePartialShort') : ''}`;
     const recordedCycle = scope.center ? data.cycles.find((cycle) => cycle.belongsToCurrentProject !== false) : null;
     const config = scope.center ? {
       engine: recordedCycle?.engine || 'unknown',
@@ -868,15 +966,29 @@
     } : data.runtime || {};
     const productLanguage = scope.center ? (data.languageState?.productLanguageStatus === 'unknown' ? null : data.languageState?.productLanguage) : config.language || data.language;
     const effort = ['low', 'medium', 'high', 'xhigh'].includes(config.reasoning) ? message(`effort_${config.reasoning}`) : config.reasoning;
-    runtime.append(runtimeRows([[message('engine'), config.engine], [message('model'), config.model], [message('reasoning'), effort === 'unknown' ? message('unknown') : effort], [message('language'), languageLabel(productLanguage)], [message('recordedUsage'), usage]]));
+    runtime.append(runtimeRows([[message('productCreated'), data.project?.createdAt ? formatTime(data.project.createdAt, true) : message('unknown')], [message('lastRun'), latest?.startedAt ? formatTime(latest.startedAt, true) : message('unknown')], [message('state'), runtimeLabel()], [message('slotOccupied'), concurrencyLabel()]]));
+    runtime.querySelectorAll('dd')[2].id = 'sidebarRuntimeState';
+    runtime.querySelectorAll('dd')[3].id = 'sidebarSlot';
+    for (const [index, value] of [[0, data.project?.createdAt], [1, latest?.startedAt]]) {
+      const cell = runtime.querySelectorAll('dd')[index];
+      if (value) { cell.title = fullTime(value); cell.setAttribute('aria-label', cell.title); }
+    }
     const details = bindDisclosure(element('details', 'runtime-disclosure'), 'runtime');
-    details.append(element('summary', '', message('moreRuntime')), runtimeRows([[message('state'), runtimeLabel()], [message('source'), data.sourceName]]));
+    const diagnosticsHeading = element('summary', 'sidebar-disclosure-heading');
+    const diagnosticsChevron = icon('chevron-down'); diagnosticsChevron.classList.add('disclosure-chevron');
+    diagnosticsHeading.append(element('span', '', message('diagnostics')), diagnosticsChevron);
+    details.append(diagnosticsHeading, runtimeRows([[message('engine'), config.engine], [message('model'), config.model], [message('reasoning'), effort === 'unknown' ? message('unknown') : effort], [message('language'), languageLabel(productLanguage)], [message('recordedUsage'), usage], [message('source'), data.sourceName]]));
     details.append(element('p', 'sidebar-note', message(config.configSource === 'session_context' ? 'observedSession' : 'unconfirmedSession')));
-    runtime.append(details);
-    sidebar.append(overview);
+    details.classList.add('sidebar-block', 'project-diagnostics');
     const productMedia = renderProductMedia(media);
-    if (productMedia) sidebar.append(productMedia);
-    sidebar.append(artifacts, runtime);
+    if (productMedia) {
+      details.append(productMedia.querySelector('.media-diagnostics'));
+      overview.append(productMedia);
+    }
+    if (artifactDiagnostics.children.length) details.append(artifactDiagnostics);
+    if (sourceName) details.append(sourceName);
+    sidebar.append(overview, artifacts, runtime, details);
+    window.DashboardUI?.mountControls(sidebar);
   }
   function applyLanguage() {
     document.documentElement.lang = state.language;
@@ -884,6 +996,8 @@
     document.querySelectorAll('[data-i18n]').forEach((node) => { node.textContent = message(node.dataset.i18n); });
     document.querySelectorAll('[data-i18n-placeholder]').forEach((node) => { node.placeholder = message(node.dataset.i18nPlaceholder); });
     $('centerContextNav').hidden = !scope.center;
+    document.body.classList.toggle('center-journal', scope.center);
+    $('journalBackLink').hidden = !scope.center;
     if (scope.center) document.querySelector('.brand').href = '/center';
     for (const [id, name] of [['tab-work', 'notebook-pen'], ['tab-usage', 'chart-no-axes-column'], ['tab-logs', 'terminal'], ['settingsButton', 'settings']]) iconLabel($(id), name, $(id).textContent);
     $('refreshButton').replaceChildren(icon('refresh-cw'));
@@ -891,22 +1005,28 @@
     $('refreshButton').title = message('refresh');
     $('refreshButton').setAttribute('aria-label', message('refresh'));
     $('closeSettingsButton').setAttribute('aria-label', message('close'));
+    $('profileButton').setAttribute('aria-label', message('localWorkspace'));
     $('closeProductSwitcherButton').setAttribute('aria-label', message('close'));
     document.querySelector('.tabs').setAttribute('aria-label', message('work'));
     document.querySelector('.table-scroll').setAttribute('aria-label', message('usageDetail'));
-    $('projectSidebar').setAttribute('aria-label', message('artifacts'));
+    $('projectSidebar').setAttribute('aria-label', message('productInfo'));
+    $('productInfoJump').hidden = state.tab !== 'work';
     window.DashboardIcons.hydrate();
   }
   function rememberFocus() {
     const active = document.activeElement;
     if (!active || active === document.body) return null;
-    const disclosure = active.closest('details[data-disclosure-key]');
-    return { id: active.id, key: active.dataset.focusKey, disclosure: active.tagName === 'SUMMARY' ? disclosure?.dataset.disclosureKey : null };
+    const disclosure = active.closest('[data-disclosure-key]');
+    return { id: active.id, key: active.dataset.focusKey, disclosure: active.classList.contains('disclosure-trigger') ? disclosure?.dataset.disclosureKey : null };
   }
   function restoreFocus(saved) {
     if (!saved) return;
-    const node = saved.id ? $(saved.id) : saved.key ? [...document.querySelectorAll('[data-focus-key]')].find((item) => item.dataset.focusKey === saved.key) : saved.disclosure ? [...document.querySelectorAll('details[data-disclosure-key]')].find((item) => item.dataset.disclosureKey === saved.disclosure)?.querySelector(':scope > summary') : null;
+    const node = saved.id ? $(saved.id) : saved.key ? [...document.querySelectorAll('[data-focus-key]')].find((item) => item.dataset.focusKey === saved.key) : saved.disclosure ? [...document.querySelectorAll('[data-disclosure-key]')].find((item) => item.dataset.disclosureKey === saved.disclosure)?.querySelector('.disclosure-trigger') : null;
     if (node && !node.disabled) node.focus({ preventScroll: true });
+    else if ((saved.key || saved.disclosure) && document.activeElement === document.body) {
+      $('mainContent').focus({ preventScroll: true });
+      actionMessage('focusedItemRemoved');
+    }
   }
   function latestCycle(data) {
     const scoped = Boolean(data.project?.id) && Object.hasOwn(data, 'latestProjectCycleId');
@@ -932,6 +1052,8 @@
     renderUsage();
     renderLogOptions();
     selectTab(state.tab);
+    describeTimes();
+    window.DashboardUI?.mountControls();
     restoreFocus(focus);
   }
   function filterUsage() {
@@ -951,7 +1073,7 @@
       start = date.toISOString().slice(0, 10);
       date.setUTCDate(date.getUTCDate() + 6);
       end = date.toISOString().slice(0, 10);
-      $('usageRange').textContent = `${start} – ${end}`;
+      $('usageRange').textContent = `${formatDate(start)} – ${formatDate(end)}`;
     }
     return recorded.filter((cycle) => {
       const value = cycle.endedAt || cycle.startedAt || cycle.reservedAt;
@@ -964,6 +1086,7 @@
     const cycles = filterUsage();
     const summary = clear($('usageSummary'));
     const rows = clear($('usageRows'));
+    $('usageSource').textContent = message('lastUpdated', { time: fullTime(state.data.generatedAt) });
     renderBudget(cycles);
     if (!cycles.length) {
       summary.append(element('p', 'muted', message('noUsage')));
@@ -972,10 +1095,22 @@
     const scoped = scope.center && state.scopedUsage?.key === usageKey(usageSelection()) ? state.scopedUsage.data : null;
     const total = scoped ? { ...scoped.usage, known: scoped.recorded, count: scoped.recorded + scoped.unknown,
       partial: Boolean(scoped.unknown || scoped.unknownTime || scoped.truncated || scoped.conflicting || cycles.some((cycle) => cycle.usage?.status === 'partial')) } : aggregate(cycles);
-    summary.append(element('span', 'usage-total', number(total.totalTokens)), element('span', 'usage-summary-label', message('knownTotal')));
-    summary.append(element('p', 'usage-coverage', message('coverageDescription', total)));
-    const amounts = element('p', 'usage-coverage', `${message('input')} ${number(total.inputTokens)} · ${message('output')} ${number(total.outputTokens)}`);
-    summary.append(amounts);
+    if (!total.known) for (const field of ['inputTokens', 'outputTokens', 'totalTokens']) total[field] = null;
+    const groups = usageGroups(cycles);
+    const metric = (label, value) => {
+      const item = element('div', 'usage-metric');
+      item.append(element('span', 'usage-metric-label', label), element('strong', 'usage-total', number(value)));
+      return item;
+    };
+    for (const group of groups) {
+      const usage = groups.length === 1 ? total : aggregate(group.cycles);
+      const section = element('section', 'usage-group');
+      const header = element('div', 'usage-group-heading');
+      header.append(element('h3', '', group.label), element('span', 'usage-coverage', message('coverageDescription', usage)));
+      const metrics = element('div', 'usage-metrics');
+      metrics.append(metric(message('total'), usage.totalTokens), metric(message('input'), usage.inputTokens), metric(message('output'), usage.outputTokens));
+      section.append(header, metrics); summary.append(section);
+    }
     if (!total.known) summary.append(element('p', 'usage-warning', message('noUsageKnown')));
     else if (total.known < total.count) summary.append(element('p', 'usage-warning', message('partialWarning', { count: total.count - total.known })));
     else if (total.partial) summary.append(element('p', 'usage-warning', message('partial')));
@@ -994,13 +1129,16 @@
   }
   function renderBudget(cycles) {
     const container = clear($('budgetSummary'));
-    const costs = cycles.map((cycle) => cycle.costUsd).filter(knownNumber);
-    const cost = costs.length ? new Intl.NumberFormat(state.language, { style: 'currency', currency: 'USD', maximumFractionDigits: 6 }).format(costs.reduce((sum, value) => sum + value, 0)) : message('unknown');
-    container.append(element('p', '', message('recordedCost', { cost, known: costs.length, count: cycles.length })));
+    for (const group of usageGroups(cycles)) {
+      const costs = group.cycles.map((cycle) => cycle.costUsd).filter(knownNumber);
+      if (!costs.length) continue;
+      const cost = costs.length ? new Intl.NumberFormat(state.language, { style: 'currency', currency: 'USD', maximumFractionDigits: 6 }).format(costs.reduce((sum, value) => sum + value, 0)) : message('unknown');
+      container.append(element('p', '', `${group.label} · ${message('recordedCost', { cost, known: costs.length, count: group.cycles.length })}`));
+    }
     const budget = cycles.find((cycle) => cycle.budget)?.budget || ($('usagePeriod').value === 'all' ? state.data?.recordedBudget : null);
-    if (budget) {
+    if (budget && budget.state && !['unknown', 'unavailable', 'disabled'].includes(budget.state)) {
       const key = `budget_${budget.state || 'unknown'}`;
-      container.append(element('p', '', message('recordedBudget', { state: message(key) === key ? String(budget.state || message('unknown')) : message(key), start: budget.start_date || '—', end: budget.end_date || '—' })));
+      container.append(element('p', '', message('recordedBudget', { state: message(key) === key ? String(budget.state || message('unknown')) : message(key), start: formatDate(budget.start_date), end: formatDate(budget.end_date) })));
       if (Array.isArray(budget.alerts)) {
         const list = element('ul');
         for (const alert of budget.alerts) {
@@ -1040,6 +1178,58 @@
     return JSON.stringify([state.data?.entryId, state.data?.sourceId, state.data?.sourceRevision, id,
       id === 'runtime' ? state.data?.runtimeLogUrl : cycle?.logUrl]);
   }
+  function readableLog(value, cycle = null) {
+    const lines = cycle && (knownNumber(cycle.sequenceNumber) || knownNumber(cycle.number)) ? [`${message('cycle')} #${paddedCycleNumber(cycle)} · ${fullTime(cycle.startedAt || cycle.reservedAt)}`, ''] : [];
+    const commands = new Set();
+    for (const raw of String(value).split('\n')) {
+      if (raw.trim() === 'Reading additional input from stdin...') continue;
+      let event;
+      try { event = JSON.parse(raw); } catch (_) { lines.push(raw); continue; }
+      if (!event || typeof event !== 'object' || Array.isArray(event)) { lines.push(raw); continue; }
+      const item = event.item;
+      if (item?.type === 'command_execution') {
+        if (item.command && !commands.has(item.id || item.command)) { lines.push('', `$ ${item.command}`); commands.add(item.id || item.command); }
+        if (item.aggregated_output) lines.push(item.aggregated_output.trimEnd());
+        if (Number.isInteger(item.exit_code)) lines.push(`${message('logExitCode')}: ${item.exit_code}`);
+      } else if (typeof item?.text === 'string') {
+        lines.push('', item.text);
+      } else if (event.type === 'thread.started' || event.type === 'turn.started') {
+        if (event.type === 'turn.started') lines.push(message('logRunStarted'));
+      } else if (event.type === 'turn.completed') {
+        lines.push('', message('logRunCompleted'));
+      } else if (event.type === 'error' || event.type === 'turn.failed') {
+        lines.push(`${message('logError')}: ${event.message || event.error?.message || JSON.stringify(event.error || event)}`);
+      } else if (Array.isArray(event.message?.content)) {
+        lines.push(...event.message.content.filter(part => typeof part.text === 'string').map(part => part.text));
+      } else if (typeof event.delta?.text === 'string') {
+        lines.push(event.delta.text);
+      } else if (typeof event.result === 'string') {
+        lines.push(event.result);
+      } else {
+        lines.push(JSON.stringify(event, null, 2));
+      }
+    }
+    return lines.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+  }
+  function showLog(value, key, range) {
+    value = value ? readableLog(value, logCycles().find(cycle => cycle.id === state.selectedLog)) : '';
+    const node = $('logText');
+    const same = state.logLoadedKey === key;
+    const previous = state.logText;
+    const top = same ? node.scrollTop : 0;
+    const left = same ? node.scrollLeft : 0;
+    const atBottom = node.scrollHeight - node.scrollTop - node.clientHeight <= 4;
+    state.logText = value; state.logLoadedKey = key;
+    state.logLoadedAt = new Date().toISOString(); state.logRange = range;
+    if (node.textContent !== value) node.textContent = value;
+    const following = same && $('followLog').checked && atBottom;
+    node.scrollTop = following ? node.scrollHeight : top;
+    node.scrollLeft = left;
+    if (!same || !value || following) $('newLogButton').hidden = true;
+    else if (value !== previous) $('newLogButton').hidden = false;
+    $('copyLogButton').disabled = !value;
+    $('logStatus').textContent = `${value ? range : message('logEmpty')} · ${message('logReadAt', { time: fullTime(state.logLoadedAt) })}`;
+  }
   async function loadLog() {
     const key = logContextKey();
     if (state.logPending) {
@@ -1055,8 +1245,8 @@
     const id = state.selectedLog;
     const previous = state.logLoadedKey === key ? state.logText : '';
     if (state.logLoadedKey !== key) $('logText').textContent = '';
-    state.logText = '';
-    $('copyLogButton').disabled = true;
+    if (state.logLoadedKey !== key) { state.logText = ''; state.logLoadedAt = null; $('newLogButton').hidden = true; }
+    $('copyLogButton').disabled = !previous;
     $('copyLogButton').textContent = message('copy');
     $('refreshLogButton').disabled = true;
     $('logStatus').textContent = message('loadingLog');
@@ -1065,30 +1255,27 @@
         const cycle = logCycles().find((item) => item.id === id);
         const value = await fetchScopedText(id === 'runtime' ? state.data.runtimeLogUrl : cycle?.logUrl, 15000);
         if (request !== state.logRequest || key !== logContextKey()) return;
-        state.logText = value; state.logLoadedKey = key; $('logText').textContent = value;
-        $('logStatus').textContent = value ? message('logAvailable', { count: number(value.length) }) : message('logEmpty');
-        $('copyLogButton').disabled = !value;
+        showLog(value, key, message('logVisibleRange', { count: number(value.length) }));
         return;
       }
       const result = await fetchJSON(id === 'runtime' ? '/api/log-tail?lines=180' : `/api/journal/log?id=${encodeURIComponent(id)}`, {}, 15000);
       if (request !== state.logRequest || key !== logContextKey()) return;
-      if (id !== 'runtime' && !result.available) { $('logText').textContent = ''; $('logStatus').textContent = message('noLog'); return; }
+      if (id !== 'runtime' && !result.available) { showLog('', key, message('noLog')); $('logStatus').textContent = message('noLog'); return; }
       if (id === 'runtime' && typeof result.logTail !== 'string') throw new Error('Invalid runtime log');
-      state.logText = String(id === 'runtime' ? result.logTail : result.text || '');
-      state.logLoadedKey = key;
-      $('logText').textContent = state.logText;
-      $('logStatus').textContent = result.truncated ? message('logTruncated') : state.logText ? message('logAvailable', { count: number(state.logText.length) }) : message('logEmpty');
-      $('copyLogButton').disabled = !state.logText;
+      const value = String(id === 'runtime' ? result.logTail : result.text || '');
+      showLog(value, key, id === 'runtime' ? message('logTailRange') : result.truncated ? message('logTruncated') : message('logVisibleRange', { count: number(value.length) }));
     } catch (_) {
       if (request !== state.logRequest || key !== logContextKey()) return;
       state.logText = previous;
-      $('logStatus').textContent = message('logFailed');
+      $('copyLogButton').disabled = !previous;
+      $('logStatus').textContent = `${message('logFailed')}${state.logLoadedAt ? ` ${message('logReadAt', { time: fullTime(state.logLoadedAt) })} · ${state.logRange || ''}` : ''}`;
     } finally { if (state.logPending?.request === request) { state.logPending = null; $('refreshLogButton').disabled = false; } } })();
     state.logPending = { key, request, promise };
     return promise;
   }
   function selectTab(tab, focus = false) {
     state.tab = tab;
+    window.DashboardUI?.selectTab(tab);
     for (const button of document.querySelectorAll('[data-tab]')) {
       const active = button.dataset.tab === tab;
       button.setAttribute('aria-selected', String(active));
@@ -1096,34 +1283,28 @@
       $(`panel-${button.dataset.tab}`).hidden = !active || !state.data;
     }
     if (focus) $(`tab-${tab}`).focus();
+    $('productInfoJump').hidden = tab !== 'work';
   }
-  function switcherMatches(query) {
-    const value = String(query || '').trim().toLocaleLowerCase(state.language);
-    return scope.entries.filter((entry) => !entry.archived && entry.kind !== 'reference' && (!value || [entry.displayName, entry.description, entry.alias].some((item) => String(item || '').toLocaleLowerCase(state.language).includes(value))));
+  function connectionNotice(key) {
+    const node = clear($('connectionError'));
+    node.append(window.DashboardUI.alertMessage(message(key)));
+    if (state.data?.generatedAt) node.firstElementChild.append(element('span', '', ` ${message('lastUpdated', { time: fullTime(state.data.generatedAt) })} `));
+    const retry = element('button', 'text-button', message('retryRead')); retry.type = 'button';
+    retry.addEventListener('click', refresh); node.firstElementChild.append(retry);
   }
-  function renderProductSwitcher(query = '') {
-    const list = clear($('productSwitcherList'));
-    const entries = switcherMatches(query);
-    $('productSwitcherStatus').textContent = entries.length ? '' : message('noProductsFound');
-    for (const entry of entries) {
-      const option = element('a', `product-switcher-option${entry.entryId === scope.entryId ? ' current' : ''}`);
-      option.href = `/products/${encodeURIComponent(entry.entryId)}`;
-      option.setAttribute('role', 'option'); option.setAttribute('aria-selected', String(entry.entryId === scope.entryId)); option.dataset.entryId = entry.entryId;
-      const copy = element('span'); copy.append(element('strong', '', entry.displayName || message('unknown')), element('small', '', entry.description || message('unavailable')));
-      option.append(copy);
-      if (entry.entryId === scope.entryId) option.append(element('span', 'switcher-current', message('currentProduct')));
-      list.append(option);
-    }
+  function renderProductSwitcher(reset = false) {
+    window.DashboardUI.productSwitcher(scope.entries.filter(entry => !entry.archived && entry.kind !== 'reference'), scope.entryId,
+      { search: message('searchProducts'), empty: message('noProductsFound'), current: message('currentProduct') }, reset);
   }
   async function openProductSwitcher() {
     if (!scope.center) return;
     const dialog = $('productSwitcherDialog'); const token = ++scope.token;
-    $('productSwitcherSearch').value = ''; $('productSwitcherStatus').textContent = message('loadingProducts'); clear($('productSwitcherList'));
-    dialog.showModal(); $('productSwitcherSearch').focus();
+    scope.entries = []; renderProductSwitcher(true); $('productSwitcherStatus').textContent = message('loadingProducts');
+    dialog.showModal(); document.querySelector('#productSwitcherControls [cmdk-input]')?.focus();
     try {
       const [entries, summary] = await Promise.all([fetchAllCenterEntries(), fetchCenter('/summary')]);
       if (token !== scope.token || !dialog.open || !Array.isArray(entries)) return;
-      scope.entries = entries; renderProductSwitcher();
+      scope.entries = entries; renderProductSwitcher(); $('productSwitcherStatus').textContent = '';
       renderCenterRuntimeContext(summary);
     } catch (_) { if (token === scope.token) $('productSwitcherStatus').textContent = message('readFailed'); }
   }
@@ -1138,13 +1319,7 @@
       if (token === scope.contextToken) { $('centerRuntimeContext').textContent = ''; $('centerRuntimeContext').title = ''; }
     }
   }
-  function moveSwitcherFocus(direction) {
-    const options = [...$('productSwitcherList').querySelectorAll('[role="option"]')];
-    if (!options.length) return;
-    const current = options.indexOf(document.activeElement);
-    const next = current < 0 ? (direction > 0 ? 0 : options.length - 1) : (current + direction + options.length) % options.length;
-    options[next].focus();
-  }
+
   function scheduleRefresh() {
     clearTimeout(state.timer);
     state.timer = null;
@@ -1166,7 +1341,7 @@
       if (scope.center) state.centerSummary = scopedResult[1];
       if (scope.center && (detailToken !== state.detailToken || requestEntryId !== scope.entryId || data.entryId !== scope.entryId)) throw new Error('Out-of-scope journal response');
       if (!data.ok || !Array.isArray(data.cycles)) throw new Error('invalid journal response');
-      const signature = JSON.stringify({ ...data, generatedAt: undefined, status: data.status ? { ...data.status, timestamp: undefined, elapsedMs: undefined } : undefined });
+      const signature = JSON.stringify({ ...data, displayDay: window.DashboardDate.day(), generatedAt: undefined, status: data.status ? { ...data.status, timestamp: undefined, elapsedMs: undefined } : undefined });
       if (state.data && Number.isFinite(Date.parse(data.generatedAt)) && Date.parse(data.generatedAt) < Date.parse(state.data.generatedAt)) throw new Error('Out-of-order journal snapshot');
       let nextScopedUsage = null;
       if (scope.center) {
@@ -1190,10 +1365,11 @@
       }
       if (!state.autoChanged) $('autoRefresh').checked = scope.center || !readOnly();
       $('connectionError').hidden = !state.statusFailed || (readOnly() && data.status === null);
-      $('connectionError').textContent = message('runtimeUnavailable');
+      connectionNotice('runtimeUnavailable');
       $('loadingState').hidden = true;
       if (signature !== state.signature) {
-        const scrollPosition = window.scrollY;
+        const scrollPosition = state.restoreScroll ?? window.scrollY;
+        state.restoreScroll = null;
         state.signature = signature;
         render();
         requestAnimationFrame(() => window.scrollTo({ top: scrollPosition, behavior: 'instant' }));
@@ -1208,7 +1384,7 @@
       state.signature = '';
       $('loadingState').hidden = true;
       $('connectionError').hidden = false;
-      $('connectionError').textContent = message(state.data ? 'stale' : 'readFailed');
+      connectionNotice(state.data ? 'stale' : 'readFailed');
       $('refreshStatus').textContent = state.data?.generatedAt ? message('lastUpdated', { time: formatTime(state.data.generatedAt, true) }) : '';
       if (state.data) {
         if (scope.center) renderCenterLiveState();
@@ -1216,6 +1392,7 @@
       }
       else renderRuntime();
     } finally {
+      clearTimeout(state.loadingTimer);
       state.refreshPending = null;
       $('refreshButton').disabled = Boolean(state.action);
       scheduleRefresh();
@@ -1251,39 +1428,44 @@
 
   document.querySelectorAll('[data-tab]').forEach((button) => {
     button.addEventListener('click', () => { selectTab(button.dataset.tab); if (button.dataset.tab === 'logs') loadLog(); });
-    button.addEventListener('keydown', (event) => {
-      const keys = ['ArrowLeft', 'ArrowRight', 'Home', 'End'];
-      if (!keys.includes(event.key)) return;
-      event.preventDefault();
-      const tabs = ['work', 'usage', 'logs'];
-      const index = tabs.indexOf(state.tab);
-      const next = event.key === 'Home' ? 0 : event.key === 'End' ? 2 : (index + (event.key === 'ArrowRight' ? 1 : 2)) % 3;
-      selectTab(tabs[next], true);
-      if (tabs[next] === 'logs') loadLog();
-    });
+  });
+  document.addEventListener('ui-tab-change', event => {
+    selectTab(event.detail);
+    if (event.detail === 'logs') loadLog();
   });
   state.elapsedTimer = setInterval(updateElapsed, 1000);
   $('refreshButton').addEventListener('click', refresh);
   $('startButton').addEventListener('click', () => runAction('start'));
-  $('stopButton').addEventListener('click', () => runAction('stop'));
+  $('stopButton').addEventListener('click', () => {
+    $('stopConfirmMessage').textContent = message('stopConfirmMessage', { name: state.data?.project?.displayName || state.data?.project?.name || message('noProject') });
+    $('stopConfirmDialog').showModal();
+  });
+  for (const id of ['closeStopConfirm', 'cancelStopConfirm']) $(id).addEventListener('click', () => $('stopConfirmDialog').close());
+  $('acceptStopConfirm').addEventListener('click', () => { $('stopConfirmDialog').close(); runAction('stop'); });
   $('autoRefresh').addEventListener('change', () => { state.autoChanged = true; scheduleRefresh(); });
   document.addEventListener('visibilitychange', () => { if (!document.hidden && $('autoRefresh').checked && (scope.center || !readOnly()) && !state.action) refresh(); else scheduleRefresh(); });
   $('usagePeriod').addEventListener('change', () => { renderUsage(); refreshScopedUsage(); });
   $('usageDate').addEventListener('change', () => { renderUsage(); refreshScopedUsage(); });
   $('logSelect').addEventListener('change', () => { state.selectedLog = $('logSelect').value; loadLog(); });
   $('refreshLogButton').addEventListener('click', loadLog);
+  $('logText').addEventListener('scroll', () => {
+    const node = $('logText');
+    if (node.scrollHeight - node.scrollTop - node.clientHeight > 4) $('followLog').checked = false;
+    else $('newLogButton').hidden = true;
+  });
+  $('newLogButton').addEventListener('click', () => { $('logText').scrollTop = $('logText').scrollHeight; $('newLogButton').hidden = true; $('logText').focus(); });
+  $('followLog').addEventListener('change', () => { if ($('followLog').checked) { $('logText').scrollTop = $('logText').scrollHeight; $('newLogButton').hidden = true; } });
   $('copyLogButton').addEventListener('click', async () => {
     try {
       await navigator.clipboard.writeText(state.logText);
       $('copyLogButton').textContent = message('copied');
+      $('logStatus').textContent = message('copiedRange', { range: state.logRange || message('logVisibleRange', { count: number(state.logText.length) }) });
     } catch (_) { $('logStatus').textContent = message('copyFailed'); }
   });
   $('settingsButton').addEventListener('click', () => { $('settingsDialog').showModal(); refreshLanguage(); });
   $('productSwitcherButton').addEventListener('click', openProductSwitcher);
   $('closeProductSwitcherButton').addEventListener('click', () => $('productSwitcherDialog').close());
-  $('productSwitcherSearch').addEventListener('input', () => renderProductSwitcher($('productSwitcherSearch').value));
-  $('productSwitcherSearch').addEventListener('keydown', (event) => { if (event.key === 'ArrowDown') { event.preventDefault(); moveSwitcherFocus(1); } else if (event.key === 'ArrowUp') { event.preventDefault(); moveSwitcherFocus(-1); } });
-  $('productSwitcherList').addEventListener('keydown', (event) => { if (event.key === 'ArrowDown') { event.preventDefault(); moveSwitcherFocus(1); } else if (event.key === 'ArrowUp') { event.preventDefault(); moveSwitcherFocus(-1); } else if (event.key === 'Enter') document.activeElement?.click(); });
+
   $('productSwitcherDialog').addEventListener('close', () => { ++scope.token; $('productSwitcherButton').focus(); });
   $('languageSelect').addEventListener('change', saveLanguage);
   $('closeSettingsButton').addEventListener('click', () => $('settingsDialog').close());
@@ -1292,7 +1474,12 @@
     const box = $('settingsDialog').getBoundingClientRect();
     if (event.clientX < box.left || event.clientX > box.right || event.clientY < box.top || event.clientY > box.bottom) $('settingsDialog').close();
   });
+  $('productInfoJump').addEventListener('click', () => $('projectSidebar').focus({ preventScroll: true }));
+  window.addEventListener('pagehide', saveJournalView);
+  restoreJournalView();
   applyLanguage();
   renderLanguage();
+  $('loadingState').hidden = true;
+  state.loadingTimer = setTimeout(() => { if (!state.data && state.refreshPending) $('loadingState').hidden = false; }, 300);
   refresh();
 })();

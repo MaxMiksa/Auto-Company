@@ -289,6 +289,28 @@ class QueueTests(unittest.TestCase):
         self.runtime.tick()
         self.assertEqual(self.runtime.decorate_entry(view)["executionSummary"]["state"], "running")
 
+    def test_readonly_source_observation_never_grants_execution_or_owns_slots(self):
+        source = {**self.a, "runtimeId": None}
+        with self.store.transaction() as tx:
+            tx.put("sources", source["sourceId"], source)
+        observation = {"state": "running", "scoped": True, "readOnly": True, "liveConfirmedAt": "2026-10-03T00:00:00+00:00"}
+        view = self.runtime.decorate_entry({**source, "availability": "available", "readonlyObservation": observation})
+        self.assertEqual(view["executionSummary"]["state"], "read_only")
+        self.assertEqual(view["readonlyObservation"], observation)
+        self.assertFalse(view["capabilities"]["execute"])
+        self.assertEqual(self.runtime.summary()["occupiedCount"], 0)
+
+    def test_expired_owned_live_receipt_still_requires_confirmation(self):
+        request = self.create(executionMode="start_now")
+        self.runtime.tick()
+        self.adapter.acknowledge("running")
+        self.runtime.tick()
+        with self.store.transaction() as tx:
+            row = tx.get("requests", request["requestId"])
+            row["liveConfirmedAt"] = "2020-01-01T00:00:00+00:00"
+            tx.put("requests", row["requestId"], row)
+        self.assertEqual(self.runtime.decorate_entry({**self.a, "availability": "available"})["executionSummary"]["state"], "unknown")
+
     def test_incompatible_control_files_disable_execution_without_losing_owned_release(self):
         sys.path.insert(0, str(ROOT / "scripts/core"))
         from center_runner import CONTROL_FILES
@@ -619,7 +641,8 @@ class PreparationTests(unittest.TestCase):
         operation = self.wait_operation(initial["operationId"])
         self.assertEqual(operation["state"], "succeeded", operation)
         request = self.runtime.get_request(operation["reserved"]["requestId"])
-        self.assertEqual((request["state"], request["reasonDetail"]), ("attention", "slot_changed"))
+        self.assertEqual((request["state"], request["reasonDetail"]), ("queued", None))
+        self.assertFalse(request["startAuthorized"])
         self.assertFalse(self.runtime.summary()["dispatchEnabled"])
 
     def test_stop_all_during_preparation_revokes_authorization_and_keeps_operation_discoverable(self):
@@ -648,7 +671,8 @@ class PreparationTests(unittest.TestCase):
         self.runtime.tick()
         self.assertEqual(self.runtime.adapter.launched, [])
         self.assertEqual(self.runtime.summary()["preparationCount"], 0)
-        self.assertEqual(self.runtime.summary()["attentionCount"], 1)
+        self.assertEqual(self.runtime.summary()["attentionCount"], 0)
+        self.assertEqual(self.runtime.summary()["queuedCount"], 1)
 
     def test_restart_revokes_preparing_authorization_and_exposes_recovery(self):
         with patch.object(self.runtime, "_worker"):
@@ -1250,7 +1274,7 @@ class WindowsBridgeTests(unittest.TestCase):
             fake.write_text('#!/bin/bash\nif [ "${1:-}" = "--version" ]; then exit 0; fi\necho called > "$AUTO_COMPANY_ROOT/invocations"\nprintf \'{"type":"result","subtype":"success","result":"offline"}\\n\'\ntouch "$AUTO_COMPANY_ROOT/.auto-loop-stop"\n', encoding="utf-8", newline="\n")
             adapter._execute(adapter._wsl() + ["--exec", "chmod", "+x", adapter.path(fake)])
             ids = {key: prefix + "_" + uuid.uuid4().hex for key, prefix in (("centerId", "center"), ("entryId", "entry"), ("sourceId", "source"), ("runtimeId", "runtime"), ("requestId", "request"), ("dispatchId", "dispatch"))}
-            atomic_json(target / ".auto-company-center.json", {"protocolVersion": 1, **{key: ids[key] for key in ("centerId", "runtimeId", "sourceId", "entryId")}})
+            atomic_json(target / ".auto-company-center.json", {"protocolVersion": 2, **{key: ids[key] for key in ("centerId", "runtimeId", "sourceId", "entryId")}})
             manifest = {**ids, "nonce": uuid.uuid4().hex, "root": adapter.path(target), "controlDir": adapter.path(control),
                         "environment": {"ENGINE": "claude", "MODEL": "fixture", "AUTO_COMPANY_LANGUAGE": "en"}}
             path = control / "manifest.json"

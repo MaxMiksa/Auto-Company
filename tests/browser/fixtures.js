@@ -56,7 +56,9 @@ export const test = base.extend({
     await page.goto(dashboard.url);
     await expect(page.locator("#projectName")).toHaveText("Browser Fixture");
     await expect(page.locator("#runtimeState")).toHaveText(scenario === "running-cycle" ? "Running" : "Stopped");
-    await page.locator("#autoRefresh").uncheck();
+    await page.locator("#settingsButton").click();
+    await page.locator('#settingsDialog [role=switch]').setChecked(false);
+    await page.locator("#closeSettingsButton").click();
     await use(page);
     expect(errors, "Unexpected dashboard JavaScript errors").toEqual([]);
   },

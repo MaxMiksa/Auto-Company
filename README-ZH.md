@@ -2,7 +2,7 @@
 
 # Auto Company
 
-**支持持续自主工作的 AI 公司框架** <a href="README.md"><img alt="[English Documentation]" src="https://img.shields.io/badge/%5BEnglish%20Documentation%5D-2f3640.svg" /></a>
+**支持持续自主工作的 AI 公司框架**
 
 基于 **Agentic Workflows（代理式工作流）**，系统提供 14 份 **AI 智能体角色定义**，各自参考相关领域专家的工作方法。
 团队可以在人类设定的目标、权限和预算内自主调研产品、做决策和写代码。部署、发布和营销取决于可用工具及授权范围，持续运行也依赖服务和模型可用性。
@@ -16,12 +16,16 @@
 [![Codex CLI](https://img.shields.io/badge/驱动-Codex%20CLI-orange?logo=data:image/svg%2Bxml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMjQgMjQiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgZmlsbD0id2hpdGUiPjxwYXRoIGQ9Ik0yMi4yODE5IDkuODIxMWE1Ljk4NDcgNS45ODQ3IDAgMCAwLS41MTU3LTQuOTEwOCA2LjA0NjIgNi4wNDYyIDAgMCAwLTYuNTA5OC0yLjlBNi4wNjUxIDYuMDY1MSAwIDAgMCA0Ljk4MDcgNC4xODE4YTUuOTg0NyA1Ljk4NDcgMCAwIDAtMy45OTc3IDIuOSA2LjA0NjIgNi4wNDYyIDAgMCAwIC43NDI3IDcuMDk2NiA1Ljk4IDUuOTggMCAwIDAgLjUxMSA0LjkxMDcgNi4wNTEgNi4wNTEgMCAwIDAgNi41MTQ2IDIuOTAwMUE2LjA2NTEgNi4wNjUxIDAgMCAwIDE5LjAyIDE5LjgxODJhNS45ODQ3IDUuOTg0NyAwIDAgMCAzLjk5NzctMi45MDAxIDYuMDQ2MiA2LjA0NjIgMCAwIDAtLjczNTgtNy4wOTdaTTguNzQ5IDYuNzU3OGE0LjQxMTggNC40MTE4IDAgMCAxIDcuMzY3MyAxLjE0NDQgNC4zOTg2IDQuMzk4NiAwIDAgMS0uMjkyOCA0LjIyODVsLTQuNzA3LTIuNzIxNHYtMi42NTE1Wk02LjUzMzIgMTQuNjU0YTQuNDExOCA0LjQxMTggMCAwIDEtMS4xMjkzLTcuMzcgNC4zOTg2IDQuMzk4NiAwIDAgMSA0LjEzNTItMS4zOWwyLjM2MTUgNC4wOTN2NS4zMDJMNi41MzMyIDE0LjY1NFptLTEuODQ4LTEuNTcyYTQuNDExOCA0LjQxMTggMCAwIDEgNi4yMzgtNi4yMjYgNC4zOTg2IDQuMzk4NiAwIDAgMSAzLjg0MzMgMi44MzhsLTQuNzA3IDIuNzIxdjUuMzAxNUw0LjY4NTIgMTMuMDgyWm0xMC41NjU4IDQuMTZhNC40MTE4IDQuNDExOCAwIDAgMS03LjM2NzMtMS4xNDQzIDQuMzk4NiA0LjM5ODYgMCAwIDEgLjI5MjgtNC4yMjg1bDQuNzA3IDIuNzIxNHYyLjY1MTRabTIuMjE1OC03Ljg5NmE0LjQxMTggNC40MTE4IDAgMCAxIDEuMTI5MyA3LjM3IDQuMzk4NiA0LjM5ODYgMCAwIDEtNC4xMzUyIDEuMzlsLTIuMzYxNS00LjA5M1Y5LjE4Nmw1LjM2NzQgMi4xODZabTEuODQ4IDEuNTcyYTQuNDExOCA0LjQxMTggMCAwIDEtNi4yMzggNi4yMjYgNC4zOTg2IDQuMzk4NiAwIDAgMS0zLjg0MzMtMi44MzhsNC43MDctMi43MjFWOS4xODZsNS4zNzQgMy4wOTZaTTEyIDE2LjUxNmE0LjQxMTggNC40MTE4IDAgMCAxLTQuNDExOC00LjQxMThjMC0yLjQzNDggMS45NzctNC40MTE4IDQuNDExOC00LjQxMThzNC40MTE4IDEuOTc3IDQuNDExOCA0LjQxMTgtMS45NzcgNC40MTE4LTQuNDExOCA0LjQxMThaIi8+PC9zdmc+&logoColor=white)](https://www.npmjs.com/package/@openai/codex)
 [![Claude Code](https://img.shields.io/badge/驱动-Claude%20Code-purple?logo=anthropic&logoColor=white)](#依赖)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green?logo=opensourceinitiative&logoColor=white)](LICENSE)
+<a href="README.md"><img alt="[English]" src="https://img.shields.io/badge/%5BEnglish%5D-2f3640.svg" /></a>
 
 </div>
 
+**v2.1.0：多项目并行、配置模板与全新产品中心。**
+
 ---
 
-## 看板与产品实拍
+<a id="看板与产品实拍"></a>
+## 🎬 看板与产品实拍
 
 [![ScopeFence · 工作时间轴](presentation/showcase/scopefence-timeline-zh-CN.png)](presentation/showcase/scopefence-timeline-zh-CN.png)
 
@@ -39,7 +43,8 @@
 <tr><td width="50%" valign="top"><a href="presentation/products/coi-chase-desk-zh-full.png"><img src="presentation/products/coi-chase-desk-zh-full.png" alt="保单跟进台 · 产品页面" width="100%" /></a></td><td width="50%" valign="top"><a href="presentation/showcase/coi-chase-desk-timeline-zh-CN.png"><img src="presentation/showcase/coi-chase-desk-timeline-zh-CN.png" alt="保单跟进台 · 真实工作时间轴" width="100%" /></a></td></tr>
 </table>
 
-## 这是什么？
+<a id="这是什么"></a>
+## ✨ 这是什么？
 
 你启动循环后，每轮会读取工作摘要、决定任务、按需组队、执行并更新摘要，然后等待下一轮。实际组队取决于模型和引擎能力；错误、预算限制或暂停请求可能中止后续运行。
 
@@ -68,7 +73,9 @@ daemon (launchd / systemd --user, 崩溃自重启)
 | 产品目录 | 搜索和打开已接入产品；每个产品的身份、历史、用量与真实执行结果分别保留。 |
 | 安全接入 | 已有运行记录或源码先以只读方式接入；不兼容或不完整的来源不能执行。 |
 | 明确安排工作 | 只有主动提交请求后，才会继续已有产品或准备新探索；查看和刷新页面不会创建任务。 |
-| 单队列顺序执行 | 一个受管执行位置按顺序处理请求。每个请求占用位置直到完整持续循环停止并完成清理，不会每轮自动切换产品。 |
+| 多项目并行 | 默认同时运行4个项目，可调整数量或选择不限；每个项目持续占用位置直到完整循环停止并完成清理。 |
+| 批量创建与配置模板 | 按不同模型、思考强度和数量分组创建项目，常用配置保存为模板；已提交工作保留当时选择。 |
+| 更顺畅的浏览 | 紧凑产品列表、示例展示选择与统一工作报告，更容易找到产品并跟进；整行进入产品，支持键盘操作。 |
 | 可见的恢复过程 | 准备状态、失败、保护暂停和未知状态在刷新后仍会保留，便于核对后再重试或恢复队列。 |
 
 在仓库目录启动，然后打开 `http://127.0.0.1:8810/center`：
@@ -85,7 +92,8 @@ make center
 
 来源登记、执行域设置、队列控制和恢复规则详见[多产品管理中心说明](docs/product-center.md)。
 
-## 运行产物示例
+<a id="运行产物示例"></a>
+## 🧩 运行产物示例
 
 [展示目录](examples/README.md)收录 22 个可独立运行的公开案例，包含本次完成的 14 个产品，以及筛选和保留的历史案例。每项提供启动方式、功能边界与来源；本地新运行继续写入 `projects/`。
 
@@ -93,12 +101,14 @@ make center
 
 前端恢复采用基于 Anthropic 技能改编的 B 版设计规则，在核心流程可用后安排一轮[独立精修](.claude/skills/frontend-polish/SKILL.md)，保留产品风格，改善组件、文案和响应式体验。[精修实验](presentation/frontend-study/README.md)与[重做对照](presentation/frontend-redesign/README.md)保留原始证据与适用边界。
 
-## 你该看哪一节（按平台）
+<a id="你该看哪一节按平台"></a>
+## 🚀 你该看哪一节（按平台）
 
 - Windows 用户：从 [Windows (WSL) 快速开始](#windows-wsl-快速开始) 开始，再看 [`docs/windows-setup.md`](docs/windows-setup.md)
 - macOS 用户：从 [macOS 快速开始](#macos-快速开始) 开始，再看 [命令速查（按平台）](#命令速查按平台)
 
-## 语言与文档
+<a id="语言与文档"></a>
+## 🌐 语言与文档
 
 一个语言设置统一控制 Dashboard、文档入口和新产品工作。首次使用跟随电脑的显示语言：中文系统使用 `zh-CN`，其他语言使用 `en`；WSL 会优先读取 Windows 的显示语言。
 
@@ -115,7 +125,8 @@ make center
 | 用量与预算 | [治理说明](i18n/zh-CN/docs/usage-governance.md) | [Governance guide](docs/usage-governance.md) |
 | 操作与排错 | [常见操作与排错](docs/troubleshooting.md) | [Common tasks and errors](i18n/en/docs/troubleshooting.md) |
 
-## 团队阵容（14 个角色）
+<a id="团队阵容14-个角色"></a>
+## 👥 团队阵容（14 个角色）
 
 不是"你是一个开发者"，而是"你是 DHH"——用真实传奇人物激活 LLM 的深层知识。
 
@@ -138,7 +149,8 @@ make center
 
 另配 **30+ 技能**（深度调研、网页抓取、财务建模、SEO、安全审计、UX 审计……），任何 Agent 按需取用。
 
-## macOS 快速开始
+<a id="macos-快速开始"></a>
+## 🍎 macOS 快速开始
 
 ```bash
 # 前提:
@@ -163,7 +175,8 @@ make install
 ENGINE=codex make install
 ```
 
-## Windows (WSL) 快速开始
+<a id="windows-wsl-快速开始"></a>
+## 🪟 Windows (WSL) 快速开始
 
 ```powershell
 # 前提:
@@ -193,7 +206,8 @@ cd Auto-Company
 监控、看板、自启等命令请查看 [`docs/windows-setup.md`](docs/windows-setup.md)。
 
 
-## 命令速查（按平台）
+<a id="命令速查按平台"></a>
+## ⌨️ 命令速查（按平台）
 
 | 任务 | macOS / WSL（在终端执行） | Windows（在 PowerShell 执行） |
 |---|---|---|
@@ -227,7 +241,13 @@ make awake         # 读取 .auto-loop.pid 并对该 PID 挂 caffeinate
 - 这两个命令依赖 macOS 自带 `caffeinate`
 - `make awake` 会在 PID 结束后自动退出
 
-## 架构技术介绍详单 (5-Layer Architecture)
+<a id="架构技术介绍详单-5-layer-architecture"></a>
+## 📚 更多
+
+<details>
+<summary><b>🏗️ 架构与开发指南</b></summary>
+
+## 🏗️ 架构技术介绍详单 (5-Layer Architecture)
 
 Auto-Company 并非简单调用 LLM API，而是一个高度解耦的 **多智能体系统 (Multi-Agent System, MAS)**。其技术架构分为 5 个清晰的层级：
 
@@ -273,7 +293,11 @@ Auto-Company 并非简单调用 LLM API，而是一个高度解耦的 **多智�
 *   **跨平台守护进程 (Cross-Platform Daemon)**：macOS 基于 `launchd` 实现开机自启和崩溃重启；Windows/WSL 基于 `systemd --user` 在 WSL 容器内运行，外部通过 PowerShell 进行控制和保活。
 *   **沙盒边界 (Sandbox Boundary)**：目前依赖底层 CLI 的配置（如 Codex 的 `danger-full-access` 或 Claude 的 `bypassPermissions`），系统级操作均在宿主机环境（或 WSL 容器）中直接发生。
 
-## 运作机制
+</details>
+
+<a id="运作机制"></a>
+
+## 🔄 运作机制
 
 ### 默认工作流指导
 
@@ -298,7 +322,8 @@ Auto-Company 并非简单调用 LLM API，而是一个高度解耦的 **多智�
 | 5 | **每周复盘** | 运营 → 销售 → CFO → QA → CEO |
 | 6 | **机会发现** | 调研 → CEO → Munger → CFO |
 
-## 引导方向
+<a id="引导方向"></a>
+## 🧭 引导方向
 
 改变方向前，前台运行使用 `make stop`，macOS/WSL 守护模式使用 `make pause`，Windows 使用下表的停止命令。等运行停止后再编辑，然后重新启动或恢复。
 
@@ -311,7 +336,8 @@ Auto-Company 并非简单调用 LLM API，而是一个高度解耦的 **多智�
 
 模型可以上报未解决的 P1，但必须保留已有 P1 条目，不能新增已勾选条目。人工应在停止运行并完成待处理恢复后解决问题，详见 [P1 问题与人工修改](docs/troubleshooting.md#p1-问题与人工修改)。
 
-## 安全红线
+<a id="安全红线"></a>
+## 🛡️ 安全红线
 
 `CLAUDE.md` 向智能体提供以下行为规则。它们与框架的特定检查共同使用，但不是通用命令拦截机制，也不保证每次违反规则的操作都被阻止：
 
@@ -323,7 +349,8 @@ Auto-Company 并非简单调用 LLM API，而是一个高度解耦的 **多智�
 - 不得 force push 到 main/master
 - 所有新项目必须在 `projects/` 目录下创建
 
-## 配置
+<a id="配置"></a>
+## ⚙️ 配置
 
 环境变量覆盖：
 
@@ -351,7 +378,8 @@ Windows `start-win.ps1` 会把同名配置写入 `.auto-loop.env`：
 
 不会自动进行引擎回退。所选引擎缺失时会直接启动失败。
 
-## 项目结构
+<a id="项目结构"></a>
+## 📁 项目结构
 
 ```
 auto-company/
@@ -376,7 +404,11 @@ auto-company/
     └── settings.json      # 权限 + Agent Teams 开关
 ```
 
-## 依赖
+<a id="依赖"></a>
+<details>
+<summary><b>📦 环境要求与限制</b></summary>
+
+## 📦 依赖
 
 | 依赖 | 说明 |
 |------|------|
@@ -391,7 +423,14 @@ auto-company/
 | `gh` | 可选，GitHub CLI |
 | `wrangler` | 可选，Cloudflare CLI |
 
-## 常见问题
+</details>
+
+<a id="常见问题"></a>
+
+<details>
+<summary><b>❓ 常见问题与排错</b></summary>
+
+## ❓ 常见问题
 
 ### 1) WSL 跑 `.sh` 报 `^M` / `bad interpreter`
 
@@ -419,6 +458,9 @@ auto-company/
   - 执行 `systemctl --user --version`
   - 若仍失败，重新登录 WSL 会话后重试
 
+
+</details>
+
 ## ⚠️ 免责声明
 
 这是一个**实验项目**：
@@ -432,7 +474,8 @@ auto-company/
 
 建议先用 `make start`（前台）观察行为，再启用守护模式（macOS/WSL：`make install`，Windows：`.\scripts\windows\start-win.ps1`）。
 
-## 致谢
+<a id="致谢"></a>
+## 🙏 致谢
 
 感谢以下贡献者，他们的问题反馈、修复和方案推动了 Auto Company 的发展：
 
@@ -449,11 +492,13 @@ auto-company/
 | [@mdoganexe](https://github.com/mdoganexe) | 报告并贡献 systemd 安装、WSL 发行版选择及区域设置相关配置处理的修复 | [#27](https://github.com/MaxMiksa/Auto-Company/pull/27)、[#28](https://github.com/MaxMiksa/Auto-Company/pull/28) |
 
 - [nicepkg/auto-company](https://github.com/nicepkg/auto-company) — macOS初版
+- [shadcn/ui](https://github.com/shadcn-ui/ui) — Dashboard 共用组件；[许可与集成说明](dashboard/ui/README.md)
 - [continuous-claude](https://github.com/AnandChowdhary/continuous-claude) — 跨会话共享笔记
 - [ralph-claude-code](https://github.com/frankbria/ralph-claude-code) — 退出信号拦截
 - [claude-auto-resume](https://github.com/terryso/claude-auto-resume) — 用量限制恢复
 
-## 许可证
+<a id="许可证"></a>
+## 📄 许可证
 
 框架采用 [MIT 许可证](LICENSE)。随附的第三方组件保留各自的许可条款和声明。
 
