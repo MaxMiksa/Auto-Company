@@ -29,7 +29,7 @@ Optional Cursor and OpenAI-compatible adapters require explicit configuration. S
 
 [![ScopeFence · work timeline](presentation/showcase/scopefence-timeline-en.png)](presentation/showcase/scopefence-timeline-en.png)
 
-Click an image to view it at full size. [Capture sources and reproduction](presentation/showcase/README.md).
+Interface demo using recorded work; unavailable runtime fields use sample values. Click an image to view it at full size. [Capture sources and reproduction](presentation/showcase/README.md).
 
 <table>
 <tr><th colspan="2"><a href="examples/scopefence/">ScopeFence</a></th></tr>

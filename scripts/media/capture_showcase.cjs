@@ -1,15 +1,17 @@
 #!/usr/bin/env node
-// Capture actual, read-only journal pages. No routes, data injection or CSS overrides.
+// Capture recorded journals, optionally filling unavailable display-only runtime fields.
 const fs = require('node:fs/promises');
 const path = require('node:path');
 const crypto = require('node:crypto');
 const assert = require('node:assert/strict');
 const root = path.resolve(__dirname, '../..');
 
-const help = `Usage: node scripts/media/capture_showcase.cjs --previews <private-targets.json> --evidence <private-results.json> [--out <image-directory>]
+const help = `Usage: node scripts/media/capture_showcase.cjs --previews <private-targets.json> --evidence <private-results.json> [--out <image-directory>] [--presentation-demo]
 
 Each target requires product, language (en/zh-CN), url (local read-only /journal),
 translation and originalSnapshot paths. cycleCount is optional.
+--presentation-demo fills unavailable runtime/slot labels and hides the read-only
+notice in the captured page only. Publish its disclosure with the screenshots.
 Paths resolve from the repository root; absolute operator paths are also accepted.
 Output defaults to presentation/showcase. Detailed evidence contains source text
 and must stay in an ignored private directory. See presentation/showcase/README.md.
@@ -18,6 +20,7 @@ const options = {};
 for (let index = 2; index < process.argv.length; index++) {
   const flag = process.argv[index];
   if (flag === '--help' || flag === '-h') { console.log(help); process.exit(0); }
+  if (flag === '--presentation-demo') { options.presentationDemo = true; continue; }
   if (!['--previews','--evidence','--out'].includes(flag) || !process.argv[index+1] || process.argv[index+1].startsWith('--')) {
     console.error(`Invalid or incomplete argument: ${flag}\n${help}`); process.exit(1);
   }
@@ -53,6 +56,33 @@ async function settle(page, count) {
     const box=image.getBoundingClientRect();
     return image.src && image.checkVisibility() && box.bottom>0 && box.top<innerHeight;
   }).every(image=>image.complete), null, {timeout:15000});
+  if (options.presentationDemo) await page.evaluate(() => {
+    const messages = window.JOURNAL_MESSAGES[document.documentElement.lang];
+    const missing = new Set([messages.unknown, messages.statusUnavailable]);
+    const changes = window.showcasePresentationChanges ||= {};
+    const status = document.getElementById('projectRuntimeStatus');
+    if (status && missing.has(status.textContent.trim())) {
+      changes.runtimeState = { original: status.textContent.trim(), displayed: messages.lastWorkEnded, simulated: true };
+      const marker = status.querySelector('.progress-node');
+      if (marker) {
+        const symbol = window.DashboardIcons.icon('circle-pause'); symbol.classList.add('size-full'); symbol.setAttribute('viewBox', '1 1 22 22');
+        marker.className = 'progress-node progress-paused'; marker.replaceChildren(symbol); marker.title = messages.lastWorkEnded;
+      }
+      const label = status.lastElementChild;
+      if (label) label.textContent = messages.lastWorkEnded;
+    }
+    const state = document.getElementById('sidebarRuntimeState');
+    if (state && missing.has(state.textContent.trim())) state.textContent = messages.lastWorkEnded;
+    const slot = document.getElementById('sidebarSlot');
+    if (slot && missing.has(slot.textContent.trim())) {
+      changes.concurrencyOccupied = { original: slot.textContent.trim(), displayed: messages.no, simulated: true };
+      slot.textContent = messages.no;
+    }
+    const notice = document.getElementById('runtimeNotice');
+    if (notice?.textContent.trim() === messages.readOnly) { notice.hidden = true; changes.readOnlyNoticeHidden = true; }
+    const header = document.getElementById('runtimeState');
+    if (header?.textContent.trim() === messages.historicalRecord) { header.textContent = messages.lastWorkEnded; header.dataset.state = 'ended'; changes.historicalHeaderReplaced = true; }
+  });
 }
 
 async function inspect(page, language) {
@@ -68,6 +98,7 @@ async function inspect(page, language) {
     const description = document.querySelector('.project-description');
     return {
       language: document.documentElement.lang,
+      presentationChanges: window.showcasePresentationChanges || null,
       viewport: {width:innerWidth,height:innerHeight},
       document: {width:document.documentElement.scrollWidth,height:document.documentElement.scrollHeight},
       visibleText: text,
@@ -88,6 +119,7 @@ async function inspect(page, language) {
 
 async function saveShot(page, filename, fullPage = false) {
   const file = path.join(outputDir, filename);
+  await page.mouse.move(0,0);
   const bytes = await page.screenshot({path:file,fullPage});
   return {file:path.relative(root,file).replaceAll('\\','/'),sha256:sha(bytes),image:{width:bytes.readUInt32BE(16),height:bytes.readUInt32BE(20)},fullPage,capturedAt:new Date().toISOString(),viewport:page.viewportSize()};
 }
@@ -97,6 +129,8 @@ async function saveShot(page, filename, fullPage = false) {
   await fs.mkdir(outputDir,{recursive:true});await fs.mkdir(path.dirname(evidenceFile),{recursive:true});
   const evidence = {observedAt:new Date().toISOString(),captureScript:path.relative(root,__filename).replaceAll('\\','/'),captureScriptSha256:sha(await fs.readFile(__filename)),manifestSha256:sha(await fs.readFile(manifestFile)),source:'Real read-only journal HTTP pages; current report and reviewed product screenshot expanded, history collapsed; provenance preserved in manifest/API, diagnostics in Log; no mocked requests, modified records, injected UI or pixel edits.',captures:[]};
   const browser = await chromium.launch({headless:true});
+  evidence.presentationDemo = Boolean(options.presentationDemo);
+  if (options.presentationDemo) evidence.source = 'Recorded journals with explicitly simulated unavailable runtime/slot display fields and read-only notice omitted. Original reports, checks, dates, APIs and media remain unchanged; no pixel editing.';
   try {
     for (const target of previews) {
       const record={product:target.product,language:target.language,url:target.url,startedAt:new Date().toISOString(),shots:[],warnings:[],errors:[]};evidence.captures.push(record);
@@ -160,6 +194,12 @@ async function saveShot(page, filename, fullPage = false) {
         height=Math.max(1000,Math.ceil(height/40)*40);assert.ok(height<=4000,'Unexpected journal height; inspect the frontend before capturing');
         await page.setViewportSize({width:1440,height});await settle(page,data.cycles.length);await page.evaluate(()=>scrollTo(0,0));
         const desktop=await inspect(page,target.language);record.desktop=desktop;
+        if (options.presentationDemo) {
+          assert.equal(desktop.presentationChanges?.runtimeState?.simulated,true);
+          assert.equal(desktop.presentationChanges?.concurrencyOccupied?.simulated,true);
+          assert.equal(await page.locator('#runtimeNotice').isVisible(),false);
+          assert.doesNotMatch(await page.locator('#projectRuntimeStatus, #sidebarRuntimeState, #sidebarSlot').allTextContents().then(text=>text.join(' ')),/unknown|unavailable|未知|不可用/i);
+        }
         assert.deepEqual(desktop.historyIds,historyIds);assert.deepEqual(desktop.openHistories,[]);assert.ok(desktop.cycleBounds.every(b=>b.y>=0&&b.bottom<=height),'A recorded cycle is outside the desktop shot');
         assert.ok(!desktop.footerBounds || desktop.footerBounds.bottom<=height,'The real page footer is outside the desktop shot');
         assert.ok(desktop.productMediaOpen&&desktop.productMediaBounds.bottom<=height,'Expanded product media must fit in the desktop shot');

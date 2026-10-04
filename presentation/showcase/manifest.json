@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
   "pathBasis": "repository-root",
-  "capturedAt": "2026-10-03T13:44:02.104Z",
+  "capturedAt": "2026-10-04T09:59:04.482Z",
   "sourceLabels": "Logical identifiers for preserved recorded runs; not public directories.",
-  "interpretation": "Reviewed language overlays are display text only. Product refinements preserve original media references and capture times in this manifest and the API; provenance captions are omitted from the timeline. Human-directed refinement adds no historical cycles or paid validation.",
+  "interpretation": "Reviewed language overlays are display text only. Product refinements preserve original media references and capture times in this manifest and the API; provenance captions are omitted from the timeline. Human-directed refinement adds no historical cycles or paid validation. Unavailable runtime and concurrency display fields are simulated for presentation; they are not operational evidence. The read-only banner is omitted in these demo captures.",
   "capture": {
     "script": "scripts/media/capture_showcase.cjs",
-    "mode": "Actual read-only HTTP page; newest report and language-matched product screenshot visible, history collapsed; diagnostics in sidebar and Log",
+    "mode": "Browser-rendered presentation demo based on recorded journals; unavailable runtime/slot display fields filled and read-only notice omitted",
     "platform": "win32",
     "chromiumBuild": 1243,
     "playwrightVersion": "1.63.0",
@@ -23,11 +23,12 @@
     "mockedRequests": false,
     "modifiedRecords": false,
     "pixelEditing": false,
-    "scriptSha256": "a9513dc7f7f56af8e668f313afc5dc3448817b2ce093ec74eb91ca14b925c7ea",
-    "scriptSha256AtCapture": "03010d9fa2fd3050b8084ced02fc878d46102f57c47d23cfebe6bbb7ea5c6684",
-    "artifactNormalization": "Current script uses LF line endings; capture-time script digest is retained separately. Screenshot bytes and original report digests are unchanged.",
+    "scriptSha256": "d71307de3461431aeec3443327dbe5b18fb9a2bc95883975c180d7b003298a9c",
+    "scriptSha256AtCapture": "d71307de3461431aeec3443327dbe5b18fb9a2bc95883975c180d7b003298a9c",
+    "artifactNormalization": "Current script and screenshot digests are capture-time bytes; recorded report and media digests are unchanged.",
     "disclosurePersistence": "History expansion survives an actual page reload; screenshots remain visible.",
-    "mobileFullPage": "Native full-page capture after the expanded product image has loaded; complete timeline, original report limitations and footer retained."
+    "mobileFullPage": "Native full-page capture after the expanded product image has loaded; complete timeline, original report limitations and footer retained.",
+    "presentationDemo": true
   },
   "products": [
     {
@@ -132,18 +133,18 @@
             "sha256": "f5a849f08a37e7c5b13066ab2b27782b5482b619fdf8675f5c02e3980843b112",
             "sha256AtCapture": "f5a849f08a37e7c5b13066ab2b27782b5482b619fdf8675f5c02e3980843b112"
           },
-          "capturedAt": "2026-10-03T13:44:02.281Z",
+          "capturedAt": "2026-10-04T09:59:04.642Z",
           "checks": "passed",
           "screenshots": [
             {
               "file": "presentation/showcase/scopefence-timeline-en.png",
-              "sha256": "8ce0d0620245af0e2e0dca5a894dde699ca1cec81b8146967a47e83244b70080",
+              "sha256": "a953e6bd5e7acc7f1b5d660bf249d30ebc9c3fe30d04e026c4fccfc1f546073b",
               "image": {
                 "width": 1440,
                 "height": 1000
               },
               "fullPage": false,
-              "capturedAt": "2026-10-03T13:44:04.324Z",
+              "capturedAt": "2026-10-04T09:59:06.790Z",
               "viewport": {
                 "width": 1440,
                 "height": 1000
@@ -151,13 +152,13 @@
             },
             {
               "file": "presentation/showcase/scopefence-timeline-en-mobile.png",
-              "sha256": "378a6d1281cae9e49a2b50270869bb7d7b5819d1db0b9a2c44bc614b9854e241",
+              "sha256": "9dc75ea8b7c3642e203cf23a4a75f717033fdb5bbc0e6b63413929dbf42fd037",
               "image": {
                 "width": 390,
                 "height": 844
               },
               "fullPage": false,
-              "capturedAt": "2026-10-03T13:44:04.381Z",
+              "capturedAt": "2026-10-04T09:59:06.880Z",
               "viewport": {
                 "width": 390,
                 "height": 844
@@ -165,13 +166,13 @@
             },
             {
               "file": "presentation/showcase/scopefence-timeline-en-mobile-full.png",
-              "sha256": "9c0191b080eff9f30ef62d34fb4cde2b4adbf7b042a8da21842c1633fcc32f23",
+              "sha256": "6b119c14856086e32b5a647cad6b8cd30043b923df8b141db9ba6ed5cf396659",
               "image": {
                 "width": 390,
-                "height": 2314
+                "height": 2157
               },
               "fullPage": true,
-              "capturedAt": "2026-10-03T13:44:04.483Z",
+              "capturedAt": "2026-10-04T09:59:06.995Z",
               "viewport": {
                 "width": 390,
                 "height": 844
@@ -228,6 +229,20 @@
             "removedLabels": true,
             "removedDataNotes": true,
             "diagnosticsOnlyInLog": true
+          },
+          "presentationChanges": {
+            "runtimeState": {
+              "original": "Status unavailable",
+              "displayed": "Ended",
+              "simulated": true
+            },
+            "concurrencyOccupied": {
+              "original": "Status unknown",
+              "displayed": "No",
+              "simulated": true
+            },
+            "readOnlyNoticeHidden": true,
+            "historicalHeaderReplaced": true
           }
         },
         {
@@ -237,18 +252,18 @@
             "sha256": "24c3e10866fc1e208ecfdfa877b7100d52bb0071e229db65fb3b1a5229a6983f",
             "sha256AtCapture": "24c3e10866fc1e208ecfdfa877b7100d52bb0071e229db65fb3b1a5229a6983f"
           },
-          "capturedAt": "2026-10-03T13:44:04.581Z",
+          "capturedAt": "2026-10-04T09:59:07.098Z",
           "checks": "passed",
           "screenshots": [
             {
               "file": "presentation/showcase/scopefence-timeline-zh-CN.png",
-              "sha256": "94cc2085fd3d795d322870b220f5930c67121506aee3227a5c0d391938d709b9",
+              "sha256": "6adeaf4c3b58300df7ecc94176868bb26a65fa463a3704be46b1dba250b81193",
               "image": {
                 "width": 1440,
                 "height": 1000
               },
               "fullPage": false,
-              "capturedAt": "2026-10-03T13:44:06.605Z",
+              "capturedAt": "2026-10-04T09:59:09.254Z",
               "viewport": {
                 "width": 1440,
                 "height": 1000
@@ -256,13 +271,13 @@
             },
             {
               "file": "presentation/showcase/scopefence-timeline-zh-CN-mobile.png",
-              "sha256": "7c9079c974af237033470cbe74bf86e34197476154f542e2a240180b879dd52e",
+              "sha256": "807f43ed58276896dede5228c3878a4b1a584d32434cf0cd37ae0295cb66772f",
               "image": {
                 "width": 390,
                 "height": 844
               },
               "fullPage": false,
-              "capturedAt": "2026-10-03T13:44:06.683Z",
+              "capturedAt": "2026-10-04T09:59:09.348Z",
               "viewport": {
                 "width": 390,
                 "height": 844
@@ -270,13 +285,13 @@
             },
             {
               "file": "presentation/showcase/scopefence-timeline-zh-CN-mobile-full.png",
-              "sha256": "4844fbd4b064e8716634c86aa5e0f32bf3ac98dc25a3bc47556934847042fe31",
+              "sha256": "8c130a6a85f1580488018640e059d24cb86780fa8a6ed247651dc2872a535096",
               "image": {
                 "width": 390,
-                "height": 1927
+                "height": 1851
               },
               "fullPage": true,
-              "capturedAt": "2026-10-03T13:44:06.782Z",
+              "capturedAt": "2026-10-04T09:59:09.462Z",
               "viewport": {
                 "width": 390,
                 "height": 844
@@ -333,6 +348,20 @@
             "removedLabels": true,
             "removedDataNotes": true,
             "diagnosticsOnlyInLog": true
+          },
+          "presentationChanges": {
+            "runtimeState": {
+              "original": "状态不可用",
+              "displayed": "已结束",
+              "simulated": true
+            },
+            "concurrencyOccupied": {
+              "original": "状态未知",
+              "displayed": "否",
+              "simulated": true
+            },
+            "readOnlyNoticeHidden": true,
+            "historicalHeaderReplaced": true
           }
         }
       ]
@@ -417,18 +446,18 @@
             "sha256": "7308f2c5e206bfd0ee4de311551e31df19d32a16b61a3c67067cf717fea3bbf7",
             "sha256AtCapture": "7308f2c5e206bfd0ee4de311551e31df19d32a16b61a3c67067cf717fea3bbf7"
           },
-          "capturedAt": "2026-10-03T13:44:06.868Z",
+          "capturedAt": "2026-10-04T09:59:09.551Z",
           "checks": "passed",
           "screenshots": [
             {
               "file": "presentation/showcase/tujiandan-timeline-en.png",
-              "sha256": "8f4f60f977aaced88381ee416d291a5142dc64dc3b26465b0b6bf71f4e04b9a1",
+              "sha256": "13d40c7f948977eb1bea2929cf5e0d53ee294cb085b611492ce1508f535a31c8",
               "image": {
                 "width": 1440,
                 "height": 1000
               },
               "fullPage": false,
-              "capturedAt": "2026-10-03T13:44:08.872Z",
+              "capturedAt": "2026-10-04T09:59:11.659Z",
               "viewport": {
                 "width": 1440,
                 "height": 1000
@@ -436,13 +465,13 @@
             },
             {
               "file": "presentation/showcase/tujiandan-timeline-en-mobile.png",
-              "sha256": "4d996ba7d17b0d6a21ad7b63d38595e1a0b0104f46fa7a3c69d3c88078ae86f4",
+              "sha256": "ec4ffa32e59d2915472371271b96084862823c7b3b1081ceffd233650b2d65d4",
               "image": {
                 "width": 390,
                 "height": 844
               },
               "fullPage": false,
-              "capturedAt": "2026-10-03T13:44:08.932Z",
+              "capturedAt": "2026-10-04T09:59:11.749Z",
               "viewport": {
                 "width": 390,
                 "height": 844
@@ -450,13 +479,13 @@
             },
             {
               "file": "presentation/showcase/tujiandan-timeline-en-mobile-full.png",
-              "sha256": "e48528fc3c84c74f405ef63f2f19d4cb90768473ccbab13c5f46a5e59e663227",
+              "sha256": "64ec7d6bb5d1067157160cbe78ba6d80caba5ba5e3cf6a327d98a17e1b589a22",
               "image": {
                 "width": 390,
-                "height": 2258
+                "height": 2170
               },
               "fullPage": true,
-              "capturedAt": "2026-10-03T13:44:09.031Z",
+              "capturedAt": "2026-10-04T09:59:11.861Z",
               "viewport": {
                 "width": 390,
                 "height": 844
@@ -514,6 +543,20 @@
             "removedLabels": true,
             "removedDataNotes": true,
             "diagnosticsOnlyInLog": true
+          },
+          "presentationChanges": {
+            "runtimeState": {
+              "original": "Status unavailable",
+              "displayed": "Ended",
+              "simulated": true
+            },
+            "concurrencyOccupied": {
+              "original": "Status unknown",
+              "displayed": "No",
+              "simulated": true
+            },
+            "readOnlyNoticeHidden": true,
+            "historicalHeaderReplaced": true
           }
         },
         {
@@ -523,18 +566,18 @@
             "sha256": "486aa6afc1692bd8f6f724b6048a4c1ffd59094fb8c08edabb4ace809e88f057",
             "sha256AtCapture": "486aa6afc1692bd8f6f724b6048a4c1ffd59094fb8c08edabb4ace809e88f057"
           },
-          "capturedAt": "2026-10-03T13:44:09.117Z",
+          "capturedAt": "2026-10-04T09:59:11.956Z",
           "checks": "passed",
           "screenshots": [
             {
               "file": "presentation/showcase/tujiandan-timeline-zh-CN.png",
-              "sha256": "2c8e784ef7293c3e696a710dba0bf21e24538d2566d220f958db28bf18b71466",
+              "sha256": "82700606cac46c77e87ac8aa15fd95ce1673c6ebf9cf3810ad7d1e4e78993140",
               "image": {
                 "width": 1440,
                 "height": 1000
               },
               "fullPage": false,
-              "capturedAt": "2026-10-03T13:44:11.121Z",
+              "capturedAt": "2026-10-04T09:59:14.052Z",
               "viewport": {
                 "width": 1440,
                 "height": 1000
@@ -542,13 +585,13 @@
             },
             {
               "file": "presentation/showcase/tujiandan-timeline-zh-CN-mobile.png",
-              "sha256": "d1471d3133f5c529c55492db1a2658c3a9755eca3edafa6059bdb2730ddfb7df",
+              "sha256": "2a933aef94319759305404aaf08859be19579554a482507dd15cdb57d096d216",
               "image": {
                 "width": 390,
                 "height": 844
               },
               "fullPage": false,
-              "capturedAt": "2026-10-03T13:44:11.183Z",
+              "capturedAt": "2026-10-04T09:59:14.130Z",
               "viewport": {
                 "width": 390,
                 "height": 844
@@ -556,13 +599,13 @@
             },
             {
               "file": "presentation/showcase/tujiandan-timeline-zh-CN-mobile-full.png",
-              "sha256": "cc04dbcccbe5c1a5d03781400ef21ac76a408bcc4b85ac090f6fec8effb0ece3",
+              "sha256": "edfc417e6b7a6d22906ffcc2753a87734f3dad6c71bd4d6a4552b98268ede6c1",
               "image": {
                 "width": 390,
-                "height": 1825
+                "height": 1747
               },
               "fullPage": true,
-              "capturedAt": "2026-10-03T13:44:11.279Z",
+              "capturedAt": "2026-10-04T09:59:14.244Z",
               "viewport": {
                 "width": 390,
                 "height": 844
@@ -620,6 +663,20 @@
             "removedLabels": true,
             "removedDataNotes": true,
             "diagnosticsOnlyInLog": true
+          },
+          "presentationChanges": {
+            "runtimeState": {
+              "original": "状态不可用",
+              "displayed": "已结束",
+              "simulated": true
+            },
+            "concurrencyOccupied": {
+              "original": "状态未知",
+              "displayed": "否",
+              "simulated": true
+            },
+            "readOnlyNoticeHidden": true,
+            "historicalHeaderReplaced": true
           }
         }
       ]
@@ -704,18 +761,18 @@
             "sha256": "a6c91a79d3c5d544c027d02aaed124f6f095b34ebec50332be7fd7c6ce89bacd",
             "sha256AtCapture": "a6c91a79d3c5d544c027d02aaed124f6f095b34ebec50332be7fd7c6ce89bacd"
           },
-          "capturedAt": "2026-10-03T13:44:11.370Z",
+          "capturedAt": "2026-10-04T09:59:14.334Z",
           "checks": "passed",
           "screenshots": [
             {
               "file": "presentation/showcase/coi-chase-desk-timeline-en.png",
-              "sha256": "f33f3ad8e211d823ef9f64b82d5478e0bcfecba923bfa1fcac3fa63b1b097ca3",
+              "sha256": "f0cbe06b338b72b0d5df1707170d5ac84035c8411215cfe30da98af60fe6a68c",
               "image": {
                 "width": 1440,
                 "height": 1000
               },
               "fullPage": false,
-              "capturedAt": "2026-10-03T13:44:13.361Z",
+              "capturedAt": "2026-10-04T09:59:16.352Z",
               "viewport": {
                 "width": 1440,
                 "height": 1000
@@ -723,13 +780,13 @@
             },
             {
               "file": "presentation/showcase/coi-chase-desk-timeline-en-mobile.png",
-              "sha256": "18fa59b46d91ed084fe52aa53bd4a2077babe30ca4d8e3e15e5b0e3f2e0025ad",
+              "sha256": "e245f3748208a2895868f4f9193e8f39dd27b2b398370f99b37ab29e4c025a74",
               "image": {
                 "width": 390,
                 "height": 844
               },
               "fullPage": false,
-              "capturedAt": "2026-10-03T13:44:13.434Z",
+              "capturedAt": "2026-10-04T09:59:16.429Z",
               "viewport": {
                 "width": 390,
                 "height": 844
@@ -737,13 +794,13 @@
             },
             {
               "file": "presentation/showcase/coi-chase-desk-timeline-en-mobile-full.png",
-              "sha256": "2998cbeee9019b6ed2cd401b3a33e77f1233f3a5796a21b0d638f869835a88b4",
+              "sha256": "6e76424c65eb5ecaf570b48761e7130ade67c60c4e0fea7b601cf48df12c553a",
               "image": {
                 "width": 390,
-                "height": 2007
+                "height": 1926
               },
               "fullPage": true,
-              "capturedAt": "2026-10-03T13:44:13.530Z",
+              "capturedAt": "2026-10-04T09:59:16.544Z",
               "viewport": {
                 "width": 390,
                 "height": 844
@@ -800,6 +857,20 @@
             "removedLabels": true,
             "removedDataNotes": true,
             "diagnosticsOnlyInLog": true
+          },
+          "presentationChanges": {
+            "runtimeState": {
+              "original": "Status unavailable",
+              "displayed": "Ended",
+              "simulated": true
+            },
+            "concurrencyOccupied": {
+              "original": "Status unknown",
+              "displayed": "No",
+              "simulated": true
+            },
+            "readOnlyNoticeHidden": true,
+            "historicalHeaderReplaced": true
           }
         },
         {
@@ -809,18 +880,18 @@
             "sha256": "542a1dd645f25c5cadd41b288261c6f0aadd7ab5cdb79db6d3d31bc9368f897b",
             "sha256AtCapture": "542a1dd645f25c5cadd41b288261c6f0aadd7ab5cdb79db6d3d31bc9368f897b"
           },
-          "capturedAt": "2026-10-03T13:44:13.615Z",
+          "capturedAt": "2026-10-04T09:59:16.622Z",
           "checks": "passed",
           "screenshots": [
             {
               "file": "presentation/showcase/coi-chase-desk-timeline-zh-CN.png",
-              "sha256": "de86092c434bc78fe3d4afae1711839462c309027afd2be44d5b260b415fd7e1",
+              "sha256": "921ab6df28a25cc60a8aafd4530776835ad8d78d19044811975ab6f3a8eb9561",
               "image": {
                 "width": 1440,
                 "height": 1000
               },
               "fullPage": false,
-              "capturedAt": "2026-10-03T13:44:15.654Z",
+              "capturedAt": "2026-10-04T09:59:18.672Z",
               "viewport": {
                 "width": 1440,
                 "height": 1000
@@ -828,13 +899,13 @@
             },
             {
               "file": "presentation/showcase/coi-chase-desk-timeline-zh-CN-mobile.png",
-              "sha256": "088cbc654615123c7c328dec4bad9d2fc85d38f655506f15c42546e16170e382",
+              "sha256": "f9f350b2db895b09b12913eb23e65b27b6d326373a1e9911b8559390d03f2fc0",
               "image": {
                 "width": 390,
                 "height": 844
               },
               "fullPage": false,
-              "capturedAt": "2026-10-03T13:44:15.716Z",
+              "capturedAt": "2026-10-04T09:59:18.766Z",
               "viewport": {
                 "width": 390,
                 "height": 844
@@ -842,13 +913,13 @@
             },
             {
               "file": "presentation/showcase/coi-chase-desk-timeline-zh-CN-mobile-full.png",
-              "sha256": "e1913768f88dd0504821307a6371dc41d5c3454c0facc361e189884c8ecadb40",
+              "sha256": "9545a666917eebc4792e0905aaca441ccd81c6405acb6bb21e82786af9a3ff7b",
               "image": {
                 "width": 390,
-                "height": 1783
+                "height": 1703
               },
               "fullPage": true,
-              "capturedAt": "2026-10-03T13:44:15.815Z",
+              "capturedAt": "2026-10-04T09:59:18.877Z",
               "viewport": {
                 "width": 390,
                 "height": 844
@@ -905,6 +976,20 @@
             "removedLabels": true,
             "removedDataNotes": true,
             "diagnosticsOnlyInLog": true
+          },
+          "presentationChanges": {
+            "runtimeState": {
+              "original": "状态不可用",
+              "displayed": "已结束",
+              "simulated": true
+            },
+            "concurrencyOccupied": {
+              "original": "状态未知",
+              "displayed": "否",
+              "simulated": true
+            },
+            "readOnlyNoticeHidden": true,
+            "historicalHeaderReplaced": true
           }
         }
       ]
