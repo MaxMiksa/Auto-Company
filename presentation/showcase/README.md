@@ -1,8 +1,8 @@
-# Recorded work timelines · 真实工作时间轴
+# Work timeline demos · 工作时间轴演示
 
-These six views show three products' real recorded work. Exploration and product work keep one continuous sequence, with the newest report and product screenshot open and earlier cycles collapsed. Manual history expansion survives page reload within the browser session; product screenshots remain visible. The screenshots preserve original cycle identities, timestamps, statuses, checks and recorded limitations.
+These six presentation views use three products' real recorded work. Unavailable runtime status and concurrency fields are illustrated as **Ended / No**; the read-only notice is omitted. These display values are not evidence of a live process state. Exploration and product work keep one continuous sequence, with the newest report and product screenshot open and earlier cycles collapsed. Manual history expansion survives page reload within the browser session; product screenshots remain visible. The screenshots preserve original cycle identities, timestamps, statuses, checks and recorded limitations.
 
-六个视图展示三个产品的真实运行记录。探索和产品工作连续编号，最新报告与产品实拍展开、早期轮次保持默认折叠；手动展开历史轮次的选择在本次浏览器会话重载后保留；产品实拍保持可见。原始轮次身份、时间、状态、检查与已记录的限制均保留。
+六个演示视图使用三个产品的真实运行记录。无法获取的运行状态和并发占用以 **已结束 / 否** 作为展示值，并省略只读提示条；这些展示值不代表实际进程状态证据。探索和产品工作连续编号，最新报告与产品实拍展开、早期轮次保持默认折叠；手动展开历史轮次的选择在本次浏览器会话重载后保留；产品实拍保持可见。原始轮次身份、时间、状态、检查与已记录的限制均保留。
 
 | Product / 产品 | Recorded cycles / 真实轮次 | English | 中文 |
 | --- | --- | --- | --- |
@@ -26,13 +26,13 @@ The expanded product screenshot is a language-matched display of the previously 
 
 ## Capture / 捕获
 
-[capture_showcase.cjs](../../scripts/media/capture_showcase.cjs) reads the actual local, read-only journal page and its API. It checks original identities, chronology, statuses, report digests and unchanged inventories before and after capture. It waits for fonts and visible images, and checks language, clipped text, failed images and horizontal overflow. No requests are mocked, records injected, interface elements hidden or image pixels edited. All six final views passed these checks.
+[capture_showcase.cjs](../../scripts/media/capture_showcase.cjs) reads the actual local, read-only journal page and its API. It checks original identities, chronology, statuses, report digests and unchanged inventories before and after capture. It waits for fonts and visible images, and checks language, clipped text, failed images and horizontal overflow. With `--presentation-demo`, only unavailable runtime labels are filled and the read-only notice is hidden in the browser. APIs, source records and image pixels are not modified; each display replacement is listed in the manifest. All six final views passed these checks.
 
-捕获脚本读取真实本机只读页面与 API，校验原身份、时间顺序、状态、报告哈希及捕获前后不变的轮次清单；等待字体和可见图片加载，并检查混语、文字截断、图片失败与横向溢出。没有请求模拟、记录注入、界面隐藏或像素编辑，最终六视图均通过检查。
+捕获脚本读取真实本机只读页面与 API，校验原身份、时间顺序、状态、报告哈希及捕获前后不变的轮次清单；等待字体和可见图片加载，并检查混语、文字截断、图片失败与横向溢出。启用 `--presentation-demo` 后，只在浏览器展示层补齐缺失状态并隐藏只读提示；API、源记录和图片像素不修改，每项展示替换记入清单。最终六视图均通过检查。
 
-Desktop width is 1440 px; height follows actual content through the complete timeline and product sidebar. Mobile viewport is 390 × 844 px, with a separate native full-page capture. This set was captured with Windows Chromium build 1243, Playwright 1.63.0 and device scale 1. The interface uses its configured Noto Sans SC stack with system fallbacks; no font overrides were injected. Capture times in the index are UTC; the visible journal uses its recorded local times. Runtime state, historical checks and report limitations remain as recorded. Runtime diagnostics are available in the sidebar and Log tab; the former data-notes disclosure is removed.
+Desktop width is 1440 px; height follows actual content through the complete timeline and product sidebar. Mobile viewport is 390 × 844 px, with a separate native full-page capture. This set was captured with Windows Chromium build 1243, Playwright 1.63.0 and device scale 1. The interface uses its configured Noto Sans SC stack with system fallbacks; no font overrides were injected. Capture times in the index are UTC; the visible journal uses its recorded local times. Historical checks and report limitations remain as recorded; unavailable runtime display fields use the declared demo values. Runtime diagnostics are available in the sidebar and Log tab; the former data-notes disclosure is removed.
 
-桌面宽 1440 像素，高度覆盖完整时间轴与产品栏；手机视口为 390 × 844，另保留浏览器原生完整页面截图。本组使用 Windows Chromium 1243、Playwright 1.63.0、像素比例 1；采用界面配置的 Noto Sans SC 字体栈与系统回退字体，没有注入字体覆盖。清单捕获时间使用 UTC，界面时间来自原记录。运行状态、历史检查与报告中的限制按记录展示。运行诊断可从产品栏和日志页访问，原数据说明折叠区已移除。
+桌面宽 1440 像素，高度覆盖完整时间轴与产品栏；手机视口为 390 × 844，另保留浏览器原生完整页面截图。本组使用 Windows Chromium 1243、Playwright 1.63.0、像素比例 1；采用界面配置的 Noto Sans SC 字体栈与系统回退字体，没有注入字体覆盖。清单捕获时间使用 UTC，界面时间来自原记录。历史检查与报告限制按原记录展示，无法获取的运行状态使用已说明的演示值。运行诊断可从产品栏和日志页访问，原数据说明折叠区已移除。
 
 ## Reproduction / 复现
 
@@ -72,7 +72,7 @@ In the ignored `.auto-company/showcase-capture/` directory, provide the unmodifi
 ```
 
 ```sh
-node scripts/media/capture_showcase.cjs --previews .auto-company/showcase-capture/targets.json --evidence .auto-company/showcase-capture/results.json --out .auto-company/showcase-capture/images
+node scripts/media/capture_showcase.cjs --presentation-demo --previews .auto-company/showcase-capture/targets.json --evidence .auto-company/showcase-capture/results.json --out .auto-company/showcase-capture/images
 ```
 
 All path arguments resolve from the repository root, including when the command is launched elsewhere. Detailed capture results contain source text and belong in an ignored private location; publish only a reviewed manifest of IDs, digests and selected image metadata. The source preview never starts a company loop or changes recorded reports.

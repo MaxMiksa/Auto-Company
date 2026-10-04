@@ -29,7 +29,7 @@
 
 [![ScopeFence · 工作时间轴](presentation/showcase/scopefence-timeline-zh-CN.png)](presentation/showcase/scopefence-timeline-zh-CN.png)
 
-点击图片查看原尺寸。[截图来源与复现](presentation/showcase/README.md)。
+界面演示采用真实工作记录，无法获取的运行状态以示例值补齐。点击图片查看原尺寸。[截图来源与复现](presentation/showcase/README.md)。
 
 <table>
 <tr><th colspan="2"><a href="examples/scopefence/">范围确认单</a></th></tr>
