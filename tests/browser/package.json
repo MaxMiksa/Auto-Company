@@ -7,6 +7,6 @@
   },
   "engines": { "node": ">=20" },
   "devDependencies": {
-    "@playwright/test": "1.64.0"
+    "@playwright/test": "1.65.0"
   }
 }
